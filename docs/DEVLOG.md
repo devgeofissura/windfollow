@@ -11,6 +11,28 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-15 17:12 - feat(irobot): painel antigo de volta em / e versao simples em /teste
+
+**Area:** irobot
+
+**Feito:**
+- raiz volta a ter joystick a esquerda e sliders de velocidade a direita
+- /teste serve a pagina so com 5 botoes
+- gerador embute teste_html e links antigos ganham ?v=3 contra cache
+
+**Dificuldades e solucoes:**
+- esp32 parou de responder ao esptool apos matar o monitor serial -> reset fisico na placa e nova deteccao da porta resolveram
+
+**Arquivos:**
+- `firmware/irobot/DashboardService.cpp`
+- `firmware/irobot/DashboardService.h`
+- `firmware/irobot/WebAssets.h`
+- `firmware/irobot/tools/generate_web_assets.ps1`
+- `firmware/irobot/web/css/style.css`
+- `firmware/irobot/web/index.html`
+- `firmware/irobot/web/js/app.js`
+- `firmware/irobot/web/teste.html`
+
 ### 2026-11-15 16:50 - fix(irobot): gerador de WebAssets embutia aspas no inicio do app.js
 
 **Area:** irobot

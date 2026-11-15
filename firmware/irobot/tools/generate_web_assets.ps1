@@ -29,6 +29,7 @@ $files = @(
     @{ name = "index_html"; path = Join-Path $WebDir "index.html" }
     @{ name = "style_css";  path = Join-Path (Join-Path $WebDir "css") "style.css" }
     @{ name = "app_js";     path = Join-Path (Join-Path $WebDir "js") "app.js" }
+    @{ name = "teste_html"; path = Join-Path $WebDir "teste.html" }
 )
 
 $header = @"

@@ -31,6 +31,7 @@ void DashboardService::loop() {
 
 void DashboardService::setupRoutes() {
   _server->on("/", HTTP_GET, std::bind(&DashboardService::handleRoot, this));
+  _server->on("/teste", HTTP_GET, std::bind(&DashboardService::handleTeste, this));
   _server->on("/style.css", HTTP_GET, std::bind(&DashboardService::handleStyleCss, this));
   _server->on("/app.js", HTTP_GET, std::bind(&DashboardService::handleAppJs, this));
   _server->on("/favicon.ico", HTTP_GET, std::bind(&DashboardService::handleFavicon, this));
@@ -62,6 +63,11 @@ void DashboardService::sendWithCors(int code, const char* contentType, const Str
 void DashboardService::handleRoot() {
   Serial.println(">>> GET /");
   sendWithCors(200, "text/html", index_html);
+}
+
+void DashboardService::handleTeste() {
+  Serial.println(">>> GET /teste");
+  sendWithCors(200, "text/html", teste_html);
 }
 
 void DashboardService::handleStyleCss() {

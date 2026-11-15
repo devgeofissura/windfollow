@@ -29,6 +29,7 @@ private:
   String generateConfigJson();
   bool handleMoveRequest(JsonDocument& doc);
   void handleRoot();
+  void handleTeste();
   void handleStyleCss();
   void handleAppJs();
   void handleMotorStatus();
