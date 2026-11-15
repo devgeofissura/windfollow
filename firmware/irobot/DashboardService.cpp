@@ -60,6 +60,7 @@ void DashboardService::sendWithCors(int code, const char* contentType, const Str
 }
 
 void DashboardService::handleRoot() {
+  Serial.println(">>> GET /");
   sendWithCors(200, "text/html", index_html);
 }
 
@@ -157,6 +158,9 @@ void DashboardService::handleSystemInfo() {
 }
 
 void DashboardService::handleNotFound() {
+  Serial.print(">>> 404 ");
+  Serial.print(_server->method() == HTTP_POST ? "POST " : "GET ");
+  Serial.println(_server->uri());
   sendWithCors(404, "text/plain", "Nao encontrado");
 }
 

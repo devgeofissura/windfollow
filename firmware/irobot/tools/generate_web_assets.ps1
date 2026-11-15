@@ -55,7 +55,9 @@ foreach ($f in $files) {
     $raw = Get-ContentNoBom $f.path
     # Escapa para raw string literal C++ (R"rawliteral(...)rawliteral")
     # Substitui ))rawliteral( se houver (improvisavel aqui, mas protegido)
-    $content += "static const char* $($f.name) = R`"rawliteral`(`"`n"
+    # Delimitador C++ e R"rawliteral( + newline; sem aspas extras, senao o
+    # conteudo servido comeca com um caractere " e o JS quebra (SyntaxError).
+    $content += "static const char* $($f.name) = R`"rawliteral(`n"
     $content += $raw
     $content += "`n)rawliteral`";`n"
 }

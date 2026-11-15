@@ -11,6 +11,23 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-15 16:50 - fix(irobot): gerador de WebAssets embutia aspas no inicio do app.js
+
+**Area:** irobot
+
+**Feito:**
+- generate_web_assets.ps1 nao adiciona mais aspas extras apos R-raw
+- JS servido voltou a ser valido e os botoes conseguem chamar a API
+- WebAssets.h regerado e gravado em COM5
+
+**Dificuldades e solucoes:**
+- app.js chegava ao navegador com aspas solta no inicio (SyntaxError) e nenhum fetch saia do celular -> corrigido o delimitador do raw string e conferido byte a byte no header gerado
+
+**Arquivos:**
+- `firmware/irobot/DashboardService.cpp`
+- `firmware/irobot/WebAssets.h`
+- `firmware/irobot/tools/generate_web_assets.ps1`
+
 ### 2026-11-15 16:17 - feat(irobot): tela simplificada so com botoes de direcao
 
 **Area:** irobot

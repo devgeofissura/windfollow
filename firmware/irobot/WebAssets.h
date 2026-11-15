@@ -3,7 +3,7 @@
 
 // Conteudos gerados automaticamente a partir da pasta web/
 // Nao edite manualmente - rode generate_web_assets.ps1 apos alterar os arquivos web/
-static const char* index_html = R"rawliteral("
+static const char* index_html = R"rawliteral(
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -30,7 +30,7 @@ static const char* index_html = R"rawliteral("
 </html>
 
 )rawliteral";
-static const char* style_css = R"rawliteral("
+static const char* style_css = R"rawliteral(
 * { box-sizing: border-box; }
 
 html, body {
@@ -133,7 +133,7 @@ h1 {
 }
 
 )rawliteral";
-static const char* app_js = R"rawliteral("
+static const char* app_js = R"rawliteral(
 (function () {
   'use strict';
 
