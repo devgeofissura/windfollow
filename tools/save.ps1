@@ -17,10 +17,10 @@
     Mensagem do commit (mesmo estilo do repositorio: "tipo(escopo): resumo").
 
 .PARAMETER Summary
-    O que foi feito. Aceita varias linhas: -Summary "linha 1","linha 2".
+    O que foi feito. Use ';' para separar itens: -Summary "item 1; item 2".
 
 .PARAMETER Difficulty
-    Dificuldades encontradas e como foram resolvidas. Varias linhas permitidas.
+    Dificuldades encontradas e como foram resolvidas. Use ';' para separar itens.
 
 .PARAMETER Area
     Area/firmware afetado (ex.: "irobot", "windfollowblind", "tooling").
@@ -30,7 +30,7 @@
     Commit local sem push (use so se o remoto estiver indisponivel).
 
 .EXAMPLE
-    powershell -ExecutionPolicy Bypass -File tools/save.ps1 -Message "feat(irobot): ajusta PWM" -Summary "PWM minimo 60" -Difficulty "motor nao partia abaixo de 40"
+    powershell -ExecutionPolicy Bypass -File tools/save.ps1 -Message "feat(irobot): ajusta PWM" -Summary "PWM minimo 60; zona morta 30" -Difficulty "motor nao partia abaixo de 40 -> min 60"
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File tools/save.ps1 -Message "docs: atualiza README" -Summary "secao nova" -NoPush
@@ -43,7 +43,6 @@ param(
     [string[]]$Summary = @(),
 
     [string[]]$Difficulty = @(),
-
     [string]$Area = '',
 
     [switch]$NoPush
@@ -57,6 +56,23 @@ if (-not (Test-Path -LiteralPath (Join-Path $RepoRoot 'firmware'))) {
 }
 
 $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+
+# powershell.exe -File entrega "a","b" como uma unica string "a,b": aceitamos
+# tanto vetor (chamada direta no PS) quanto itens separados por ';'.
+function Expand-List {
+    param([string[]]$Items)
+    $out = @()
+    foreach ($item in $Items) {
+        if ($null -eq $item) { continue }
+        foreach ($piece in ($item -split ';')) {
+            if ($piece.Trim().Length -gt 0) { $out += $piece.Trim() }
+        }
+    }
+    return $out
+}
+
+$Summary = Expand-List -Items $Summary
+$Difficulty = Expand-List -Items $Difficulty
 
 Push-Location $RepoRoot
 try {

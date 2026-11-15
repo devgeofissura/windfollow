@@ -28,9 +28,12 @@ local. Use `tools/save.ps1`, que já faz tudo:
 ```text
 powershell -ExecutionPolicy Bypass -File tools/save.ps1 `
   -Message "feat(irobot): <resumo curto>" `
-  -Summary "<o que mudou 1>","<o que mudou 2>" `
+  -Summary "<o que mudou 1>; <o que mudou 2>" `
   -Difficulty "<dificuldade encontrada> -> <como resolveu>"
 ```
+
+Itens de `-Summary` e `-Difficulty` são separados por `;` (o `powershell.exe -File`
+não converte vírgulas em lista).
 
 O script:
 

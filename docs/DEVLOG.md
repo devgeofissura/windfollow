@@ -11,15 +11,42 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-15 15:52 - fix(tooling): itens de Summary/Difficulty separados por ';' no save.ps1
+
+**Area:** docs, raiz, tooling
+
+**Feito:**
+- save.ps1 divide -Summary e -Difficulty por '
+- ' (powershell -File nao converte virgula em lista)
+- entrada anterior do DEVLOG reorganizada em bullets
+- AGENTS.md atualizado com o separador
+
+**Dificuldades e solucoes:**
+- powershell.exe -File entregou 'a','b' como uma unica string e o DEVLOG saiu corrido -> split por '
+- ' e entrada corrigida
+
+**Arquivos:**
+- `AGENTS.md`
+- `docs/DEVLOG.md`
+- `tools/save.ps1`
+
 ### 2026-11-15 15:51 - feat(irobot): chassi 2 rodas + caster, deteccao automatica de placa/COM e DEVLOG automatico
 
 **Area:** irobot, windfollowblind, tooling, docs
 
 **Feito:**
-- chassi documentado como 2 motores (1 roda cada) + roda caster livre,novo tools/flash.ps1: detecta COM na hora, confere chip com esptool e grava,novo tools/save.ps1 + docs/DEVLOG.md: commit, push e diario automaticos,AGENTS.md: fluxo de inicio de sessao e regras de porta/commit,corrige windfollowblind.ino (nao compilava) e typos de mDNS do blind,remove COM fixa dos READMEs/documentacao; README raiz ganha secao irobot
+- chassi documentado como 2 motores (1 roda cada) + roda caster livre
+- novo `tools/flash.ps1`: detecta COM na hora, confere chip com esptool e grava
+- novo `tools/save.ps1` + `docs/DEVLOG.md`: commit, push e diário automáticos
+- `AGENTS.md`: fluxo de início de sessão e regras de porta/commit
+- corrige `windfollowblind.ino` (não compilava) e typos de mDNS do blind
+- remove COM fixa dos READMEs/documentação; README raiz ganha seção irobot
 
-**Dificuldades e solucoes:**
-- arduino-cli marca clone CH340 como Unknown -> chip identificado via esptool flash-id,windflollowblind.ino nao batia com a pasta (main file missing) -> git mv preservando historico,pasta de build com %TEMP% literal dentro do repo -> removida; scripts usam TEMP,PowerShell 5.1 le .ps1 sem BOM como ANSI -> scripts mantidos em ASCII puro
+**Dificuldades e soluções:**
+- arduino-cli marca clone CH340 como Unknown -> chip identificado via esptool flash-id
+- `windflollowblind.ino` não batia com a pasta (main file missing) -> `git mv` preservando histórico
+- pasta de build com `%TEMP%` literal dentro do repo -> removida; scripts usam TEMP
+- PowerShell 5.1 lê .ps1 sem BOM como ANSI -> scripts mantidos em ASCII puro
 
 **Arquivos:**
 - `README.md`
