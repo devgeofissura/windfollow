@@ -4,12 +4,13 @@
 #include <Arduino.h>
 
 // --- GPIOs do L298N (motores direito e esquerdo) ---
-// Motor esquerdo (roda dianteira + traseira esquerda)
+// Chassi diferencial: uma roda motriz por motor + uma roda caster livre na outra ponta
+// Motor esquerdo (roda esquerda)
 static const int8_t M_LEFT_IN1  = 26;   // Sentido 1
 static const int8_t M_LEFT_IN2  = 25;   // Sentido 2
 static const int8_t M_LEFT_ENA  = 27;   // PWM / habilitação (era botão 1)
 
-// Motor direito (roda dianteira + traseira direita)
+// Motor direito (roda direita)
 static const int8_t M_RIGHT_IN3 = 32;   // Sentido 1
 static const int8_t M_RIGHT_IN4 = 33;   // Sentido 2
 static const int8_t M_RIGHT_ENB = 14;   // PWM / habilitação (era botão 2)

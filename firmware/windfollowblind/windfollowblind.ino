@@ -160,7 +160,7 @@ void setupNetwork() {
 
     if (MDNS.begin("windfollowblind")) {
         MDNS.addService("http", "tcp", 80);
-        Serial.println(F("mDNS: http://windflollowblind.local"));
+        Serial.println(F("mDNS: http://windfollowblind.local"));
     } else {
         Serial.println(F("Falha ao iniciar mDNS"));
     }
@@ -179,7 +179,7 @@ void setupMotion() {
 
 void setupDashboard() {
     dashboardServiceBlind.init();
-    Serial.println(F("Dashboard: http://windflollowblind.local"));
+    Serial.println(F("Dashboard: http://windfollowblind.local"));
 }
 
 // ============================================================

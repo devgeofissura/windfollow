@@ -1,21 +1,25 @@
-# iRobot — Firmware ESP32 (Robô Diferencial de 4 Rodas)
+# iRobot — Firmware ESP32 (Robô Diferencial de 2 Rodas + Caster)
 
-Projeto baseado no hardware existente do **WindFollowBlind**, adaptado para um robô diferencial de 4 rodas:
-- **2 motores DC com redutor**, cada um acionando o par de rodas de um lado (esquerda/direita).
+Projeto baseado no hardware existente do **WindFollowBlind**, adaptado para um chassi diferencial de 2 motores:
+- **2 motores DC com redutor**, cada um acionando **uma roda** (esquerda/direita).
+- **1 roda caster livre** (giratória) na outra ponta do chassi, apenas de apoio.
 - **Driver L298N** com controle de PWM nos pinos ENA/ENB.
 - **ESP32 DevKit** com Access Point, mDNS e interface web embarcada.
 - **Sem botões físicos** — controle exclusivamente via interface web / API REST.
 
 ## Hardware
 
+Chassi diferencial: **roda motriz esquerda + roda motriz direita** na traseira e **roda caster livre** (giratória, 360°) na dianteira (ou vice-versa), apenas como ponto de apoio.
+
 | Sinal | GPIO | Função |
 |-------|------|--------|
-| Motor Esquerdo IN1 | 26 | Sentido 1 |
-| Motor Esquerdo IN2 | 25 | Sentido 2 |
+| Motor Esquerdo IN1 | 26 | Sentido 1 da roda esquerda |
+| Motor Esquerdo IN2 | 25 | Sentido 2 da roda esquerda |
 | Motor Esquerdo ENA (PWM) | 27 | Habilitação + velocidade |
-| Motor Direito IN3 | 32 | Sentido 1 |
-| Motor Direito IN4 | 33 | Sentido 2 |
+| Motor Direito IN3 | 32 | Sentido 1 da roda direita |
+| Motor Direito IN4 | 33 | Sentido 2 da roda direita |
 | Motor Direito ENB (PWM) | 14 | Habilitação + velocidade |
+| Roda caster | — | Livre, sem atuador nem sensor |
 
 **Regras elétricas:**
 - Fonte separada para os motores (nunca pelos 3V3/5V do ESP32).
@@ -44,9 +48,23 @@ Acesse via `http://irobot.local` ou IP do Access Point (`192.168.4.1` por padrã
 
 ## Compilacao
 
-```bash
-arduino-cli compile --fqbn "esp32:esp32:esp32" --build-path "%TEMP%\irobot-build" firmware/irobot
-arduino-cli upload -p COM6 --fqbn "esp32:esp32:esp32" --input-dir "%TEMP%\irobot-build"
+A porta COM muda a cada replug do cabo, entao o script detecta a porta e confere o
+chip (ESP32 classico) na hora:
+
+```text
+powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch irobot
+```
+
+Para apenas listar as portas e o chip de cada uma:
+
+```text
+powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch irobot -DetectOnly
+```
+
+Antes de compilar apos editar `web/` (rodar dentro de `firmware/irobot`):
+
+```text
+powershell -ExecutionPolicy Bypass -File tools/generate_web_assets.ps1
 ```
 
 ## Comandos Seriais (115200 baud)
@@ -80,4 +98,6 @@ arduino-cli upload -p COM6 --fqbn "esp32:esp32:esp32" --input-dir "%TEMP%\irobot
 
 - Sem encoders → controle em malha aberta (nao sabe distancia/angulo exato).
 - Motores tipo TT → baixo torque, adequado para piso plano e robô leve.
-- 4 rodas geram mais atrito lateral em curvas que 2 rodas + caster.
+- A roda caster absorve a deriva lateral nas curvas, mas exige piso liso: em carpete ou piso irregular ela trava e o robô desvia.
+- Só duas rodas motrizes → menor tração que um chassi de 4 rodas; manter o centro de gravidade próximo do eixo motriz.
+- `e`/`d` giram em torno da roda parada (uma roda para frente, a outra travada). Girar no próprio eixo exigiria uma roda para frente e a outra para trás.

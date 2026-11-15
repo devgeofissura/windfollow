@@ -63,11 +63,17 @@ Pasta `firmware/windfollow/`. Módulos:
 | `WebAssets.h` | HTML/CSS/JS gerados por `tools/generate_web_assets.ps1` |
 | `windfollow.ino` | Setup/loop, AP + mDNS, câmera, heartbeat e comandos seriais |
 
-Compilação/gravação (ESP32-S3, 16 MB, PSRAM OPI, USB CDC):
+Compilação/gravação (ESP32-S3, 16 MB, PSRAM OPI, USB CDC). **A porta COM muda a
+cada replug do cabo**, então o script detecta a porta na hora e confere o chip:
 
 ```text
-arduino-cli compile --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,USBMode=hwcdc,UploadSpeed=921600,FlashSize=16M,PartitionScheme=huge_app,PSRAM=opi" firmware/windfollow
-arduino-cli upload -p COM3 --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,USBMode=hwcdc,UploadSpeed=921600,FlashSize=16M,PartitionScheme=huge_app,PSRAM=opi" firmware/windfollow
+powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollow
+```
+
+Para só listar as portas e o chip de cada uma (sem compilar/gravar):
+
+```text
+powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollow -DetectOnly
 ```
 
 Comandos pela serial (115200): `c` inicia a câmera, `i` mostra status, `p` captura, `r` reinicia.
@@ -88,7 +94,7 @@ powershell -ExecutionPolicy Bypass -File tools/generate_web_assets.ps1
 
 # WindFollowBlind (subprojeto — sem câmera)
 
-Pasta `firmware/windflollowblind/` e `simulator/windflollowblind/`.
+Pasta `firmware/windfollowblind/` e `simulator/windflollowblind/`.
 
 Controle de **2 motores DC via L298N** + **2 botões NA** em um ESP32 DevKit (não usa a T-SIMCAM nem câmera). Cada botão alterna seu próprio motor entre: parado → esquerda (contínuo) → parado → direita (contínuo) → parado → repete. Mantém a mesma interface web (dashboard, configuração de GPIOs, Wi-Fi AP/mDNS) do WindFollow, removendo apenas a parte de câmera e rastreamento por movimento.
 
@@ -129,18 +135,36 @@ Abra `simulator/windflollowblind/index.html` no navegador para simular os 2 moto
 
 ## Firmware (ESP32 DevKit via Arduino IDE)
 
-FQBN: `esp32:esp32:esp32`
+FQBN: `esp32:esp32:esp32`. A porta COM é detectada na hora (nunca fixa):
 
 ```text
-arduino-cli compile --fqbn "esp32:esp32:esp32" --build-path "%TEMP%\wf-blind-build" firmware/windflollowblind
-arduino-cli upload -p COM6 --fqbn "esp32:esp32:esp32" --input-dir "%TEMP%\wf-blind-build"
+powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollowblind
 ```
 
-Antes de regenerar o firmware após editar `firmware/windflollowblind/web/`, rode:
+Antes de regenerar o firmware após editar `firmware/windfollowblind/web/`, rode:
 
 ```text
-powershell -ExecutionPolicy Bypass -File tools/generate_web_assets.ps1 -WebDir "firmware/windflollowblind/web" -OutFile "firmware/windflollowblind/WebAssets.h"
+powershell -ExecutionPolicy Bypass -File tools/generate_web_assets.ps1 -WebDir "firmware/windfollowblind/web" -OutFile "firmware/windfollowblind/WebAssets.h"
 ```
 
 Comandos pela serial (115200): `i` status, `r` reinicia, `1` motor1 esquerda, `2` motor1 direita, `3` motor2 esquerda, `4` motor2 direita, `0` parar tudo.
+
+---
+
+# iRobot (subprojeto — robô diferencial de 2 rodas + caster)
+
+Pasta `firmware/irobot/`. Mesmo ESP32 DevKit clássico do WindFollowBlind, sem botões
+e sem câmera: 2 motores DC (uma roda por motor) + roda caster livre na outra ponta.
+
+| Sinal | GPIO |
+|---|---|
+| Motor esquerdo IN1 / IN2 / ENA (PWM) | 26 / 25 / 27 |
+| Motor direito IN3 / IN4 / ENB (PWM) | 32 / 33 / 14 |
+
+- AP: `Irobot-Setup` / senha `irobot1234` — `http://irobot.local`
+- FQBN: `esp32:esp32:esp32`
+- Gravação: `powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch irobot`
+- Regenerar assets: `powershell -ExecutionPolicy Bypass -File firmware/irobot/tools/generate_web_assets.ps1` (executado dentro de `firmware/irobot`)
+- Comandos seriais (115200): `f` frente, `t` trás, `e` esquerda, `d` direita, `s` stop, `1`–`9` velocidade, `i` status, `r` reinicia
+
 

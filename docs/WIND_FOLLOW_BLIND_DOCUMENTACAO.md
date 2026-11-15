@@ -346,16 +346,18 @@ Abra `simulator/windflollowblind/index.html` em qualquer navegador.
 
 **FQBN:** `esp32:esp32:esp32` (ESP32 DevKit)
 
+A porta COM muda a cada replug do cabo; o script detecta a porta e confere o chip:
+
 ```text
-arduino-cli compile --fqbn "esp32:esp32:esp32" --build-path "%TEMP%\wf-blind-build" firmware/windflollowblind
-arduino-cli upload -p COM6 --fqbn "esp32:esp32:esp32" --input-dir "%TEMP%\wf-blind-build"
+powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollowblind
+powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollowblind -DetectOnly
 ```
 
 ### 7.2 Estrutura de arquivos
 
 | Arquivo | Função |
 |---------|--------|
-| `windflollowblind.ino` | Setup/loop, AP + mDNS, L298N dual, 2 botões NA, comandos seriais |
+| `windfollowblind.ino` | Setup/loop, AP + mDNS, L298N dual, 2 botões NA, comandos seriais |
 | `HardwareConfig.h` | Struct de configuração (GPIOs, duração do pulso, habilitar motores) |
 | `ConfigManager.h/.cpp` | Leitura/gravação em Preferences (NVS), validação de GPIO |
 | `L298NDualDriver.h/.cpp` | Controle do L298N (2 motores, direção, PWM opcional) |

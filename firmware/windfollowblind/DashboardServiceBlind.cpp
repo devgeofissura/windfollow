@@ -14,7 +14,7 @@
 static DashboardServiceBlind* s_instance = nullptr;
 static WebServer* s_webServer = nullptr;
 
-// Instancias globais definidas em windflollowblind.ino
+// Instancias globais definidas em windfollowblind.ino
 extern ConfigManager configManager;
 extern L298NDualDriver l298nDualDriver;
 extern MotorEngineBlind motorEngineBlind;
@@ -290,7 +290,7 @@ void DashboardServiceBlind::handleWifiStatus() {
     char buf[512];
     snprintf(buf, sizeof(buf),
         "{\"status\":\"ok\",\"mode\":\"%s\",\"ip\":\"%s\",\"ssid\":\"%s\","
-        "\"connected\":%s,\"configured\":%s,\"apIp\":\"%s\",\"mdns\":\"windflollowblind.local\"}",
+        "\"connected\":%s,\"configured\":%s,\"apIp\":\"%s\",\"mdns\":\"windfollowblind.local\"}",
         connected ? "sta" : "ap",
         ip.c_str(),
         jsonEscape(ssid).c_str(),
