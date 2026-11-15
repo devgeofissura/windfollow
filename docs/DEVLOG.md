@@ -11,6 +11,20 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-15 16:06 - fix(irobot): tela nao enviava comandos por ler o corpo do POST do socket
+
+**Area:** irobot
+
+**Feito:**
+- POST usa server.arg('plain') em move e config
+- o corpo ja vem bufferizado pelo WebServer e readString devolvia vazio esperando 1s por requisicao
+
+**Dificuldades e solucoes:**
+- handlers liam client().readString() depois do parser consumir o corpo, causando 400 e travando o servidor -> trocado por arg('plain') e regravado no ESP32
+
+**Arquivos:**
+- `firmware/irobot/DashboardService.cpp`
+
 ### 2026-11-15 15:58 - fix(tooling): flash.ps1 falhava com uma unica porta serial
 
 **Area:** tooling

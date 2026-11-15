@@ -88,7 +88,9 @@ void DashboardService::handleMotorMove() {
     return;
   }
 
-  String body = _server->client().readString();
+  // O WebServer ja bufferiza o corpo do POST em arg("plain"); ler do socket
+  // aqui espera o timeout e devolve vazio, quebrando a tela.
+  String body = _server->arg("plain");
   Serial.println("Body: " + body);
   DynamicJsonDocument doc(256);
   DeserializationError err = deserializeJson(doc, body);
@@ -119,7 +121,7 @@ void DashboardService::handleConfigGet() {
 
 void DashboardService::handleConfigPost() {
   Serial.println(">>> /api/config POST");
-  String body = _server->client().readString();
+  String body = _server->arg("plain");
   Serial.println("Body: " + body);
   DynamicJsonDocument doc(512);
   DeserializationError err = deserializeJson(doc, body);
