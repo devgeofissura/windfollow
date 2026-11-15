@@ -11,6 +11,20 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-15 15:58 - fix(tooling): flash.ps1 falhava com uma unica porta serial
+
+**Area:** tooling
+
+**Feito:**
+- ports agora e sempre array com @() e a gravacao segue sem -Port
+- firmware irobot compilado e gravado com sucesso em COM8 (ESP32-D0WD-V3)
+
+**Dificuldades e solucoes:**
+- PowerShell desembrulha array de um elemento e .Count fica vazio -> Get-SerialPorts embrulhado em @() e campo Count validado
+
+**Arquivos:**
+- `tools/flash.ps1`
+
 ### 2026-11-15 15:53 - docs(devlog): corrige entrada quebrada pelo separador de itens
 
 **Area:** docs, raiz

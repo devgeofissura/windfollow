@@ -181,7 +181,8 @@ if ($profile) {
 }
 Write-Host ''
 
-$ports = Get-SerialPorts -ArduinoCli $arduinoCli
+# @() obrigatorio: PowerShell desembrulha array de 1 elemento e .Count fica vazio
+$ports = @(Get-SerialPorts -ArduinoCli $arduinoCli)
 
 if ($ports.Count -eq 0) {
     throw 'Nenhuma porta serial (COMx) encontrada. Conecte o ESP32 e confira o cabo/driver CH340.'
