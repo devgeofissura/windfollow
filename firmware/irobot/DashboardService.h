@@ -5,6 +5,8 @@
 #include "L298NDualDriver.h"
 #include "MotorEngine.h"
 #include "ConfigManager.h"
+#include "SensorService.h"
+#include "AutoNavigator.h"
 #include <WebServer.h>
 #include <ArduinoJson.h>
 
@@ -12,7 +14,8 @@ class DashboardService {
 public:
   DashboardService();
 
-  bool begin(MotorEngine* engine, L298NDualDriver* driver, ConfigManager* configMgr);
+  bool begin(MotorEngine* engine, L298NDualDriver* driver, ConfigManager* configMgr,
+             SensorService* sensors, AutoNavigator* autoNav);
   void loop();
 
 private:
@@ -20,6 +23,8 @@ private:
   MotorEngine* _engine = nullptr;
   L298NDualDriver* _driver = nullptr;
   ConfigManager* _configMgr = nullptr;
+  SensorService* _sensors = nullptr;
+  AutoNavigator* _autoNav = nullptr;
 
   void setupRoutes();
   void handleCorsPreflight();
@@ -37,6 +42,9 @@ private:
   void handleMotorStop();
   void handleConfigGet();
   void handleConfigPost();
+  void handleSensors();
+  void handleAutoGet();
+  void handleAutoPost();
   void handleSystemInfo();
   void handleNotFound();
 };

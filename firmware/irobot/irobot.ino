@@ -6,6 +6,8 @@
 #include "MotorEngine.h"
 #include "ConfigManager.h"
 #include "DashboardService.h"
+#include "SensorService.h"
+#include "AutoNavigator.h"
 #include "WebAssets.h"
 
 // --- Access Point ---
@@ -16,6 +18,8 @@ static const char* AP_PASS   = "irobot1234";
 ConfigManager   configMgr;
 L298NDualDriver motorDriver;
 MotorEngine     motorEngine;
+SensorService   sensorService;
+AutoNavigator   autoNav;
 DashboardService dashboard;
 
 // --- Configuração global ---
@@ -70,8 +74,18 @@ void setup() {
     Serial.println("mDNS: http://irobot.local");
   }
 
+  // Sensores de ambiente (AHT20 + BMP280 + VL53L0X) e navegacao autonoma
+  if (!sensorService.begin()) {
+    Serial.println("Nenhum sensor I2C encontrado");
+  } else {
+    Serial.println("Sensores I2C inicializados");
+  }
+  if (!autoNav.begin(&motorEngine, &sensorService)) {
+    Serial.println("Falha ao iniciar AutoNavigator!");
+  }
+
   // Servidor web + API
-  if (!dashboard.begin(&motorEngine, &motorDriver, &configMgr)) {
+  if (!dashboard.begin(&motorEngine, &motorDriver, &configMgr, &sensorService, &autoNav)) {
     Serial.println("Falha ao iniciar DashboardService!");
   } else {
     Serial.println("DashboardService ativo na porta 80");
@@ -87,11 +101,15 @@ void setup() {
   Serial.println("  1-9 = velocidade (10%..90%)");
   Serial.println("  i  = status");
   Serial.println("  r  = reiniciar");
+  Serial.println("  a  = autonomo ON/OFF");
+  Serial.println("  m  = ler ambiente (temp/umid/pressao/distancia)");
   Serial.println();
 }
 
 void loop() {
   dashboard.loop();
+  sensorService.update();
+  autoNav.loop();
 
   // Comandos seriais
   if (Serial.available()) {
@@ -136,6 +154,27 @@ void loop() {
         delay(100);
         ESP.restart();
         break;
+      case 'a': {
+        bool on = !autoNav.enabled();
+        if (autoNav.setEnabled(on)) {
+          Serial.print("Autonomo: "); Serial.println(on ? "ON" : "OFF");
+        } else {
+          Serial.println("Autonomo indisponivel (VL53L0X ausente)");
+        }
+        break;
+      }
+      case 'm': {
+        EnvironmentReading r = sensorService.reading();
+        Serial.print("Temp: ");
+        if (isnan(r.temperatureC)) Serial.println("--"); else Serial.println(r.temperatureC, 2);
+        Serial.print("Umidade: ");
+        if (isnan(r.humidityPct)) Serial.println("--"); else Serial.println(r.humidityPct, 2);
+        Serial.print("Pressao: ");
+        if (isnan(r.pressureHpa)) Serial.println("--"); else Serial.println(r.pressureHpa, 2);
+        Serial.print("Distancia (mm): "); Serial.println(r.distanceMm);
+        Serial.print("Autonomo: "); Serial.println(autoNav.stateName());
+        break;
+      }
     }
   }
 

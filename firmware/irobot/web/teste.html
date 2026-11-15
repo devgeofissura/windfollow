@@ -42,6 +42,13 @@
   #status { margin: 0; min-height: 1.4em; font-size: 0.95rem; color: #9fb2c6; text-align: center; }
   #status.error { color: #ff8a8a; }
   .back { color: #9fb2c6; font-size: 0.9rem; text-decoration: none; }
+  #amb { margin: 0; font-size: 0.9rem; color: #9fb2c6; text-align: center; font-variant-numeric: tabular-nums; }
+  #auto {
+    border: 1px solid #2f4257; background: #16202b; color: #cfe3f5;
+    font-family: inherit; font-size: 0.95rem; padding: 10px 18px; border-radius: 12px;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  #auto.on { background: #1f7a4d; border-color: #2fa76a; color: #eafff3; }
 </style>
 </head>
 <body>
@@ -56,6 +63,8 @@
 </div>
 
 <p id="status">toque em um bot&#227;o</p>
+<p id="amb">ambiente: lendo...</p>
+<button id="auto" type="button">Aut&#244;nomo: OFF</button>
 <a class="back" href="/">voltar ao painel completo</a>
 
 <script>
@@ -113,7 +122,52 @@
     });
   });
 
+  var ambEl = document.getElementById('amb');
+  var autoBtn = document.getElementById('auto');
+  var autoOn = false;
+
+  function refreshSensors() {
+    fetch('/api/sensors', { cache: 'no-store' }).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).then(function (s) {
+      var temp = (s.temperature === undefined) ? '--' : s.temperature.toFixed(1) + ' C';
+      var hum = (s.humidity === undefined) ? '--' : s.humidity.toFixed(0) + ' %';
+      var pres = (s.pressure === undefined) ? '--' : s.pressure.toFixed(0) + ' hPa';
+      var dist = s.distanceMm ? (s.distanceMm / 10).toFixed(1) + ' cm' : '--';
+      ambEl.textContent = temp + ' | ' + hum + ' | ' + pres + ' | dist ' + dist;
+      autoOn = s.auto === true;
+      autoBtn.textContent = 'Aut\u00f4nomo: ' + (autoOn ? 'ON' : 'OFF');
+      autoBtn.className = autoOn ? 'on' : '';
+    }).catch(function (err) {
+      ambEl.textContent = 'ambiente: falha (' + err.message + ')';
+    });
+  }
+
+  autoBtn.addEventListener('click', function () {
+    autoBtn.disabled = true;
+    fetch('/api/auto', {
+      method: 'POST',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: !autoOn })
+    }).then(function (res) {
+      return res.text().then(function (text) {
+        if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + text);
+      });
+    }).then(function () {
+      setStatus(autoOn ? 'autonomo desligado' : 'autonomo ligado');
+    }).catch(function (err) {
+      setStatus('falha: ' + err.message, true);
+    }).then(function () {
+      autoBtn.disabled = false;
+      refreshSensors();
+    });
+  });
+
   setStatus('toque em um bot\u00e3o');
+  refreshSensors();
+  setInterval(refreshSensors, 2000);
 })();
 </script>
 </body>

@@ -27,6 +27,7 @@ var state = {
   intensity: 0,
   active: false,
   lastSent: { l: 0, r: 0, dir: '', speed: 0 },
+  autoOn: false,
   online: false
 };
 var joy = { cx: 0, cy: 0, radius: 0, knobRadius: 32 };
@@ -55,6 +56,12 @@ function getEls() {
     cfgPwmDefault: document.getElementById('cfg-pwm-default'),
     cfgMotorsEnabled: document.getElementById('cfg-motors-enabled'),
     sysInfo: document.getElementById('system-info'),
+    envTemp: document.getElementById('env-temp'),
+    envHum: document.getElementById('env-hum'),
+    envPres: document.getElementById('env-pres'),
+    envDist: document.getElementById('env-dist'),
+    envStatus: document.getElementById('env-status'),
+    btnAuto: document.getElementById('btn-auto'),
     telStatus: document.getElementById('tel-status'),
     telLeft: document.getElementById('tel-left'),
     telRight: document.getElementById('tel-right'),
@@ -239,6 +246,48 @@ function updateTelemetry(st) {
   els.telConn.className = 'tel-value online';
 }
 
+async function fetchSensors() {
+  try {
+    var s = await API.get('/api/sensors');
+    if (els.envTemp) els.envTemp.textContent = (s.temperature === undefined) ? '--' : s.temperature.toFixed(1) + ' \u00b0C';
+    if (els.envHum) els.envHum.textContent = (s.humidity === undefined) ? '--' : s.humidity.toFixed(0) + ' %';
+    if (els.envPres) els.envPres.textContent = (s.pressure === undefined) ? '--' : s.pressure.toFixed(0) + ' hPa';
+    if (els.envDist) els.envDist.textContent = s.distanceMm ? (s.distanceMm / 10).toFixed(1) + ' cm' : '--';
+
+    if (els.envStatus) {
+      var present = [];
+      if (s.aht) present.push('AHT20');
+      if (s.bmp) present.push('BMP280');
+      if (s.tof) present.push('VL53L0X');
+      var autoTxt = s.auto ? (' | autonomo: ' + s.autoState) : '';
+      els.envStatus.textContent = (present.length ? 'sensores: ' + present.join(', ') : 'sensores: nenhum') + autoTxt;
+    }
+
+    if (els.btnAuto) {
+      els.btnAuto.textContent = 'Autonomo: ' + (s.auto ? 'ON' : 'OFF');
+      els.btnAuto.classList.toggle('btn-auto-on', !!s.auto);
+    }
+  } catch (err) {
+    if (els.envStatus) els.envStatus.textContent = 'sensores: falha (' + (err.message || 'erro') + ')';
+  }
+}
+
+async function toggleAuto() {
+  var turnOn = !(state.autoOn === true);
+  try {
+    var res = await API.post('/api/auto', { enabled: turnOn });
+    state.autoOn = res.enabled === true;
+    if (els.btnAuto) {
+      els.btnAuto.textContent = 'Autonomo: ' + (state.autoOn ? 'ON' : 'OFF');
+      els.btnAuto.classList.toggle('btn-auto-on', state.autoOn);
+    }
+    if (!state.autoOn) resetKnob();
+    fetchSensors();
+  } catch (err) {
+    if (els.envStatus) els.envStatus.textContent = 'autonomo: ' + (err.message || 'falha');
+  }
+}
+
 async function loadConfig() {
   try {
     var cfg = await API.get('/api/config');
@@ -415,6 +464,7 @@ function init() {
   dpadBtns.forEach(function(btn) { btn.addEventListener('click', onDpadClick); });
 
   els.btnSaveConfig.addEventListener('click', saveConfig);
+  if (els.btnAuto) els.btnAuto.addEventListener('click', toggleAuto);
   els.btnSystemInfo.addEventListener('click', fetchSystemInfo);
 
   requestAnimationFrame(initJoystickGeometry);
@@ -422,7 +472,9 @@ function init() {
 
   loadConfig();
   fetchStatus();
+  fetchSensors();
   setInterval(fetchStatus, 1000);
+  setInterval(fetchSensors, 2000);
 }
 
 document.addEventListener('DOMContentLoaded', init);

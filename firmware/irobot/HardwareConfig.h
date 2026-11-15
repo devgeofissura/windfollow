@@ -29,6 +29,23 @@ static const uint8_t PWM_DEFAULT = 150;
 // --- Duração de pulso para movimentos temporizados (ms) ---
 static const unsigned long PULSE_DURATION_DEFAULT = 500;
 
+// --- Barramento I2C dos sensores de ambiente ---
+// AHT20 (0x38) + BMP280 (0x76/0x77) na mesma placa; VL53L0X (0x29) na frente.
+static const int8_t I2C_SDA = 21;
+static const int8_t I2C_SCL = 22;
+static const uint32_t I2C_FREQ = 100000;
+
+static const uint8_t AHT20_I2C_ADDR  = 0x38;
+static const uint8_t VL53L0X_I2C_ADDR = 0x29;
+
+// --- Navegacao autonoma (modo captura de ambiente) ---
+static const uint16_t AUTO_OBSTACLE_MM   = 250;  // abaixo disso considera obstaculo
+static const uint16_t AUTO_AVOID_STOP_MS = 250;  // pausa antes de girar
+static const uint16_t AUTO_TURN_MS       = 650;  // giro para desviar (roda parada como pivo)
+static const uint16_t AUTO_SETTLE_MS     = 350;  // assenta antes de medir de novo
+static const uint8_t  AUTO_MAX_TURNS     = 3;    // giros seguidos antes de desistir e parar
+static const uint8_t  AUTO_FORWARD_SPEED = 140;  // PWM usado no avanco autonomo
+
 // --- Estrutura de configuração salva em NVS ---
 struct RobotConfig {
   int8_t  gpioLeftIn1  = M_LEFT_IN1;

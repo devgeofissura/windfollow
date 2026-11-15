@@ -11,6 +11,36 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-15 19:35 - feat(irobot): sensores AHT20/BMP280/VL53L0X e modo autonomo
+
+**Area:** irobot
+
+**Feito:**
+- SensorService le AHT20 + BMP280 (temp/umidade/pressao) e VL53L0X (distancia) no I2C SDA=21/SCL=22 com intervalos escalonados
+- AutoNavigator implementa FSM frente/para/desvia/assenta/desiste com giros alternados a cada 650 ms e limite de 3 tentativas
+- novas rotas GET /api/sensors, GET e POST /api/auto e comandos seriais a e m
+- painel ganhou card Ambiente com distancia e botao Autonomo e a pagina /teste mostra linha compacta com toggle
+- WebAssets.h regenerado e firmware compila em 81% de flash
+
+**Dificuldades e solucoes:**
+- arduino-cli reportou sucesso com 1.070.207 bytes
+- a gravacao nao pode ser feita porque nenhuma porta COM estava presente no momento do teste -> deixei o firmware compilado e orientei reconectar o ESP32 e gravar com tools/flash.ps1 -Sketch irobot
+
+**Arquivos:**
+- `firmware/irobot/DashboardService.cpp`
+- `firmware/irobot/DashboardService.h`
+- `firmware/irobot/HardwareConfig.h`
+- `firmware/irobot/WebAssets.h`
+- `firmware/irobot/irobot.ino`
+- `firmware/irobot/web/css/style.css`
+- `firmware/irobot/web/index.html`
+- `firmware/irobot/web/js/app.js`
+- `firmware/irobot/web/teste.html`
+- `firmware/irobot/AutoNavigator.cpp`
+- `firmware/irobot/AutoNavigator.h`
+- `firmware/irobot/SensorService.cpp`
+- `firmware/irobot/SensorService.h`
+
 ### 2026-11-15 19:08 - docs(irobot): registra o Prototipo-67 e o teste com duas baterias 3.7V
 
 **Area:** irobot

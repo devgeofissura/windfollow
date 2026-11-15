@@ -107,6 +107,19 @@
         <button class="btn btn-outline btn-block" id="btn-save-config">Salvar Configuracao</button>
       </div>
 
+      <!-- Ambiente + modo autonomo -->
+      <div class="card">
+        <div class="card-title">Ambiente (AHT20 + BMP280 + VL53L0X)</div>
+        <div class="env-grid">
+          <div class="env-item"><span>Temperatura</span><strong id="env-temp">--</strong></div>
+          <div class="env-item"><span>Umidade</span><strong id="env-hum">--</strong></div>
+          <div class="env-item"><span>Pressao</span><strong id="env-pres">--</strong></div>
+          <div class="env-item"><span>Distancia</span><strong id="env-dist">--</strong></div>
+        </div>
+        <div class="env-status" id="env-status">sensores: verificando...</div>
+        <button class="btn btn-outline btn-block" id="btn-auto">Autonomo: OFF</button>
+      </div>
+
       <!-- Sistema -->
       <div class="card">
         <div class="card-title">Sistema</div>

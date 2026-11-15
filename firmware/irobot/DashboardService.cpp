@@ -5,10 +5,13 @@
 
 DashboardService::DashboardService() {}
 
-bool DashboardService::begin(MotorEngine* engine, L298NDualDriver* driver, ConfigManager* configMgr) {
+bool DashboardService::begin(MotorEngine* engine, L298NDualDriver* driver, ConfigManager* configMgr,
+                             SensorService* sensors, AutoNavigator* autoNav) {
   _engine = engine;
   _driver = driver;
   _configMgr = configMgr;
+  _sensors = sensors;
+  _autoNav = autoNav;
 
   _server = new WebServer(80);
   setupRoutes();
@@ -44,6 +47,11 @@ void DashboardService::setupRoutes() {
   _server->on("/api/config", HTTP_GET, std::bind(&DashboardService::handleConfigGet, this));
   _server->on("/api/config", HTTP_POST, std::bind(&DashboardService::handleConfigPost, this));
   _server->on("/api/config", HTTP_OPTIONS, std::bind(&DashboardService::handleCorsPreflight, this));
+  _server->on("/api/sensors", HTTP_GET, std::bind(&DashboardService::handleSensors, this));
+  _server->on("/api/sensors", HTTP_OPTIONS, std::bind(&DashboardService::handleCorsPreflight, this));
+  _server->on("/api/auto", HTTP_GET, std::bind(&DashboardService::handleAutoGet, this));
+  _server->on("/api/auto", HTTP_POST, std::bind(&DashboardService::handleAutoPost, this));
+  _server->on("/api/auto", HTTP_OPTIONS, std::bind(&DashboardService::handleCorsPreflight, this));
   _server->on("/api/system/info", HTTP_GET, std::bind(&DashboardService::handleSystemInfo, this));
   _server->on("/api/system/info", HTTP_OPTIONS, std::bind(&DashboardService::handleCorsPreflight, this));
   _server->onNotFound(std::bind(&DashboardService::handleNotFound, this));
@@ -150,6 +158,67 @@ void DashboardService::handleConfigPost() {
   } else {
     sendWithCors(500, "application/json", "{\"error\":\"falha ao salvar\"}");
   }
+}
+
+void DashboardService::handleSensors() {
+  Serial.println(">>> /api/sensors");
+  DynamicJsonDocument doc(384);
+  EnvironmentReading r = _sensors ? _sensors->reading() : EnvironmentReading();
+  doc["aht"] = r.ahtOk;
+  doc["bmp"] = r.bmpOk;
+  doc["tof"] = r.tofOk;
+  if (!isnan(r.temperatureC)) doc["temperature"] = r.temperatureC;
+  if (!isnan(r.humidityPct))  doc["humidity"] = r.humidityPct;
+  if (!isnan(r.pressureHpa))  doc["pressure"] = r.pressureHpa;
+  if (!isnan(r.bmpTemperatureC)) doc["bmpTemperature"] = r.bmpTemperatureC;
+  doc["distanceMm"] = r.distanceMm;
+  doc["auto"] = _autoNav ? _autoNav->enabled() : false;
+  doc["autoState"] = _autoNav ? _autoNav->stateName() : "off";
+  doc["uptime"] = millis();
+  String json;
+  serializeJson(doc, json);
+  sendWithCors(200, "application/json", json);
+}
+
+void DashboardService::handleAutoGet() {
+  Serial.println(">>> /api/auto GET");
+  DynamicJsonDocument doc(128);
+  doc["enabled"] = _autoNav ? _autoNav->enabled() : false;
+  doc["state"] = _autoNav ? _autoNav->stateName() : "off";
+  doc["tof"] = _sensors ? _sensors->tofPresent() : false;
+  String json;
+  serializeJson(doc, json);
+  sendWithCors(200, "application/json", json);
+}
+
+void DashboardService::handleAutoPost() {
+  Serial.println(">>> /api/auto POST");
+  if (!_autoNav) {
+    sendWithCors(400, "application/json", "{\"error\":\"autonomo indisponivel\"}");
+    return;
+  }
+
+  String body = _server->arg("plain");
+  DynamicJsonDocument doc(128);
+  DeserializationError err = deserializeJson(doc, body);
+  if (err) {
+    sendWithCors(400, "application/json", "{\"error\":\"json invalido\"}");
+    return;
+  }
+
+  bool on = doc["enabled"] | false;
+  if (!_autoNav->setEnabled(on)) {
+    sendWithCors(409, "application/json", "{\"error\":\"VL53L0X ausente\"}");
+    return;
+  }
+
+  DynamicJsonDocument out(128);
+  out["ok"] = true;
+  out["enabled"] = _autoNav->enabled();
+  out["state"] = _autoNav->stateName();
+  String json;
+  serializeJson(out, json);
+  sendWithCors(200, "application/json", json);
 }
 
 void DashboardService::handleSystemInfo() {

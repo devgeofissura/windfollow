@@ -464,3 +464,44 @@ main.test-layout {
 
 /* ===== Util ===== */
 .hidden { display: none !important; }
+
+/* --- Ambiente / sensores --- */
+.env-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.env-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+}
+
+.env-item span {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.65;
+}
+
+.env-item strong {
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.env-status {
+  font-size: 0.78rem;
+  opacity: 0.7;
+  margin-bottom: 8px;
+}
+
+.btn-auto-on {
+  background: #1f7a4d !important;
+  border-color: #2fa76a !important;
+  color: #eafff3 !important;
+}
