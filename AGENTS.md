@@ -33,7 +33,8 @@ powershell -ExecutionPolicy Bypass -File tools/save.ps1 `
 ```
 
 Itens de `-Summary` e `-Difficulty` são separados por `;` (o `powershell.exe -File`
-não converte vírgulas em lista).
+não converte vírgulas em lista). Não use `;` no meio do texto de um item, senão
+ele é dividido em dois.
 
 O script:
 

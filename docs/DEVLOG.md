@@ -11,19 +11,32 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-15 15:53 - docs(devlog): corrige entrada quebrada pelo separador de itens
+
+**Area:** docs, raiz
+
+**Feito:**
+- entrada do commit anterior reorganizada em bullets
+- AGENTS.md avisa para nao usar ponto e virgula dentro do texto de um item
+
+**Dificuldades e solucoes:**
+- o proprio texto do item continha o separador e foi dividido ao meio -> texto reescrito sem o caractere
+
+**Arquivos:**
+- `AGENTS.md`
+- `docs/DEVLOG.md`
+
 ### 2026-11-15 15:52 - fix(tooling): itens de Summary/Difficulty separados por ';' no save.ps1
 
 **Area:** docs, raiz, tooling
 
 **Feito:**
-- save.ps1 divide -Summary e -Difficulty por '
-- ' (powershell -File nao converte virgula em lista)
+- save.ps1 divide -Summary e -Difficulty pelo ponto e virgula (powershell -File nao converte virgula em lista)
 - entrada anterior do DEVLOG reorganizada em bullets
 - AGENTS.md atualizado com o separador
 
 **Dificuldades e solucoes:**
-- powershell.exe -File entregou 'a','b' como uma unica string e o DEVLOG saiu corrido -> split por '
-- ' e entrada corrigida
+- powershell.exe -File entregou "a","b" como uma unica string e o DEVLOG saiu corrido -> split pelo separador e entrada corrigida
 
 **Arquivos:**
 - `AGENTS.md`
