@@ -11,6 +11,24 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-15 16:17 - feat(irobot): tela simplificada so com botoes de direcao
+
+**Area:** irobot
+
+**Feito:**
+- index.html com 5 botoes grandes (frente, tras, esquerda, direita, parar)
+- app.js reescrito mostrando erro de API na propria tela
+- css novo e WebAssets.h regerado
+
+**Dificuldades e solucoes:**
+- sem acesso ao AP da placa pela maquina (Windows bloqueia netsh wlan connect sem Localizacao) -> validacao feita por compilacao, gravacao e log serial de boot
+
+**Arquivos:**
+- `firmware/irobot/WebAssets.h`
+- `firmware/irobot/web/css/style.css`
+- `firmware/irobot/web/index.html`
+- `firmware/irobot/web/js/app.js`
+
 ### 2026-11-15 16:06 - fix(irobot): tela nao enviava comandos por ler o corpo do POST do socket
 
 **Area:** irobot
