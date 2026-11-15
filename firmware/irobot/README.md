@@ -101,6 +101,20 @@ powershell -ExecutionPolicy Bypass -File tools/generate_web_assets.ps1
 | `web/` | Fontes da interface web |
 | `tools/generate_web_assets.ps1` | Gera WebAssets.h a partir de web/ |
 
+## Protótipos
+
+### Protótipo-67
+
+- Montagem de bancada do projeto irobot.
+- Alimentado com **2 baterias 3,7 V em série (7,4 V)** no L298N, que também
+  alimentou o ESP32 pela saída 5 V (`VIN`).
+- Deu conta de alimentar ESP32 + drivers + motores, mas ficou **um pouco fraco**
+  (7,4 V é o mínimo do L298N, que derruba ~2 V: sobram ~5 V nos motores).
+- Mesmo assim, **todas as funcionalidades foram testadas** (web em `/` e
+  `/teste`, comandos, PWM e AP Wi-Fi).
+- Próximo passo de potência: 3 células (11,1 V) ou pack 12 V com buck para o
+  ESP32, mantendo o GND comum.
+
 ## Limites Conhecidos
 
 - Sem encoders → controle em malha aberta (nao sabe distancia/angulo exato).

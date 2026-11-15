@@ -11,6 +11,20 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-15 19:08 - docs(irobot): registra o Prototipo-67 e o teste com duas baterias 3.7V
+
+**Area:** irobot
+
+**Feito:**
+- README ganha secao Prototipos com o Prototipo-67
+- teste com 2 baterias 3.7V em serie (7.4V) alimentou tudo, ficou um pouco fraco mas validou todas as funcionalidades
+
+**Dificuldades e solucoes:**
+- nenhuma
+
+**Arquivos:**
+- `firmware/irobot/README.md`
+
 ### 2026-11-15 18:53 - docs(irobot): registra alimentacao do ESP32 pela saida 5V do L298N
 
 **Area:** irobot
