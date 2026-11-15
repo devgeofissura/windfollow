@@ -12,14 +12,14 @@ void AutoNavigator::enter(State s) {
 }
 
 const char* AutoNavigator::stateName() const {
+  if (_stuck) return "enroscado";
   switch (_state) {
-    case State::FORWARD:   return "frente";
+    case State::FORWARD:    return "frente";
     case State::AVOID_STOP: return "parando";
-    case State::TURN:      return "desviando";
-    case State::SETTLE:    return "medindo";
-    case State::GIVING_UP: return "bloqueado";
+    case State::TURN:       return "desviando";
+    case State::SETTLE:     return "medindo";
     case State::OFF:
-    default:               return "off";
+    default:                return "off";
   }
 }
 
@@ -29,28 +29,60 @@ bool AutoNavigator::blockedAhead() const {
   return mm > 0 && mm < AUTO_OBSTACLE_MM;
 }
 
+void AutoNavigator::startForward() {
+  _forwardSince = millis();
+  _engine->move(RobotDirection::FRENTE, _speed);
+  enter(State::FORWARD);
+}
+
+void AutoNavigator::handleObstacle() {
+  _engine->stop();
+  _avoidCount++;
+
+  if (_avoidCount >= AUTO_STUCK_ATTEMPTS) {
+    _enabled = false;
+    _stuck = true;
+    _stuckSeq++;
+    if (_sensors) _sensors->setFastDistance(false);
+    Serial.print("ENROSCADO: ");
+    Serial.print(_avoidCount);
+    Serial.println(" obstaculos seguidos sem avanco livre. Autonomo desligado.");
+    enter(State::OFF);
+    return;
+  }
+
+  Serial.print("Obstaculo ");
+  Serial.print(_avoidCount);
+  Serial.print("/"); Serial.println(AUTO_STUCK_ATTEMPTS);
+  enter(State::AVOID_STOP);
+}
+
 bool AutoNavigator::setEnabled(bool on) {
-  if (on && (!_sensors || !_sensors->tofPresent())) {
+  if (!on) {
+    if (_engine && _enabled) _engine->stop();
+    _enabled = false;
+    _stuck = false;
+    _avoidCount = 0;
+    _turnSide = 0;
+    if (_sensors) _sensors->setFastDistance(false);
+    enter(State::OFF);
+    Serial.println("Autonomo OFF");
+    return true;
+  }
+
+  if (_enabled) return true;
+  if (!_sensors || !_sensors->tofPresent()) {
     Serial.println("Autonomo recusado: VL53L0X ausente");
     return false;
   }
 
-  if (on == _enabled) return true;
-
-  _enabled = on;
-  _turnCount = 0;
-
-  if (_sensors) _sensors->setFastDistance(on);
-
-  if (on) {
-    Serial.println("Autonomo ON");
-    _engine->move(RobotDirection::FRENTE, _speed);
-    enter(State::FORWARD);
-  } else {
-    Serial.println("Autonomo OFF");
-    _engine->stop();
-    enter(State::OFF);
-  }
+  _enabled = true;
+  _stuck = false;
+  _avoidCount = 0;
+  _turnSide = 0;
+  _sensors->setFastDistance(true);
+  Serial.println("Autonomo ON");
+  startForward();
   return true;
 }
 
@@ -62,15 +94,19 @@ void AutoNavigator::loop() {
   switch (_state) {
     case State::FORWARD:
       if (blockedAhead()) {
-        _engine->stop();
-        enter(State::AVOID_STOP);
+        handleObstacle();
+      } else if (millis() - _forwardSince >= AUTO_FREE_FORWARD_MS) {
+        if (_avoidCount > 0) {
+          _avoidCount = 0;
+          Serial.println("Avanco livre: contador de obstaculos zerado");
+        }
       }
       break;
 
     case State::AVOID_STOP:
       if (elapsed >= AUTO_AVOID_STOP_MS) {
-        _turnDir = (_turnCount % 2 == 0) ? RobotDirection::ESQUERDA
-                                         : RobotDirection::DIREITA;
+        _turnDir = (_turnSide++ % 2 == 0) ? RobotDirection::ESQUERDA
+                                          : RobotDirection::DIREITA;
         _engine->move(_turnDir, _speed);
         enter(State::TURN);
       }
@@ -86,22 +122,13 @@ void AutoNavigator::loop() {
     case State::SETTLE:
       if (elapsed >= AUTO_SETTLE_MS) {
         if (blockedAhead()) {
-          _turnCount++;
-          if (_turnCount >= AUTO_MAX_TURNS) {
-            _engine->stop();
-            enter(State::GIVING_UP);
-          } else {
-            enter(State::AVOID_STOP);
-          }
+          handleObstacle();
         } else {
-          _turnCount = 0;
-          _engine->move(RobotDirection::FRENTE, _speed);
-          enter(State::FORWARD);
+          startForward();
         }
       }
       break;
 
-    case State::GIVING_UP:
     case State::OFF:
     default:
       break;

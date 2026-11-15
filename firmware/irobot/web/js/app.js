@@ -28,6 +28,7 @@ var state = {
   active: false,
   lastSent: { l: 0, r: 0, dir: '', speed: 0 },
   autoOn: false,
+  lastStuckSeq: 0,
   online: false
 };
 var joy = { cx: 0, cy: 0, radius: 0, knobRadius: 32 };
@@ -62,6 +63,8 @@ function getEls() {
     envDist: document.getElementById('env-dist'),
     envStatus: document.getElementById('env-status'),
     btnAuto: document.getElementById('btn-auto'),
+    alertStuck: document.getElementById('alert-stuck'),
+    btnAlertOk: document.getElementById('btn-alert-ok'),
     telStatus: document.getElementById('tel-status'),
     telLeft: document.getElementById('tel-left'),
     telRight: document.getElementById('tel-right'),
@@ -259,7 +262,7 @@ async function fetchSensors() {
       if (s.aht) present.push('AHT20');
       if (s.bmp) present.push('BMP280');
       if (s.tof) present.push('VL53L0X');
-      var autoTxt = s.auto ? (' | autonomo: ' + s.autoState) : '';
+      var autoTxt = s.auto ? (' | autonomo: ' + s.autoState + ' (' + s.avoidCount + '/100)') : '';
       els.envStatus.textContent = (present.length ? 'sensores: ' + present.join(', ') : 'sensores: nenhum') + autoTxt;
     }
 
@@ -267,9 +270,55 @@ async function fetchSensors() {
       els.btnAuto.textContent = 'Autonomo: ' + (s.auto ? 'ON' : 'OFF');
       els.btnAuto.classList.toggle('btn-auto-on', !!s.auto);
     }
+
+    if (s.stuck && s.stuckSeq !== state.lastStuckSeq) {
+      state.lastStuckSeq = s.stuckSeq;
+      notifyStuck();
+    }
   } catch (err) {
     if (els.envStatus) els.envStatus.textContent = 'sensores: falha (' + (err.message || 'erro') + ')';
   }
+}
+
+function notifyStuck() {
+  if (els.alertStuck) els.alertStuck.hidden = false;
+
+  try {
+    if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 800]);
+  } catch (e) { /* ignorado */ }
+
+  try {
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (Ctx) {
+      var ctx = new Ctx();
+      [0, 0.35, 0.7].forEach(function (t) {
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = 880;
+        gain.gain.value = 0.08;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + t);
+        osc.stop(ctx.currentTime + t + 0.18);
+      });
+    }
+  } catch (e) { /* som bloqueado sem gesto do usuario */ }
+
+  try {
+    if (window.Notification && Notification.permission === 'granted') {
+      new Notification('iRobot enroscado', {
+        body: 'O modo autonomo foi desligado apos 100 obstaculos seguidos.',
+        tag: 'irobot-stuck'
+      });
+    }
+  } catch (e) { /* notificacao exige HTTPS */ }
+
+  if (els.envStatus) els.envStatus.textContent = 'ALERTA: robo enroscado - autonomo desligado';
+}
+
+function hideStuckAlert() {
+  if (els.alertStuck) els.alertStuck.hidden = true;
 }
 
 async function toggleAuto() {
@@ -463,6 +512,7 @@ function init() {
 
   dpadBtns.forEach(function(btn) { btn.addEventListener('click', onDpadClick); });
 
+  if (els.btnAlertOk) els.btnAlertOk.addEventListener('click', hideStuckAlert);
   els.btnSaveConfig.addEventListener('click', saveConfig);
   if (els.btnAuto) els.btnAuto.addEventListener('click', toggleAuto);
   els.btnSystemInfo.addEventListener('click', fetchSystemInfo);
@@ -474,7 +524,7 @@ function init() {
   fetchStatus();
   fetchSensors();
   setInterval(fetchStatus, 1000);
-  setInterval(fetchSensors, 2000);
+  setInterval(fetchSensors, 1000);
 }
 
 document.addEventListener('DOMContentLoaded', init);

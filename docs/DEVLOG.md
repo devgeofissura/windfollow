@@ -11,6 +11,32 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-15 20:36 - feat(irobot): autonomo continuo com deteccao de enroscamento e alerta no app
+
+**Area:** irobot
+
+**Feito:**
+- AutoNavigator deixou de parar apos 3 giros: agora roda ate o usuario desligar ou ate acumular 100 obstaculos seguidos sem completar 2 s de avanco livre (AUTO_STUCK_ATTEMPTS e AUTO_FREE_FORWARD_MS no HardwareConfig)
+- ao enroscar desliga o modo, zera o PWM e publica stuck e stuckSeq em /api/auto e /api/sensors
+- painel ganhou banner de alerta com vibracao e bipe e polling de 1 s
+- /teste tambem alerta
+- comandos seriais continuam a e m e o log mostra a contagem de obstaculos
+
+**Dificuldades e solucoes:**
+- Nenhuma porta COM presente nas duas tentativas de gravacao -> firmware compilado (1.074.447 bytes, 81% flash) e commitado, restando gravar com tools/flash.ps1 -Sketch irobot assim que o ESP32 for reconectado
+- notificacao nativa do browser exige HTTPS e no AP ela so funciona ate onde o navegador permite, entao o alerta principal ficou sendo o banner com vibracao e som
+
+**Arquivos:**
+- `firmware/irobot/AutoNavigator.cpp`
+- `firmware/irobot/AutoNavigator.h`
+- `firmware/irobot/DashboardService.cpp`
+- `firmware/irobot/HardwareConfig.h`
+- `firmware/irobot/WebAssets.h`
+- `firmware/irobot/web/css/style.css`
+- `firmware/irobot/web/index.html`
+- `firmware/irobot/web/js/app.js`
+- `firmware/irobot/web/teste.html`
+
 ### 2026-11-15 19:35 - feat(irobot): sensores AHT20/BMP280/VL53L0X e modo autonomo
 
 **Area:** irobot

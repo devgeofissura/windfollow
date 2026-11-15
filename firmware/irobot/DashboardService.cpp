@@ -174,6 +174,9 @@ void DashboardService::handleSensors() {
   doc["distanceMm"] = r.distanceMm;
   doc["auto"] = _autoNav ? _autoNav->enabled() : false;
   doc["autoState"] = _autoNav ? _autoNav->stateName() : "off";
+  doc["stuck"] = _autoNav ? _autoNav->stuck() : false;
+  doc["stuckSeq"] = _autoNav ? _autoNav->stuckSeq() : 0;
+  doc["avoidCount"] = _autoNav ? _autoNav->avoidCount() : 0;
   doc["uptime"] = millis();
   String json;
   serializeJson(doc, json);
@@ -186,6 +189,9 @@ void DashboardService::handleAutoGet() {
   doc["enabled"] = _autoNav ? _autoNav->enabled() : false;
   doc["state"] = _autoNav ? _autoNav->stateName() : "off";
   doc["tof"] = _sensors ? _sensors->tofPresent() : false;
+  doc["stuck"] = _autoNav ? _autoNav->stuck() : false;
+  doc["stuckSeq"] = _autoNav ? _autoNav->stuckSeq() : 0;
+  doc["avoidCount"] = _autoNav ? _autoNav->avoidCount() : 0;
   String json;
   serializeJson(doc, json);
   sendWithCors(200, "application/json", json);
@@ -216,6 +222,8 @@ void DashboardService::handleAutoPost() {
   out["ok"] = true;
   out["enabled"] = _autoNav->enabled();
   out["state"] = _autoNav->stateName();
+  out["stuck"] = _autoNav->stuck();
+  out["stuckSeq"] = _autoNav->stuckSeq();
   String json;
   serializeJson(out, json);
   sendWithCors(200, "application/json", json);

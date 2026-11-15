@@ -43,7 +43,8 @@ static const uint16_t AUTO_OBSTACLE_MM   = 250;  // abaixo disso considera obsta
 static const uint16_t AUTO_AVOID_STOP_MS = 250;  // pausa antes de girar
 static const uint16_t AUTO_TURN_MS       = 650;  // giro para desviar (roda parada como pivo)
 static const uint16_t AUTO_SETTLE_MS     = 350;  // assenta antes de medir de novo
-static const uint8_t  AUTO_MAX_TURNS     = 3;    // giros seguidos antes de desistir e parar
+static const uint8_t  AUTO_STUCK_ATTEMPTS  = 100;  // obstaculos seguidos sem avanco livre -> enroscado
+static const uint16_t AUTO_FREE_FORWARD_MS = 2000; // avanco livre continuo que zera o contador
 static const uint8_t  AUTO_FORWARD_SPEED = 140;  // PWM usado no avanco autonomo
 
 // --- Estrutura de configuração salva em NVS ---
