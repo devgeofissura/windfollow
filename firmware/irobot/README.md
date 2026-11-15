@@ -26,9 +26,16 @@ Chassi diferencial: **roda motriz esquerda + roda motriz direita** na traseira e
 - GND comum entre ESP32, L298N e fonte dos motores.
 - Jumpers ENA/ENB do módulo L298N devem ser **removidos** para que o PWM funcione.
 
+**Alimentação sem USB (ligação validada em bancada):**
+- Bateria **7–12 V** nos terminais `+12V` e `GND` do L298N, com o jumper `5V-EN` no lugar.
+- Saída **`5V` do L298N → pino `VIN` (ou `5V`) do ESP32**.
+- **`GND` do L298N → `GND` do ESP32** (mesma referência, obrigatório).
+- Não ligar o USB junto com essa alimentação no `VIN` (backfeed).
+
 ## Interface Web
 
 Acesse via `http://irobot.local` ou IP do Access Point (`192.168.4.1` por padrão).
+Versão minimalista só com 5 botões (frente/trás/esquerda/direita/parar): `http://192.168.4.1/teste`.
 
 ### Controles
 - **Frente / Tras / Esquerda / Direita / Parar**: movimento diferencial do robô.

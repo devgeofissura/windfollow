@@ -11,6 +11,21 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-15 18:53 - docs(irobot): registra alimentacao do ESP32 pela saida 5V do L298N
+
+**Area:** irobot
+
+**Feito:**
+- README documenta bateria 7-12V no L298N com jumper 5V-EN, saida 5V para VIN do ESP32 e GND comum
+- aviso de nao usar USB junto
+- menciona a rota /teste
+
+**Dificuldades e solucoes:**
+- nenhuma
+
+**Arquivos:**
+- `firmware/irobot/README.md`
+
 ### 2026-11-15 17:12 - feat(irobot): painel antigo de volta em / e versao simples em /teste
 
 **Area:** irobot
