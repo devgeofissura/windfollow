@@ -11,6 +11,22 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-15 22:12 - fix(irobot): boot sem acionar motores e Wi-Fi com menor potencia de TX
+
+**Area:** irobot
+
+**Feito:**
+- GPIO27 e GPIO14 agora sao colocados em LOW na primeira linha do setup, antes de serial e Wi-Fi, evitando que ENA/ENB flutuando no boot girem os motores e derrubem a alimentacao
+- AP reduzido para 11 dBm para diminuir o pico de corrente
+- boot avisa quando o reset anterior foi brownout e explica o que revisar
+- diagnostico confirmou que no USB o AP sobe normal (Irobot-Setup) e o problema é alimentacao/bateria
+
+**Dificuldades e solucoes:**
+- O sintoma nao reproduziu com USB (AP sobe e fica estavel 15 min com heap em 207 kB e sensor lendo distancia), mas o usuario confirmou que na bateria a rede nem aparece -> sem banco de testes com bateria, apliquei mitigacoes de firmware (enable em LOW no boot, TX 11 dBm) e documentei a causa provavel: sag do 5V do L298N e ENA/ENB flutuando durante o boot
+
+**Arquivos:**
+- `firmware/irobot/irobot.ino`
+
 ### 2026-11-15 21:50 - chore(irobot): diagnostico de reset, heap e clientes WiFi
 
 **Area:** irobot

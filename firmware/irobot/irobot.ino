@@ -31,6 +31,13 @@ unsigned long _lastHeartbeat = 0;
 unsigned long _lastHealth    = 0;
 
 void setup() {
+  // Segura os enables antes de tudo: com ENA/ENB flutuando no boot os motores
+  // podem girar e derrubar a alimentacao (brownout) antes do AP subir.
+  pinMode(27, OUTPUT);
+  digitalWrite(27, LOW);
+  pinMode(14, OUTPUT);
+  digitalWrite(14, LOW);
+
   Serial.begin(115200);
   Serial.println();
   esp_reset_reason_t rr = esp_reset_reason();
@@ -51,6 +58,10 @@ void setup() {
   Serial.println("=== iRobot Firmware ===");
   Serial.println("Controle diferencial de 2 motores com PWM");
   Serial.println("GPIO: M1(26/25/ENA=27)  M2(32/33/ENB=14)");
+  if (rr == ESP_RST_BROWNOUT) {
+    Serial.println("AVISO: reset por brownout. Confira 5V/VIN, capacitor no VIN");
+    Serial.println("e pull-down de 10k em GPIO27/GPIO14 (ENA/ENB).");
+  }
   Serial.println();
 
   // Carrega configuração NVS
@@ -79,6 +90,7 @@ void setup() {
   // Wi-Fi Access Point
   WiFi.mode(WIFI_AP);
   WiFi.setSleep(false);
+  WiFi.setTxPower(WIFI_POWER_11dBm);
   WiFi.softAP(AP_SSID, AP_PASS);
   IPAddress apIP = WiFi.softAPIP();
   Serial.print("AP SSID: "); Serial.println(AP_SSID);
