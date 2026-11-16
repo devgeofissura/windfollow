@@ -7,6 +7,7 @@
 #include "ConfigManager.h"
 #include "SensorService.h"
 #include "AutoNavigator.h"
+#include "EnvironmentAdvisor.h"
 #include <WebServer.h>
 #include <ArduinoJson.h>
 
@@ -15,7 +16,7 @@ public:
   DashboardService();
 
   bool begin(MotorEngine* engine, L298NDualDriver* driver, ConfigManager* configMgr,
-             SensorService* sensors, AutoNavigator* autoNav);
+             SensorService* sensors, AutoNavigator* autoNav, EnvironmentAdvisor* envAdvisor);
   void loop();
 
 private:
@@ -25,6 +26,7 @@ private:
   ConfigManager* _configMgr = nullptr;
   SensorService* _sensors = nullptr;
   AutoNavigator* _autoNav = nullptr;
+  EnvironmentAdvisor* _envAdvisor = nullptr;
 
   void setupRoutes();
   void handleCorsPreflight();

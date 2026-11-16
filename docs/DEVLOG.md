@@ -11,6 +11,34 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-15 23:28 - feat(irobot): avisos ambientais (chuva, calor, frio, ar seco, incendio)
+
+**Area:** irobot
+
+**Feito:**
+- Novo EnvironmentAdvisor com historico de pressao do BMP280 (1 amostra por minuto, 3 h) para prever chuva pela regra de barometro e janela de 1 min da temperatura para detectar subida rapida, gerando avisos de chuva provavel, calor acima de 26 C, frio abaixo de 17 C, umidade abaixo de 30 e possivel incendio com histerese, expostos no objeto alerts de /api/sensors e no serial pelo comando m, com card Avisos e banner vermelho de incendio no painel e linha de avisos na pagina de teste mais suporte opcional a sensor de chuva FC-37 no GPIO34 e chama KY-026 no GPIO39 por defines, e o sensor ToF continua sendo lido durante o giro com log a cada 500 ms e leitura vencida nao conta mais como caminho livre
+
+**Dificuldades e solucoes:**
+- A previsao de chuva depende de 30 min de historico de pressao, entao no arranque o app mostra coletando dados em vez de arriscar um falso negativo, e o giro sem encoder precisou de um limite de idade da amostra (500 ms) para nao decidir caminho livre com leitura velha enquanto o robo roda
+
+**Arquivos:**
+- `firmware/irobot/AutoNavigator.cpp`
+- `firmware/irobot/AutoNavigator.h`
+- `firmware/irobot/DashboardService.cpp`
+- `firmware/irobot/DashboardService.h`
+- `firmware/irobot/HardwareConfig.h`
+- `firmware/irobot/README.md`
+- `firmware/irobot/SensorService.cpp`
+- `firmware/irobot/SensorService.h`
+- `firmware/irobot/WebAssets.h`
+- `firmware/irobot/irobot.ino`
+- `firmware/irobot/web/css/style.css`
+- `firmware/irobot/web/index.html`
+- `firmware/irobot/web/js/app.js`
+- `firmware/irobot/web/teste.html`
+- `firmware/irobot/EnvironmentAdvisor.cpp`
+- `firmware/irobot/EnvironmentAdvisor.h`
+
 ### 2026-11-15 23:15 - feat(irobot): desvio autonomo com re, pivo e espera por 1 m livre
 
 **Area:** irobot

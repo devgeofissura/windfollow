@@ -82,6 +82,7 @@ void SensorService::readEnvironment() {
 
 void SensorService::readDistance() {
   uint16_t mm = tof.readRangeSingleMillimeters();
+  _lastDistanceMs = millis();
   _lastRawMm = mm;
   if (tof.timeoutOccurred()) {
     _lastRawMm = 9999;

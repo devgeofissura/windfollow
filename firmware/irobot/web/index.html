@@ -119,6 +119,14 @@
         <div class="env-status" id="env-status">sensores: verificando...</div>
         <button class="btn btn-outline btn-block" id="btn-auto">Autonomo: OFF</button>
       </div>
+      <!-- Avisos ambientais -->
+      <div class="card">
+        <div class="card-title">Avisos</div>
+        <ul class="advice-list" id="advice-list">
+          <li class="advice-none">Nenhum aviso no momento</li>
+        </ul>
+        <div class="env-status" id="trend-status">tendencia: coletando dados...</div>
+      </div>
 
       <!-- Sistema -->
       <div class="card">
@@ -139,12 +147,17 @@
     <div class="tel-item"><span class="tel-label">Ultimo erro:</span> <span id="tel-api-error" class="tel-value offline">Nenhum</span></div>
   </div>
 
+  <div class="alert alert-critical" id="alert-fire" hidden>
+    <strong>Poss&#237;vel inc&#234;ndio</strong>
+    <p id="alert-fire-text">A temperatura subiu muito r&#225;pido. Verifique o ambiente imediatamente.</p>
+    <button id="btn-fire-ok" type="button">Entendi</button>
+  </div>
   <div class="alert" id="alert-stuck" hidden>
     <strong>Rob&#244; enroscado</strong>
     <p id="alert-stuck-text">O modo aut&#244;nomo foi desligado ap&#243;s 100 obst&#225;culos seguidos. Limpe o caminho e ligue novamente.</p>
     <button id="btn-alert-ok" type="button">Entendi</button>
   </div>
 
-  <script src="/app.js?v=4"></script>
+  <script src="/app.js?v=5"></script>
 </body>
 </html>

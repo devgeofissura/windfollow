@@ -6,12 +6,13 @@
 DashboardService::DashboardService() {}
 
 bool DashboardService::begin(MotorEngine* engine, L298NDualDriver* driver, ConfigManager* configMgr,
-                             SensorService* sensors, AutoNavigator* autoNav) {
+                             SensorService* sensors, AutoNavigator* autoNav, EnvironmentAdvisor* envAdvisor) {
   _engine = engine;
   _driver = driver;
   _configMgr = configMgr;
   _sensors = sensors;
   _autoNav = autoNav;
+  _envAdvisor = envAdvisor;
 
   _server = new WebServer(80);
   setupRoutes();
@@ -154,7 +155,7 @@ void DashboardService::handleConfigPost() {
 
 void DashboardService::handleSensors() {
   Serial.println(">>> /api/sensors");
-  DynamicJsonDocument doc(384);
+  DynamicJsonDocument doc(768);
   EnvironmentReading r = _sensors ? _sensors->reading() : EnvironmentReading();
   doc["aht"] = r.ahtOk;
   doc["bmp"] = r.bmpOk;
@@ -170,6 +171,19 @@ void DashboardService::handleSensors() {
   doc["stuckSeq"] = _autoNav ? _autoNav->stuckSeq() : 0;
   doc["avoidCount"] = _autoNav ? _autoNav->avoidCount() : 0;
   doc["uptime"] = millis();
+
+  JsonObject alerts = doc.createNestedObject("alerts");
+  EnvAlerts a = _envAdvisor ? _envAdvisor->alerts() : EnvAlerts();
+  alerts["rain"] = a.rainLikely;
+  alerts["rainSensor"] = a.rainSensor;
+  alerts["hot"] = a.hot;
+  alerts["cold"] = a.cold;
+  alerts["dry"] = a.dry;
+  alerts["fire"] = a.fire;
+  alerts["trendReady"] = a.trendReady;
+  alerts["trend3h"] = a.trend3hHpa;
+  alerts["trend30m"] = a.trend30mHpa;
+  alerts["tempRise"] = a.tempRiseC;
   String json;
   serializeJson(doc, json);
   sendWithCors(200, "application/json", json);

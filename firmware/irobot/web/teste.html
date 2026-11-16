@@ -43,6 +43,8 @@
   #status.error { color: #ff8a8a; }
   .back { color: #9fb2c6; font-size: 0.9rem; text-decoration: none; }
   #amb { margin: 0; font-size: 0.9rem; color: #9fb2c6; text-align: center; font-variant-numeric: tabular-nums; }
+  #adv { margin: 0; font-size: 0.9rem; color: #ffd479; text-align: center; max-width: 340px; line-height: 1.3; }
+  #adv.crit { color: #ff8a8a; font-weight: 600; }
   #auto {
     border: 1px solid #2f4257; background: #16202b; color: #cfe3f5;
     font-family: inherit; font-size: 0.95rem; padding: 10px 18px; border-radius: 12px;
@@ -64,6 +66,7 @@
 
 <p id="status">toque em um bot&#227;o</p>
 <p id="amb">ambiente: lendo...</p>
+<p id="adv"></p>
 <button id="auto" type="button">Aut&#244;nomo: OFF</button>
 <a class="back" href="/">voltar ao painel completo</a>
 
@@ -123,6 +126,7 @@
   });
 
   var ambEl = document.getElementById('amb');
+  var advEl = document.getElementById('adv');
   var autoBtn = document.getElementById('auto');
   var autoOn = false;
   var lastStuckSeq = 0;
@@ -137,6 +141,7 @@
       var pres = (s.pressure === undefined) ? '--' : s.pressure.toFixed(0) + ' hPa';
       var dist = s.distanceMm ? (s.distanceMm / 10).toFixed(1) + ' cm' : '--';
       ambEl.textContent = temp + ' | ' + hum + ' | ' + pres + ' | dist ' + dist;
+      showAdvice(s, hum);
       autoOn = s.auto === true;
       if (s.stuck && s.stuckSeq !== lastStuckSeq) {
         lastStuckSeq = s.stuckSeq;
@@ -147,6 +152,45 @@
     }).catch(function (err) {
       ambEl.textContent = 'ambiente: falha (' + err.message + ')';
     });
+  }
+
+  var lastFire = false;
+
+  function showAdvice(s, hum) {
+    var a = s.alerts || {};
+    var msgs = [];
+    if (a.fire) msgs.push('INCENDIO! temperatura subiu rapido - verifique o ambiente');
+    if (a.rainSensor) msgs.push('chuva agora (sensor molhado)');
+    else if (a.rain) msgs.push('pode chover - pressao caiu ' + Math.abs(a.trend3h || 0).toFixed(1) + ' hPa/3h');
+    if (a.hot) msgs.push('calor - ligar o ar-condicionado');
+    if (a.cold) msgs.push('frio - desligar o ar-condicionado');
+    if (a.dry) msgs.push('ar seco - beba agua');
+    advEl.textContent = msgs.length ? msgs.join(' | ') : '';
+    advEl.className = a.fire ? 'crit' : '';
+    if (a.fire && !lastFire) alertFire();
+    lastFire = !!a.fire;
+  }
+
+  function alertFire() {
+    setStatus('ALERTA: possivel incendio', true);
+    try { if (navigator.vibrate) navigator.vibrate([900, 200, 900, 200, 1500]); } catch (e) {}
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) {
+        var ctx = new Ctx();
+        [0, 0.4, 0.8, 1.2].forEach(function (t) {
+          var osc = ctx.createOscillator();
+          var gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.value = 1200;
+          gain.gain.value = 0.09;
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + t);
+          osc.stop(ctx.currentTime + t + 0.25);
+        });
+      }
+    } catch (e) {}
   }
 
   function alertStuck() {

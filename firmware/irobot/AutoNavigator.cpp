@@ -31,6 +31,8 @@ bool AutoNavigator::blockedAhead() const {
 
 bool AutoNavigator::clearAhead() const {
   if (!_sensors || !_sensors->tofPresent()) return true;
+  // Continua medindo durante o giro: leitura velha nao vale como caminho livre.
+  if (_sensors->distanceAgeMs() > AUTO_CLEAR_MAX_AGE_MS) return false;
   uint16_t mm = _sensors->distanceMm();
   if (mm == 0) return true;            // sem alvo no alcance = caminho livre
   return mm >= AUTO_CLEAR_MM;
@@ -49,6 +51,7 @@ void AutoNavigator::startBackup(uint16_t ms) {
 }
 
 void AutoNavigator::startTurn() {
+  _lastTurnLogMs = 0;
   int8_t s = static_cast<int8_t>(AUTO_TURN_SPEED);
   // Pivo no eixo: uma roda para tras, a outra para frente.
   if (_side == 0) {
@@ -162,6 +165,17 @@ void AutoNavigator::loop() {
 
     case State::TURN: {
       bool clear = clearAhead();
+
+      // Mostra no serial que a leitura continua durante a rotacao.
+      if (millis() - _lastTurnLogMs >= 500) {
+        _lastTurnLogMs = millis();
+        Serial.print("[giro] dist=");
+        Serial.print(_sensors ? _sensors->distanceMm() : 0);
+        Serial.print(" mm (bruto ");
+        Serial.print(_sensors ? _sensors->lastRawMm() : 0);
+        Serial.print(") livre=");
+        Serial.println(clear ? "sim" : "nao");
+      }
 
       if (clear && elapsed >= AUTO_TURN_MIN_MS) {
         if (++_clearStreak >= AUTO_CLEAR_SAMPLES) {

@@ -52,6 +52,7 @@ private:
 
   State _state = State::OFF;
   uint32_t _stateSince = 0;
+  uint32_t _lastTurnLogMs = 0;
   uint32_t _forwardSince = 0;
   uint16_t _backupMs = AUTO_BACKUP_MS;
   uint8_t _side = 0;           // 0 = gira pela esquerda, 1 = pela direita

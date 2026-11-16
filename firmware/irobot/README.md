@@ -122,3 +122,46 @@ powershell -ExecutionPolicy Bypass -File tools/generate_web_assets.ps1
 - A roda caster absorve a deriva lateral nas curvas, mas exige piso liso: em carpete ou piso irregular ela trava e o robô desvia.
 - Só duas rodas motrizes → menor tração que um chassi de 4 rodas; manter o centro de gravidade próximo do eixo motriz.
 - `e`/`d` giram em torno da roda parada (uma roda para frente, a outra travada). Girar no próprio eixo exigiria uma roda para frente e a outra para trás.
+
+## Sensores ambientais e avisos
+
+| Sensor | Endereco | Uso |
+|--------|----------|-----|
+| AHT20 | I2C `0x38` | temperatura e umidade |
+| BMP280 | I2C `0x76`/`0x77` | pressao (tendencia do tempo) |
+| VL53L0X | I2C `0x29` | distancia (desvio autonomo) |
+
+`GET /api/sensors` devolve tambem o objeto `alerts`:
+
+```json
+"alerts": { "rain": false, "rainSensor": false, "hot": false, "cold": false,
+            "dry": false, "fire": false, "trendReady": true,
+            "trend3h": -0.4, "trend30m": -0.1, "tempRise": 0.2 }
+```
+
+### Regras (limiares em `HardwareConfig.h`, bloco `ENV_*`)
+
+- **Vai chover**: pressao caiu >= 1,0 hPa em 3 h e umidade >= 65 %, ou queda
+  >= 0,6 hPa em 30 min com umidade >= 70 %. A previsao so aparece depois de
+  30 min de historico (regra classica de barometro).
+- **Chuva agora**: sensor FC-37/YL-83 molhado (opcional).
+- **Calor**: acima de 26 C -> avisa para ligar o ar-condicionado.
+- **Frio**: abaixo de 17 C -> avisa para desligar o ar-condicionado.
+- **Ar seco**: umidade abaixo de 30 % -> avisa para beber agua.
+- **Incendio**: temperatura >= 45 C, subida >= 4 C em 1 min ou sensor de chama
+  KY-026 (opcional). O app mostra banner vermelho, vibra e apita.
+
+### Sensores opcionais
+
+Ainda nao ligados no Prototipo-67. Para habilitar, descomente em
+`HardwareConfig.h`:
+
+```c
+#define IROBOT_RAIN_SENSOR_PIN   34   // FC-37/YL-83 AO (ADC1, entrada)
+#define IROBOT_FLAME_SENSOR_PIN  39   // KY-026 AO (ADC1, entrada)
+#define IROBOT_RAIN_WET_ADC      1800 // menor = mais molhado
+#define IROBOT_FLAME_ADC         1000 // menor = chama presente
+```
+
+Alimente os modulos em 3,3 V e use apenas pinos ADC1 (GPIO 32-39): o ADC2 nao
+funciona com o Wi-Fi ligado.

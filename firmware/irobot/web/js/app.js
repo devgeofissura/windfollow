@@ -29,6 +29,7 @@ var state = {
   lastSent: { l: 0, r: 0, dir: '', speed: 0 },
   autoOn: false,
   lastStuckSeq: 0,
+  lastFire: false,
   online: false
 };
 var joy = { cx: 0, cy: 0, radius: 0, knobRadius: 32 };
@@ -65,6 +66,11 @@ function getEls() {
     btnAuto: document.getElementById('btn-auto'),
     alertStuck: document.getElementById('alert-stuck'),
     btnAlertOk: document.getElementById('btn-alert-ok'),
+    adviceList: document.getElementById('advice-list'),
+    trendStatus: document.getElementById('trend-status'),
+    alertFire: document.getElementById('alert-fire'),
+    alertFireText: document.getElementById('alert-fire-text'),
+    btnFireOk: document.getElementById('btn-fire-ok'),
     telStatus: document.getElementById('tel-status'),
     telLeft: document.getElementById('tel-left'),
     telRight: document.getElementById('tel-right'),
@@ -271,6 +277,8 @@ async function fetchSensors() {
       els.btnAuto.classList.toggle('btn-auto-on', !!s.auto);
     }
 
+    if (s.alerts) renderAdvice(s, s.alerts);
+
     if (s.stuck && s.stuckSeq !== state.lastStuckSeq) {
       state.lastStuckSeq = s.stuckSeq;
       notifyStuck();
@@ -280,8 +288,101 @@ async function fetchSensors() {
   }
 }
 
-function notifyStuck() {
-  if (els.alertStuck) els.alertStuck.hidden = false;
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+function renderAdvice(s, a) {
+  var t = (s.temperature === undefined) ? null : s.temperature;
+  var h = (s.humidity === undefined) ? null : s.humidity;
+  var items = [];
+
+  if (a.fire) {
+    var rise = a.tempRise ? a.tempRise.toFixed(1) : '0.0';
+    items.push({ cls: 'advice-crit', txt: 'POSSIVEL INCENDIO: temperatura subiu ' + rise + ' \u00b0C em 1 min' + (t !== null ? ' (agora ' + t.toFixed(1) + ' \u00b0C)' : '') + '. Verifique o ambiente!' });
+  }
+  if (a.rainSensor) {
+    items.push({ cls: 'advice-crit', txt: 'Chuva agora: o sensor de chuva esta molhado.' });
+  } else if (a.rain) {
+    var drop = Math.abs(a.trend3h || 0).toFixed(1);
+    items.push({ cls: 'advice-warn', txt: 'Pode chover: pressao caiu ' + drop + ' hPa em 3 h' + (h !== null ? ' e umidade em ' + h.toFixed(0) + '%' : '') + '. Leve guarda-chuva.' });
+  }
+  if (a.hot && t !== null) {
+    items.push({ cls: 'advice-warn', txt: 'Calor: ' + t.toFixed(1) + ' \u00b0C (acima de 26 \u00b0C). Ligue o ar-condicionado.' });
+  }
+  if (a.cold && t !== null) {
+    items.push({ cls: 'advice-info', txt: 'Frio: ' + t.toFixed(1) + ' \u00b0C (abaixo de 17 \u00b0C). Desligue o ar-condicionado.' });
+  }
+  if (a.dry && h !== null) {
+    items.push({ cls: 'advice-warn', txt: 'Ar seco: umidade em ' + h.toFixed(0) + '% (abaixo de 30%). Beba agua.' });
+  }
+
+  if (els.adviceList) {
+    if (!items.length) {
+      els.adviceList.innerHTML = '<li class="advice-none">Nenhum aviso no momento</li>';
+    } else {
+      els.adviceList.innerHTML = items.map(function (it) {
+        return '<li class="' + it.cls + '">' + escapeHtml(it.txt) + '</li>';
+      }).join('');
+    }
+  }
+
+  if (els.trendStatus) {
+    if (a.trendReady) {
+      var d3 = (a.trend3h || 0) >= 0 ? '+' : '';
+      var d30 = (a.trend30m || 0) >= 0 ? '+' : '';
+      els.trendStatus.textContent = 'tendencia: ' + d30 + (a.trend30m || 0).toFixed(1) + ' hPa/30 min | ' + d3 + (a.trend3h || 0).toFixed(1) + ' hPa/3 h';
+    } else {
+      els.trendStatus.textContent = 'tendencia: coletando dados (30 min)';
+    }
+  }
+
+  if (a.fire && !state.lastFire) notifyFire();
+  state.lastFire = !!a.fire;
+}
+
+function notifyFire() {
+  if (els.alertFire) els.alertFire.hidden = false;
+
+  try {
+    if (navigator.vibrate) navigator.vibrate([900, 200, 900, 200, 1500]);
+  } catch (e) { /* ignorado */ }
+
+  try {
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (Ctx) {
+      var ctx = new Ctx();
+      [0, 0.4, 0.8, 1.2].forEach(function (t0) {
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = 1200;
+        gain.gain.value = 0.09;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + t0);
+        osc.stop(ctx.currentTime + t0 + 0.25);
+      });
+    }
+  } catch (e) { /* som bloqueado sem gesto do usuario */ }
+
+  try {
+    if (window.Notification && Notification.permission === 'granted') {
+      new Notification('Possivel incendio', {
+        body: 'A temperatura subiu muito rapido. Verifique o ambiente.',
+        tag: 'irobot-fire'
+      });
+    }
+  } catch (e) { /* notificacao exige HTTPS */ }
+}
+
+function hideFireAlert() {
+  if (els.alertFire) els.alertFire.hidden = true;
+}
+
+function notifyStuck() {  if (els.alertStuck) els.alertStuck.hidden = false;
 
   try {
     if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 800]);
@@ -513,6 +614,7 @@ function init() {
   dpadBtns.forEach(function(btn) { btn.addEventListener('click', onDpadClick); });
 
   if (els.btnAlertOk) els.btnAlertOk.addEventListener('click', hideStuckAlert);
+  if (els.btnFireOk) els.btnFireOk.addEventListener('click', hideFireAlert);
   els.btnSaveConfig.addEventListener('click', saveConfig);
   if (els.btnAuto) els.btnAuto.addEventListener('click', toggleAuto);
   els.btnSystemInfo.addEventListener('click', fetchSystemInfo);

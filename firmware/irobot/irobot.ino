@@ -9,6 +9,7 @@
 #include "DashboardService.h"
 #include "SensorService.h"
 #include "AutoNavigator.h"
+#include "EnvironmentAdvisor.h"
 #include "WebAssets.h"
 
 // --- Access Point ---
@@ -21,6 +22,7 @@ L298NDualDriver motorDriver;
 MotorEngine     motorEngine;
 SensorService   sensorService;
 AutoNavigator   autoNav;
+EnvironmentAdvisor envAdvisor;
 DashboardService dashboard;
 
 // --- Configuração global ---
@@ -115,7 +117,9 @@ void setup() {
   }
 
   // Servidor web + API
-  if (!dashboard.begin(&motorEngine, &motorDriver, &configMgr, &sensorService, &autoNav)) {
+  envAdvisor.begin(&sensorService);
+
+  if (!dashboard.begin(&motorEngine, &motorDriver, &configMgr, &sensorService, &autoNav, &envAdvisor)) {
     Serial.println("Falha ao iniciar DashboardService!");
   } else {
     Serial.println("DashboardService ativo na porta 80");
@@ -140,6 +144,7 @@ void loop() {
   dashboard.loop();
   sensorService.update();
   autoNav.loop();
+  envAdvisor.update();
 
   // Comandos seriais
   if (Serial.available()) {
@@ -204,6 +209,19 @@ void loop() {
         Serial.print("Distancia (mm): "); Serial.println(r.distanceMm);
         Serial.print("Distancia bruta (mm): "); Serial.println(sensorService.lastRawMm());
         Serial.print("Autonomo: "); Serial.println(autoNav.stateName());
+        EnvAlerts al = envAdvisor.alerts();
+        Serial.print("Avisos:");
+        bool none = true;
+        if (al.fire) { Serial.print(" INCENDIO"); none = false; }
+        if (al.rainLikely) { Serial.print(al.rainSensor ? " CHUVA(agora)" : " CHUVA"); none = false; }
+        if (al.hot) { Serial.print(" CALOR"); none = false; }
+        if (al.cold) { Serial.print(" FRIO"); none = false; }
+        if (al.dry) { Serial.print(" AR-SECO"); none = false; }
+        if (none) Serial.print(" nenhum");
+        Serial.print(" (dP30m="); Serial.print(al.trend30mHpa, 2);
+        Serial.print(" dP3h="); Serial.print(al.trend3hHpa, 2);
+        Serial.print(" dT1min="); Serial.print(al.tempRiseC, 2);
+        Serial.println(")");
         break;
       }
     }
