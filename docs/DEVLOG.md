@@ -11,6 +11,21 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-15 23:59 - docs(irobot): documentar sensores, avisos ambientais e navegacao autonoma
+
+**Area:** docs, irobot, raiz
+
+**Feito:**
+- README do firmware irobot reescrito como referencia completa (hardware e alimentacao, tabela dos sensores I2C com enderecos e cadencia, maquina de estados do autonomo com tabela de constantes, regras dos avisos ambientais, API com exemplo real de /api/sensors, comandos seriais incluindo a e m, compilacao e gravacao, tabela de diagnostico de problemas, arquivos, prototipos, limites e proximos passos de hardware) e novo documento docs/IROBOT_NAVEGACAO_E_SENSORES.md com diagramas mermaid do fluxo de dados e da FSM, justificativa do pivo em vez de arco, tratamento de leituras invalidas do VL53L0X, criterios de calibracao, evidencias dos testes seriais, logica detalhada de previsao de chuva por barometro e de incendio, mitigacoes de brownout e checklist de teste, alem de links no README raiz
+
+**Dificuldades e solucoes:**
+- Manter a documentacao fiel ao codigo exigiu conferir cada valor no HardwareConfig e nas classes novas (cadencia 80/400 ms, janela de 3 h com 180 amostras, limiares e histereses) e registrar o que ainda e apenas planejado, como o monitor de bateria e os sensores de chuva e chama, para nao prometer recurso que o firmware nao tem
+
+**Arquivos:**
+- `README.md`
+- `firmware/irobot/README.md`
+- `docs/IROBOT_NAVEGACAO_E_SENSORES.md`
+
 ### 2026-11-15 23:28 - feat(irobot): avisos ambientais (chuva, calor, frio, ar seco, incendio)
 
 **Area:** irobot

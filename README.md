@@ -165,6 +165,10 @@ e sem câmera: 2 motores DC (uma roda por motor) + roda caster livre na outra po
 - FQBN: `esp32:esp32:esp32`
 - Gravação: `powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch irobot`
 - Regenerar assets: `powershell -ExecutionPolicy Bypass -File firmware/irobot/tools/generate_web_assets.ps1` (executado dentro de `firmware/irobot`)
-- Comandos seriais (115200): `f` frente, `t` trás, `e` esquerda, `d` direita, `s` stop, `1`–`9` velocidade, `i` status, `r` reinicia
+- Comandos seriais (115200): `f` frente, `t` trás, `e` esquerda, `d` direita, `s` stop, `1`–`9` velocidade, `i` status, `r` reinicia, `a` autônomo ON/OFF, `m` ambiente + avisos
+- Sensores I2C (SDA 21 / SCL 22): AHT20 `0x38` (temp/umidade), BMP280 `0x76`/`0x77` (pressão), VL53L0X `0x29` (distância)
+- Modo autônomo: para a 50 cm, dá ré, gira em pivô até ter 1 m livre, detecta enroscado e desliga após 100 tentativas
+- Avisos: chuva provável (tendência de pressão), calor > 26 °C, frio < 17 °C, ar seco < 30 %, possível incêndio — visíveis no painel, `/teste`, serial e `/api/sensors`
+- Documentação completa: [`firmware/irobot/README.md`](firmware/irobot/README.md) e [`docs/IROBOT_NAVEGACAO_E_SENSORES.md`](docs/IROBOT_NAVEGACAO_E_SENSORES.md)
 
 
