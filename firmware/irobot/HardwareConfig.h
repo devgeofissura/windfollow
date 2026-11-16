@@ -39,14 +39,21 @@ static const uint8_t AHT20_I2C_ADDR  = 0x38;
 static const uint8_t VL53L0X_I2C_ADDR = 0x29;
 
 // --- Navegacao autonoma (modo captura de ambiente) ---
-static const uint16_t AUTO_OBSTACLE_MM   = 250;  // abaixo disso considera obstaculo
-static const uint16_t AUTO_AVOID_STOP_MS = 250;  // pausa antes de girar
-static const uint16_t AUTO_TURN_MS       = 650;  // giro para desviar (roda parada como pivo)
-static const uint16_t AUTO_SETTLE_MS     = 350;  // assenta antes de medir de novo
-static const uint8_t  AUTO_STUCK_ATTEMPTS  = 100;  // obstaculos seguidos sem avanco livre -> enroscado
-static const uint16_t AUTO_FREE_FORWARD_MS = 2000; // avanco livre continuo que zera o contador
-static const uint8_t  AUTO_FORWARD_SPEED = 140;  // PWM usado no avanco autonomo
-
+// Para 50 cm antes do obstaculo e so retoma o reto com 1 m livre na frente.
+static const uint16_t AUTO_STOP_MM         = 500;
+static const uint16_t AUTO_CLEAR_MM        = 1000;
+static const uint16_t AUTO_BACKUP_MS       = 500;   // re antes de girar
+static const uint16_t AUTO_BACKUP_LONG_MS  = 800;   // re maior a cada 3 obstaculos
+static const uint16_t AUTO_BACKUP_NUDGE_MS = 350;   // re curta quando o giro nao acha saida
+static const uint8_t  AUTO_BACKUP_SPEED    = 130;
+static const uint16_t AUTO_TURN_MIN_MS     = 450;   // gira no minimo isso antes de avaliar
+static const uint16_t AUTO_TURN_MAX_MS     = 2400;  // sem 1 m livre -> re e continua girando
+static const uint8_t  AUTO_FORWARD_SPEED   = 140;   // PWM do avanco reto
+static const uint8_t  AUTO_TURN_SPEED      = 160;   // pivo: uma roda em re, outra em frente
+static const uint8_t  AUTO_CLEAR_SAMPLES   = 2;     // leituras seguidas acima de 1 m
+static const uint16_t AUTO_SETTLE_MS       = 250;
+static const uint16_t AUTO_FREE_FORWARD_MS = 2000;  // avanco livre que zera o contador
+static const uint8_t  AUTO_STUCK_ATTEMPTS  = 100;   // obstaculos seguidos -> enroscado
 // --- Estrutura de configuração salva em NVS ---
 struct RobotConfig {
   int8_t  gpioLeftIn1  = M_LEFT_IN1;

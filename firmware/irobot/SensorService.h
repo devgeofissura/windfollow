@@ -27,7 +27,7 @@ public:
   uint16_t distanceMm() const { return _reading.distanceMm; }
   uint16_t lastRawMm() const { return _lastRawMm; }
   bool tofPresent() const { return _reading.tofOk; }
-  void setFastDistance(bool fast) { _tofIntervalMs = fast ? 120 : 400; }
+  void setFastDistance(bool fast) { _tofIntervalMs = fast ? 80 : 400; }
 
 private:
   EnvironmentReading _reading;

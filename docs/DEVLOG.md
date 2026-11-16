@@ -11,6 +11,28 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-15 23:15 - feat(irobot): desvio autonomo com re, pivo e espera por 1 m livre
+
+**Area:** irobot
+
+**Feito:**
+- AutoNavigator para a 50 cm do obstaculo (era 25 cm), recua 500 ms antes de girar (800 ms a cada 3 obstaculos) e gira no proprio eixo com uma roda em re e outra em frente, em vez do arco que derrapava
+- o giro nao tem mais tempo fixo, continua ate o ToF ler 1 m livre em 2 leituras seguidas, com minimo de 450 ms e maximo de 2,4 s por segmento
+- se nao achar saida recua 350 ms e continua girando do mesmo lado e, apos dois segmentos, troca de lado
+- so retoma o reto depois de assentar e confirmar 1 m
+- cada giro sem saida tambem conta como tentativa para o detector de enroscamento (100 tentativas) e moveDifferential agora atualiza a direcao para a telemetria
+
+**Dificuldades e solucoes:**
+- O FSM antigo alternava lados a cada 650 ms com um arco de roda unica, o que num chassi com roda traseira fixa virava derrapagem e nunca dava tempo de medir
+- reescrevi como maquina de estados inspirada nos projetos de obstacle avoidance do GitHub (stop-backup-pivot-turnate-clear) e observei no serial que, numa bancada cercada a 15 cm, ele agora alterna re e giro e troca de lado em vez de ficar piscando entre esquerda e direita
+
+**Arquivos:**
+- `firmware/irobot/AutoNavigator.cpp`
+- `firmware/irobot/AutoNavigator.h`
+- `firmware/irobot/HardwareConfig.h`
+- `firmware/irobot/MotorEngine.cpp`
+- `firmware/irobot/SensorService.h`
+
 ### 2026-11-15 22:12 - fix(irobot): boot sem acionar motores e Wi-Fi com menor potencia de TX
 
 **Area:** irobot

@@ -6,15 +6,26 @@
 #include "MotorEngine.h"
 #include "SensorService.h"
 
-// Modo autonomo do Prototipo-67: anda sem parar, desvia de obstaculos e so
-// encerra quando o usuario desliga ou quando detecta que ficou enroscado
-// (AUTO_STUCK_ATTEMPTS obstaculos seguidos sem AUTO_FREE_FORWARD_MS de avanco).
+// Modo autonomo do Prototipo-67 (roda traseira fixa, sem encoder).
+//
+// Ciclo de desvio, inspirado nos FSMs de obstacle avoidance para ESP32
+// (stop -> backup -> pivot turn -> scan -> forward):
+//   FRENTE: anda reto medindo a frente; para a 50 cm do obstaculo.
+//   RE:     recua (500 ms; ate 800 ms a cada 3 obstaculos) para abrir espaco.
+//   GIRANDO: pivo no proprio eixo (uma roda em re, outra em frente) e fica
+//            girando ate a frente ter AUTO_CLEAR_MM (1 m) por 2 leituras.
+//            Se girar demais sem achar saida, recua um tico e continua; se
+//            ainda assim nao achar, troca de lado.
+//   MEDINDO: assenta e confirma a clareza antes de retomar o reto.
+//
+// Nunca para sozinho: encerra apenas quando o usuario desliga ou quando
+// acumula AUTO_STUCK_ATTEMPTS obstaculos sem AUTO_FREE_FORWARD_MS de avanco.
 class AutoNavigator {
 public:
   enum class State : uint8_t {
     OFF,
     FORWARD,
-    AVOID_STOP,
+    BACKUP,
     TURN,
     SETTLE
   };
@@ -42,14 +53,20 @@ private:
   State _state = State::OFF;
   uint32_t _stateSince = 0;
   uint32_t _forwardSince = 0;
-  RobotDirection _turnDir = RobotDirection::ESQUERDA;
-  uint8_t _turnSide = 0;
-  uint8_t _speed = AUTO_FORWARD_SPEED;
+  uint16_t _backupMs = AUTO_BACKUP_MS;
+  uint8_t _side = 0;           // 0 = gira pela esquerda, 1 = pela direita
+  uint8_t _turnSegments = 0;   // giros consecutivos sem achar 1 m livre
+  uint8_t _clearStreak = 0;
 
   void enter(State s);
   void startForward();
+  void startTurn();
+  void startBackup(uint16_t ms);
   void handleObstacle();
+  bool registerFailure();
+  void goStuck();
   bool blockedAhead() const;
+  bool clearAhead() const;
 };
 
 #endif // AUTO_NAVIGATOR_H

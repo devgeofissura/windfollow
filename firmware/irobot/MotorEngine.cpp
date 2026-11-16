@@ -49,8 +49,20 @@ void MotorEngine::move(RobotDirection dir, uint8_t speed) {
 void MotorEngine::moveDifferential(int8_t leftSpeed, int8_t rightSpeed) {
   if (!_driver) return;
 
-  _currentDir = RobotDirection::STOP; // controle manual, não mapeia para direção simples
-  _currentSpeed = PWM_DEFAULT;
+  // Mantem o estado coerente para a telemetria, inclusive no pivo
+  // (uma roda em re e outra em frente).
+  if (leftSpeed == 0 && rightSpeed == 0) {
+    _currentDir = RobotDirection::STOP;
+  } else if (leftSpeed >= 0 && rightSpeed >= 0) {
+    _currentDir = RobotDirection::FRENTE;
+  } else if (leftSpeed <= 0 && rightSpeed <= 0) {
+    _currentDir = RobotDirection::TRAS;
+  } else if (leftSpeed < 0 && rightSpeed > 0) {
+    _currentDir = RobotDirection::ESQUERDA;
+  } else {
+    _currentDir = RobotDirection::DIREITA;
+  }
+  _currentSpeed = max(abs(leftSpeed), abs(rightSpeed));
 
   _driver->setSpeeds(leftSpeed, rightSpeed);
 }
