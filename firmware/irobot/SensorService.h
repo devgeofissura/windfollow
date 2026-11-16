@@ -25,6 +25,7 @@ public:
 
   EnvironmentReading reading() const { return _reading; }
   uint16_t distanceMm() const { return _reading.distanceMm; }
+  uint16_t lastRawMm() const { return _lastRawMm; }
   bool tofPresent() const { return _reading.tofOk; }
   void setFastDistance(bool fast) { _tofIntervalMs = fast ? 120 : 400; }
 
@@ -35,6 +36,7 @@ private:
   bool _tofOk = false;
   uint32_t _lastEnvMs = 0;
   uint32_t _lastTofMs = 0;
+  uint16_t _lastRawMm = 0;
   uint16_t _tofIntervalMs = 400;
 
   void readEnvironment();

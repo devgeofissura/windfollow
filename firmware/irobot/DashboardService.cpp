@@ -17,14 +17,6 @@ bool DashboardService::begin(MotorEngine* engine, L298NDualDriver* driver, Confi
   setupRoutes();
   _server->begin();
 
-  // mDNS
-  if (!MDNS.begin("irobot")) {
-    Serial.println("Erro ao iniciar mDNS");
-  } else {
-    MDNS.addService("http", "tcp", 80);
-    Serial.println("mDNS ativo: http://irobot.local");
-  }
-
   return true;
 }
 

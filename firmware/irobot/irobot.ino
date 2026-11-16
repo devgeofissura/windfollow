@@ -172,6 +172,7 @@ void loop() {
         Serial.print("Pressao: ");
         if (isnan(r.pressureHpa)) Serial.println("--"); else Serial.println(r.pressureHpa, 2);
         Serial.print("Distancia (mm): "); Serial.println(r.distanceMm);
+        Serial.print("Distancia bruta (mm): "); Serial.println(sensorService.lastRawMm());
         Serial.print("Autonomo: "); Serial.println(autoNav.stateName());
         break;
       }

@@ -82,7 +82,9 @@ void SensorService::readEnvironment() {
 
 void SensorService::readDistance() {
   uint16_t mm = tof.readRangeSingleMillimeters();
+  _lastRawMm = mm;
   if (tof.timeoutOccurred()) {
+    _lastRawMm = 9999;
     return;
   }
   // VL53L0X devolve ~8190 quando nao ha alvo no alcance

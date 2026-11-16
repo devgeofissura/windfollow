@@ -11,6 +11,26 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-15 21:32 - chore(irobot): gravacao no COM9, diagnostico de distancia bruta e mDNS sem duplicata
+
+**Area:** irobot
+
+**Feito:**
+- Gravado no ESP32 D0WDQ6 do COM9 (1.074.303 bytes, 81% flash)
+- comandos seriais a e m validados no hardware com autonomo entrando em frente e desligando corretamente
+- AHT20 e BMP280 respondendo (26,8 C 70,4% 945,5 hPa)
+- serial m agora mostra a leitura bruta do VL53L0X (8191 significa nenhum alvo no alcance)
+- removida a segunda chamada de MDNS.begin duplicada no DashboardService que gerava o erro service already exists
+
+**Dificuldades e solucoes:**
+- A distancia aparecia 0 e nao dava para saber se o sensor estava quebrado ou apenas sem alvo -> expus lastRawMm no SensorService e no comando m, confirmando 8191 (sem alvo) em vez de falha de I2C, e reflash para validar no funcionamento real
+
+**Arquivos:**
+- `firmware/irobot/DashboardService.cpp`
+- `firmware/irobot/SensorService.cpp`
+- `firmware/irobot/SensorService.h`
+- `firmware/irobot/irobot.ino`
+
 ### 2026-11-15 20:36 - feat(irobot): autonomo continuo com deteccao de enroscamento e alerta no app
 
 **Area:** irobot
