@@ -11,6 +11,22 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-15 21:50 - chore(irobot): diagnostico de reset, heap e clientes WiFi
+
+**Area:** irobot
+
+**Feito:**
+- Boot agora imprime o motivo do reset anterior (incluindo BROWNOUT) via esp_reset_reason
+- heartbeat de 10 s mostra heap livre, menor heap, numero de clientes conectados ao AP, estado do autonomo e distancia
+- Wi-Fi do AP com setSleep(false) para nao economizar energia
+- teste de 40 s com motores em 150 PWM sem reset e heap estavel em 207 kB
+
+**Dificuldades e solucoes:**
+- O sintoma relatado (AP some e nao volta) nao reproduziu em bancada com motores ligados -> adicionei instrumentacao de reset e heap e deixei uma captura serial longa rodando para pegar a causa no momento da falha
+
+**Arquivos:**
+- `firmware/irobot/irobot.ino`
+
 ### 2026-11-15 21:32 - chore(irobot): gravacao no COM9, diagnostico de distancia bruta e mDNS sem duplicata
 
 **Area:** irobot

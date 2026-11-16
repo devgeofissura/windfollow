@@ -1,4 +1,5 @@
 #include <WiFi.h>
+#include <esp_system.h>
 #include <ESPmDNS.h>
 
 #include "HardwareConfig.h"
@@ -27,10 +28,26 @@ RobotConfig cfg;
 
 // --- Variáveis de heartbeat ---
 unsigned long _lastHeartbeat = 0;
+unsigned long _lastHealth    = 0;
 
 void setup() {
   Serial.begin(115200);
   Serial.println();
+  esp_reset_reason_t rr = esp_reset_reason();
+  Serial.print("Reset anterior: ");
+  Serial.print(static_cast<int>(rr));
+  switch (rr) {
+    case ESP_RST_POWERON:  Serial.println(" (power-on)"); break;
+    case ESP_RST_EXT:      Serial.println(" (reset externo)"); break;
+    case ESP_RST_SW:       Serial.println(" (software)"); break;
+    case ESP_RST_PANIC:    Serial.println(" (panic/crash)"); break;
+    case ESP_RST_INT_WDT:  Serial.println(" (watchdog de interrupcao)"); break;
+    case ESP_RST_TASK_WDT: Serial.println(" (watchdog de task)"); break;
+    case ESP_RST_WDT:      Serial.println(" (watchdog)"); break;
+    case ESP_RST_BROWNOUT: Serial.println(" (BROWNOUT - queda de tensao)"); break;
+    case ESP_RST_DEEPSLEEP:Serial.println(" (deep sleep)"); break;
+    default:               Serial.println(" (desconhecido)"); break;
+  }
   Serial.println("=== iRobot Firmware ===");
   Serial.println("Controle diferencial de 2 motores com PWM");
   Serial.println("GPIO: M1(26/25/ENA=27)  M2(32/33/ENB=14)");
@@ -61,6 +78,7 @@ void setup() {
 
   // Wi-Fi Access Point
   WiFi.mode(WIFI_AP);
+  WiFi.setSleep(false);
   WiFi.softAP(AP_SSID, AP_PASS);
   IPAddress apIP = WiFi.softAPIP();
   Serial.print("AP SSID: "); Serial.println(AP_SSID);
@@ -184,5 +202,14 @@ void loop() {
   if (now - _lastHeartbeat > 2000) {
     _lastHeartbeat = now;
     Serial.print(".");
+    if (now - _lastHealth > 10000) {
+      _lastHealth = now;
+      Serial.println();
+      Serial.print("[saude] heap="); Serial.print(ESP.getFreeHeap());
+      Serial.print(" minHeap="); Serial.print(ESP.getMinFreeHeap());
+      Serial.print(" clientesWiFi="); Serial.print(WiFi.softAPgetStationNum());
+      Serial.print(" auto="); Serial.print(autoNav.stateName());
+      Serial.print(" dist="); Serial.println(sensorService.distanceMm());
+    }
   }
 }
