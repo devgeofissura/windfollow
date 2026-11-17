@@ -14,12 +14,16 @@ void AutoNavigator::enter(State s) {
 const char* AutoNavigator::stateName() const {
   if (_stuck) return "enroscado";
   switch (_state) {
-    case State::FORWARD: return "frente";
-    case State::BACKUP:  return "re";
-    case State::TURN:    return "girando";
-    case State::SETTLE:  return "medindo";
-    case State::OFF:
-    default:             return "off";
+    case State::OFF:        return "off";
+    case State::SCAN:       return "reconhecendo";
+    case State::SCAN_MEASURE: return "medindo";
+    case State::SCAN_TURN:  return "girando-scan";
+    case State::ALIGN_BEST: return "alinhando";
+    case State::FORWARD:    return "frente";
+    case State::BACKUP:     return "re";
+    case State::TURN:       return "girando";
+    case State::SETTLE:     return "medindo";
+    default:                return "off";
   }
 }
 
@@ -31,10 +35,9 @@ bool AutoNavigator::blockedAhead() const {
 
 bool AutoNavigator::clearAhead() const {
   if (!_sensors || !_sensors->tofPresent()) return true;
-  // Continua medindo durante o giro: leitura velha nao vale como caminho livre.
   if (_sensors->distanceAgeMs() > AUTO_CLEAR_MAX_AGE_MS) return false;
   uint16_t mm = _sensors->distanceMm();
-  if (mm == 0) return true;            // sem alvo no alcance = caminho livre
+  if (mm == 0) return true;
   return mm >= AUTO_CLEAR_MM;
 }
 
@@ -53,7 +56,6 @@ void AutoNavigator::startBackup(uint16_t ms) {
 void AutoNavigator::startTurn() {
   _lastTurnLogMs = 0;
   int8_t s = static_cast<int8_t>(AUTO_TURN_SPEED);
-  // Pivo no eixo: uma roda para tras, a outra para frente.
   if (_side == 0) {
     _engine->moveDifferential(-s, s);
   } else {
@@ -89,7 +91,6 @@ void AutoNavigator::handleObstacle() {
 
   if (registerFailure()) return;
 
-  // Alterna o lado a cada obstaculo e, a cada 3, recua mais para abrir espaco.
   _side = (_avoidCount % 2 == 0) ? 1 : 0;
   _turnSegments = 0;
 
@@ -115,6 +116,8 @@ bool AutoNavigator::setEnabled(bool on) {
     _side = 0;
     _turnSegments = 0;
     _clearStreak = 0;
+    _headingDeg = 0;
+    _scanDone = false;
     if (_sensors) _sensors->setFastDistance(false);
     enter(State::OFF);
     Serial.println("Autonomo OFF");
@@ -133,10 +136,150 @@ bool AutoNavigator::setEnabled(bool on) {
   _side = 0;
   _turnSegments = 0;
   _clearStreak = 0;
+  _headingDeg = 0;
+  _scanDone = false;
+  for (uint8_t i = 0; i < SCAN_STEPS; i++) {
+    _scan[i].angleDeg = i * SCAN_STEP_DEG;
+    _scan[i].distanceMm = 0;
+  }
   _sensors->setFastDistance(true);
-  Serial.println("Autonomo ON");
-  startForward();
+  Serial.println("Autonomo ON - iniciando reconhecimento de 360 graus");
+  startScan();
   return true;
+}
+
+bool AutoNavigator::tofReady() const {
+  if (!_sensors || !_sensors->tofPresent()) return false;
+  return _sensors->distanceAgeMs() <= SCAN_MEASURE_MS;
+}
+
+void AutoNavigator::recordScan(uint16_t angleDeg, uint16_t distanceMm) {
+  for (uint8_t i = 0; i < SCAN_STEPS; i++) {
+    if (_scan[i].angleDeg == angleDeg) {
+      _scan[i].distanceMm = distanceMm;
+      break;
+    }
+  }
+}
+
+uint16_t AutoNavigator::scanBestAngle() const {
+  uint16_t best = 0;
+  uint16_t bestDist = 0;
+  for (uint8_t i = 0; i < SCAN_STEPS; i++) {
+    if (_scan[i].distanceMm > bestDist) {
+      bestDist = _scan[i].distanceMm;
+      best = _scan[i].angleDeg;
+    }
+  }
+  return best;
+}
+
+void AutoNavigator::updateHeading(int16_t deltaDeg) {
+  int32_t h = (int32_t)_headingDeg + deltaDeg;
+  while (h < 0) h += 360;
+  while (h >= 360) h -= 360;
+  _headingDeg = (uint16_t)h;
+}
+
+void AutoNavigator::startScan() {
+  _scanStep = 0;
+  _headingDeg = 0;
+  _bestAngleDeg = 0;
+  _bestDistanceMm = 0;
+  for (uint8_t i = 0; i < SCAN_STEPS; i++) {
+    _scan[i].distanceMm = 0;
+  }
+  _engine->stop();
+  enter(State::SCAN_MEASURE);
+  Serial.println("[scan] ponto 0/");
+  Serial.print(SCAN_STEPS);
+  Serial.println(" - medindo direcao inicial");
+}
+
+void AutoNavigator::scanMeasure() {
+  uint32_t elapsed = millis() - _stateSince;
+
+  if (!tofReady() && elapsed < SCAN_MEASURE_MS) return;
+
+  uint16_t mm = _sensors->distanceMm();
+  if (mm == 0 || mm >= 8000) mm = SCAN_MAX_MM;
+  recordScan(_headingDeg, mm);
+
+  Serial.print("[scan] ");
+  Serial.print(_scanStep + 1);
+  Serial.print("/");
+  Serial.print(SCAN_STEPS);
+  Serial.print(" ang=");
+  Serial.print(_headingDeg);
+  Serial.print(" dist=");
+  Serial.print(mm);
+  Serial.println(mm == SCAN_MAX_MM ? " mm (sem alvo)" : " mm");
+
+  _scanStep++;
+  if (_scanStep >= SCAN_STEPS) {
+    _bestAngleDeg = scanBestAngle();
+    _bestDistanceMm = 0;
+    for (uint8_t i = 0; i < SCAN_STEPS; i++) {
+      if (_scan[i].angleDeg == _bestAngleDeg) {
+        _bestDistanceMm = _scan[i].distanceMm;
+        break;
+      }
+    }
+    _scanDone = true;
+    Serial.print("[scan] concluido - melhor direcao: ");
+    Serial.print(_bestAngleDeg);
+    Serial.print(" graus (");
+    Serial.print(_bestDistanceMm);
+    Serial.println(" mm)");
+    enter(State::ALIGN_BEST);
+    return;
+  }
+
+  enter(State::SCAN_TURN);
+}
+
+void AutoNavigator::scanTurn() {
+  uint32_t elapsed = millis() - _stateSince;
+
+  if (elapsed < SCAN_TURN_MS) return;
+
+  _engine->stop();
+  delay(SCAN_SETTLE_MS);
+  updateHeading(SCAN_STEP_DEG);
+  enter(State::SCAN_MEASURE);
+}
+
+void AutoNavigator::alignBest() {
+  uint32_t elapsed = millis() - _stateSince;
+
+  // Calcula desvio angular do heading atual (0 apos scan) ate o melhor angulo.
+  int16_t delta = (int16_t)_bestAngleDeg - (int16_t)_headingDeg;
+  while (delta > 180) delta -= 360;
+  while (delta < -180) delta += 360;
+
+  if (abs(delta) <= 5) {
+    _engine->stop();
+    _headingDeg = _bestAngleDeg;
+    Serial.print("[alinhado] seguindo para ");
+    Serial.print(_bestAngleDeg);
+    Serial.println(" graus (mais livre)");
+    startForward();
+    return;
+  }
+
+  if (elapsed >= SCAN_TURN_MS * abs(delta) / SCAN_STEP_DEG) {
+    _engine->stop();
+    _headingDeg = _bestAngleDeg;
+    startForward();
+    return;
+  }
+
+  int8_t s = static_cast<int8_t>(AUTO_TURN_SPEED);
+  if (delta > 0) {
+    _engine->moveDifferential(-s, s);
+  } else {
+    _engine->moveDifferential(s, -s);
+  }
 }
 
 void AutoNavigator::loop() {
@@ -145,6 +288,18 @@ void AutoNavigator::loop() {
   uint32_t elapsed = millis() - _stateSince;
 
   switch (_state) {
+    case State::SCAN_MEASURE:
+      scanMeasure();
+      break;
+
+    case State::SCAN_TURN:
+      scanTurn();
+      break;
+
+    case State::ALIGN_BEST:
+      alignBest();
+      break;
+
     case State::FORWARD:
       if (blockedAhead()) {
         handleObstacle();
@@ -166,7 +321,6 @@ void AutoNavigator::loop() {
     case State::TURN: {
       bool clear = clearAhead();
 
-      // Mostra no serial que a leitura continua durante a rotacao.
       if (millis() - _lastTurnLogMs >= 500) {
         _lastTurnLogMs = millis();
         Serial.print("[giro] dist=");

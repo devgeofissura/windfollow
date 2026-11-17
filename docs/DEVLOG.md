@@ -11,6 +11,25 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-17 20:40 - feat(irobot): reconhecimento de 360 graus e alinhamento na direcao mais livre no modo autonomo
+
+**Area:** irobot
+
+**Feito:**
+- novo estado SCAN varre 360 graus parando e medindo a cada 60 graus
+- leituras sem alvo gravam distancia maxima
+- apos scan o robo gira para a direcao mais livre e segue em frente
+- heading estimado por tempo de giro
+- estados SCAN_MEASURE SCAN_TURN ALIGN_BEST adicionados
+
+**Dificuldades e solucoes:**
+- nenhuma
+
+**Arquivos:**
+- `firmware/irobot/AutoNavigator.cpp`
+- `firmware/irobot/AutoNavigator.h`
+- `firmware/irobot/build/`
+
 ### 2026-11-15 23:59 - docs(irobot): documentar sensores, avisos ambientais e navegacao autonoma
 
 **Area:** docs, irobot, raiz
