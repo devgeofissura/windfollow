@@ -8,38 +8,48 @@ static const char* index_html = R"rawliteral(
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0b1120">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MSA">
   <link rel="manifest" href="/manifest.json">
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
-  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
   <title>MSA — Sensores Ambientais</title>
-  <link rel="stylesheet" href="/style.css?v=1">
+  <link rel="stylesheet" href="/style.css?v=2">
 </head>
 <body>
   <div class="app">
+    <div class="ticker" id="ticker">
+      <span class="ticker-label">Ambiente:</span>
+      <span class="ticker-text" id="ticker-text">Iniciando leituras...</span>
+    </div>
+
     <header class="app-header">
-      <div class="logo" aria-hidden="true">&#127777;</div>
+      <div class="logo">MSA</div>
       <div class="header-center">
-        <h1 class="app-title">MSA</h1>
-        <div class="subtitle">Módulo de Sensores Ambientais</div>
+        <h1 class="app-title">Sensores Ambientais</h1>
+        <div class="header-alerts" id="header-alerts"><span class="alert-chip ok">Sem avisos</span></div>
       </div>
       <div class="header-actions">
-        <span id="badge-conn" class="badge offline">Desconectado</span>
-        <span id="badge-uptime" class="badge">--</span>
+        <div id="badge-conn" class="badge offline">Desconectado</div>
+        <label class="switch fullscreen-switch">
+          <input type="checkbox" id="fs-toggle">
+          <span class="slider-round"></span>
+        </label>
+        <span class="fs-hint">Tela cheia</span>
       </div>
     </header>
 
     <nav class="tabs" role="tablist">
-      <button class="tab active" role="tab" aria-selected="true" data-tab="painel">Painel</button>
+      <button class="tab active" role="tab" aria-selected="true" data-tab="home">Painel</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="config">Config</button>
     </nav>
 
-    <main class="content">
-      <section class="panel active" id="panel-painel">
+    <section class="panel panel-home active" id="panel-home">
+      <div class="home-wrap">
         <div class="metrics">
           <article class="card metric">
             <div class="card-title">Temperatura <span class="sensor-tag" id="tag-aht">AHT20</span></div>
@@ -49,7 +59,7 @@ static const char* index_html = R"rawliteral(
           <article class="card metric">
             <div class="card-title">Umidade relativa <span class="sensor-tag" id="tag-aht-hum">AHT20</span></div>
             <div class="metric-value"><span id="value-hum">--</span><small>%</small></div>
-            <div class="metric-foot">Conforto: 40–60%</div>
+            <div class="metric-foot">Faixa de conforto: 40–60%</div>
           </article>
           <article class="card metric">
             <div class="card-title">Pressão <span class="sensor-tag" id="tag-bmp">BMP280</span></div>
@@ -58,69 +68,76 @@ static const char* index_html = R"rawliteral(
           </article>
         </div>
 
-        <article class="card">
-          <div class="card-title">Avisos ambientais</div>
-          <div class="alerts" id="alerts"><span class="chip ok">Sem avisos</span></div>
-        </article>
-
-        <div class="secondary">
+        <div class="home-bottom">
           <article class="card">
             <div class="card-title">Tendência barométrica</div>
-            <div class="trend-row"><span>30 min</span><strong id="value-trend30m">--</strong></div>
-            <div class="trend-row"><span>3 h</span><strong id="value-trend3h">--</strong></div>
-            <div class="trend-row"><span>Temp. 1 min</span><strong id="value-temprise">--</strong></div>
-            <div class="trend-note" id="trend-note">Coletando histórico de pressão...</div>
+            <div class="data-row"><span>30 min</span><strong id="value-trend30m">--</strong></div>
+            <div class="data-row"><span>3 h</span><strong id="value-trend3h">--</strong></div>
+            <div class="data-row"><span>Temp. 1 min</span><strong id="value-temprise">--</strong></div>
+            <div class="data-note" id="trend-note">Coletando histórico de pressão...</div>
           </article>
           <article class="card">
-            <div class="card-title">Estado do sistema</div>
-            <div class="trend-row"><span>Amostra</span><strong id="value-interval">--</strong></div>
-            <div class="trend-row"><span>Heap livre</span><strong id="value-heap">--</strong></div>
-            <div class="trend-row"><span>Uptime</span><strong id="value-uptime">--</strong></div>
-            <div class="trend-row"><span>mDNS</span><strong>http://msa.local</strong></div>
+            <div class="card-title">Sistema</div>
+            <div class="data-row"><span>Amostra</span><strong id="value-interval">--</strong></div>
+            <div class="data-row"><span>Heap livre</span><strong id="value-heap">--</strong></div>
+            <div class="data-row"><span>Uptime</span><strong id="value-uptime">--</strong></div>
+            <div class="data-row"><span>OLED</span><strong id="value-display">--</strong></div>
+            <div class="data-note">http://msa.local</div>
           </article>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="panel" id="panel-config">
-        <article class="card form-card">
+    <section class="panel panel-config hidden" id="panel-config">
+      <div class="config-wrap">
+        <div class="card wifi-card">
+          <div class="card-title">Wi-Fi</div>
+          <div class="config-row">
+            <label>Modo</label>
+            <select id="cfg-wifi-mode" class="cfg-select">
+              <option value="ap">Access Point (configuração)</option>
+              <option value="sta">Cliente (conectar à rede)</option>
+            </select>
+          </div>
+          <div class="config-row" id="cfg-wifi-sta-row" style="display:none;">
+            <label>SSID</label><input type="text" id="cfg-wifi-ssid" class="cfg-input" placeholder="Nome da rede" autocomplete="off">
+          </div>
+          <div class="config-row" id="cfg-wifi-pass-row" style="display:none;">
+            <label>Senha</label><input type="password" id="cfg-wifi-pass" class="cfg-input" placeholder="Senha Wi-Fi" autocomplete="new-password">
+          </div>
+          <div class="config-row" id="cfg-wifi-ap-row">
+            <label>SSID AP</label><input type="text" id="cfg-ap-ssid" class="cfg-input" value="MSA-Setup">
+          </div>
+          <div class="config-row" id="cfg-wifi-ap-pass-row">
+            <label>Senha AP</label><input type="password" id="cfg-ap-pass" class="cfg-input" value="msa1234">
+          </div>
+          <button type="button" class="btn btn-outline btn-block" id="cfg-save-wifi">Salvar Wi-Fi</button>
+        </div>
+
+        <div class="card limits-card">
           <div class="card-title">Leitura e limites</div>
-          <form id="form-config">
-            <label>Intervalo de leitura (ms)
-              <input type="number" id="cfg-interval" min="500" max="60000" step="500" required>
-            </label>
-            <div class="form-grid">
-              <label>Alerta de calor (°C)<input type="number" id="cfg-hot" step="0.5" required></label>
-              <label>Alerta de frio (°C)<input type="number" id="cfg-cold" step="0.5" required></label>
-              <label>Ar seco (% UR)<input type="number" id="cfg-dry" step="1" required></label>
-              <label>Chuva (% UR)<input type="number" id="cfg-rain" step="1" required></label>
-            </div>
-            <button type="submit" class="btn primary">Salvar configuração</button>
-          </form>
-        </article>
+          <div class="config-row"><label>Intervalo (ms)</label><input type="number" id="cfg-interval" class="cfg-input" min="500" max="60000" step="500"></div>
+          <div class="config-row"><label>Alerta calor (°C)</label><input type="number" id="cfg-hot" class="cfg-input" step="0.5"></div>
+          <div class="config-row"><label>Alerta frio (°C)</label><input type="number" id="cfg-cold" class="cfg-input" step="0.5"></div>
+          <div class="config-row"><label>Ar seco (% UR)</label><input type="number" id="cfg-dry" class="cfg-input" step="1"></div>
+          <div class="config-row"><label>Chuva (% UR)</label><input type="number" id="cfg-rain" class="cfg-input" step="1"></div>
+          <button type="button" class="btn btn-outline btn-block" id="cfg-save-limits">Salvar limites</button>
+        </div>
 
-        <article class="card form-card">
-          <div class="card-title">Rede Wi-Fi</div>
-          <form id="form-wifi">
-            <label>Modo
-              <select id="wifi-mode">
-                <option value="ap">Access Point (MSA-Setup)</option>
-                <option value="sta">Conectar à rede (STA)</option>
-              </select>
-            </label>
-            <div class="form-grid">
-              <label>SSID<input type="text" id="wifi-ssid" autocomplete="off"></label>
-              <label>Senha<input type="password" id="wifi-pass" autocomplete="new-password"></label>
-            </div>
-            <button type="submit" class="btn primary">Salvar Wi-Fi e reiniciar</button>
-          </form>
-          <button type="button" class="btn danger" id="btn-restart">Reiniciar dispositivo</button>
-        </article>
-
-        <div class="status" id="form-status" role="status"></div>
-      </section>
-    </main>
+        <div class="card sys-card">
+          <div class="card-title">Sistema</div>
+          <button type="button" class="btn btn-outline btn-block" id="cfg-sys-info">Ler status do sistema</button>
+          <div id="cfg-system-info" class="sys-info"></div>
+          <div class="config-row" style="margin-top:12px;">
+            <button type="button" class="btn btn-outline btn-block" id="cfg-restart">Reiniciar MSA</button>
+          </div>
+          <div id="cfg-status" class="cfg-status" role="status"></div>
+        </div>
+      </div>
+    </section>
   </div>
-  <script src="/app.js"></script>
+
+  <script src="/app.js?v=2"></script>
 </body>
 </html>
 
@@ -129,150 +146,239 @@ static const char* style_css = R"rawliteral(
 * { box-sizing: border-box; }
 
 :root {
-  --bg: #0b1120;
-  --panel: #121a2b;
-  --panel-2: #0f172a;
-  --line: #1f2a3d;
-  --text: #e8eef5;
-  --muted: #9fb2c6;
-  --accent: #8fd7ff;
-  --blue: #2f9fd8;
-  --green: #2fa76a;
-  --yellow: #d99b2f;
-  --red: #d64553;
+  --u: clamp(5px, min(1vw, 2vh), 12px);
+  --gap: calc(var(--u) * 1.1);
+  --pad: calc(var(--u) * 1.3);
+  --radius: calc(var(--u) * 1.5);
 }
 
-html, body { margin: 0; padding: 0; min-height: 100%; }
-body {
-  background: var(--bg); color: var(--text);
+html, body {
+  margin: 0; padding: 0; width: 100%; height: 100%;
+  height: 100dvh;
+  background: #0b1120; color: #e8eef5;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-user-select: none; user-select: none; touch-action: manipulation;
 }
-.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+body { display: flex; flex-direction: column; overflow: hidden; }
+.app {
+  display: flex; flex-direction: column;
+  width: 100%; height: 100%; height: 100dvh;
+  min-height: 0; overflow: hidden;
+}
+
+.ticker {
+  flex: 0 0 auto;
+  height: calc(var(--u) * 3.2);
+  display: flex; align-items: center;
+  background: #121a2b; color: #cfe3f5;
+  font-size: calc(var(--u) * 1.35);
+  padding: 0 calc(var(--u) * 1.2);
+  overflow: hidden; white-space: nowrap;
+  border-bottom: 1px solid #1f2a3d;
+  z-index: 40;
+}
+.ticker-label { color: #8fd7ff; margin-right: calc(var(--u) * 1.2); font-weight: 700; flex: 0 0 auto; }
+.ticker-text { display: inline-block; animation: ticker 20s linear infinite; }
+@keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
 .app-header {
-  display: flex; align-items: center; gap: 16px;
-  padding: 14px 20px; background: var(--panel-2);
-  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  height: calc(var(--u) * 7.2);
+  padding: 0 var(--pad);
+  background: #0f172a; border-bottom: 1px solid #1f2a3d;
+  z-index: 30; gap: var(--gap);
 }
 .logo {
-  width: 48px; height: 48px; flex: 0 0 auto;
+  font-size: calc(var(--u) * 1.6); font-weight: 800; letter-spacing: .08em;
+  width: calc(var(--u) * 4.8); height: calc(var(--u) * 4.2);
   display: flex; align-items: center; justify-content: center;
-  font-size: 26px; background: #1d2733; border-radius: 12px;
+  border-radius: calc(var(--u) * 1); background: #1d2733; color: #8fd7ff; flex: 0 0 auto;
 }
-.header-center { flex: 1 1 auto; min-width: 0; }
-.app-title { margin: 0; font-size: 22px; letter-spacing: .08em; color: var(--accent); }
-.subtitle { font-size: 13px; color: var(--muted); }
-.header-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
-.badge {
-  padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
-  background: #1f2a3d; color: var(--muted); border: 1px solid #2d3a50; white-space: nowrap;
+.header-center {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: calc(var(--u) * 0.2); min-width: 0; flex: 1 1 auto;
 }
-.badge.online { background: #163a26; color: #9fe3b2; border-color: var(--green); }
-.badge.offline { background: #3a2428; color: #ffb3b3; border-color: var(--red); }
-
-.tabs { display: flex; background: var(--panel-2); border-bottom: 1px solid var(--line); }
-.tab {
-  flex: 1; padding: 14px 8px; border: 0; border-bottom: 2px solid transparent;
-  background: transparent; color: var(--accent); font-size: 15px; font-weight: 700;
-  cursor: pointer;
+.app-title {
+  margin: 0; font-size: calc(var(--u) * 1.55); font-weight: 800;
+  letter-spacing: .04em; color: #8fd7ff; line-height: 1.05;
 }
-.tab.active { background: var(--panel); border-bottom-color: var(--blue); }
-
-.content { flex: 1 1 auto; padding: 18px; max-width: 1200px; width: 100%; margin: 0 auto; }
-.panel { display: none; flex-direction: column; gap: 16px; }
-.panel.active { display: flex; }
-
-.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-.secondary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.card {
-  background: var(--panel); border: 1px solid var(--line);
-  border-radius: 14px; padding: 18px; min-width: 0;
+.header-alerts {
+  display: flex; flex-wrap: nowrap; gap: calc(var(--u) * 0.4);
+  justify-content: center; max-width: 100%; overflow: hidden;
 }
-.card-title {
-  font-size: 13px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
-  color: var(--accent); margin-bottom: 14px;
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-}
-.sensor-tag {
-  font-size: 10px; padding: 3px 8px; border-radius: 999px;
-  background: #1d2733; color: var(--muted); border: 1px solid #2d3a50;
-}
-.sensor-tag.ok { color: #9fe3b2; border-color: var(--green); background: #163a26; }
-.sensor-tag.fail { color: #ffb3b3; border-color: var(--red); background: #3a2428; }
-.metric-value { font-size: clamp(32px, 6vw, 52px); font-weight: 800; line-height: 1; }
-.metric-value small { font-size: 18px; color: var(--muted); margin-left: 4px; }
-.metric-foot { margin-top: 12px; font-size: 13px; color: var(--muted); }
-
-.alerts { display: flex; flex-wrap: wrap; gap: 8px; }
-.chip {
-  padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+.alert-chip {
+  font-size: calc(var(--u) * 1.05); font-weight: 700;
+  padding: calc(var(--u) * 0.2) calc(var(--u) * 0.7);
+  border-radius: calc(var(--u) * 1.2); white-space: nowrap;
   border: 1px solid transparent;
 }
-.chip.ok { background: #163a26; color: #9fe3b2; border-color: var(--green); }
-.chip.info { background: #16283a; color: #9fd0ff; border-color: var(--blue); }
-.chip.warn { background: #3a2a16; color: #ffd479; border-color: var(--yellow); }
-.chip.crit { background: #3a1f24; color: #ffb3b3; border-color: var(--red); }
+.alert-chip.ok { background: #163a26; color: #9fe3b2; border-color: #2fa76a; }
+.alert-chip.info { background: #16283a; color: #9fd0ff; border-color: #2f7fd8; }
+.alert-chip.warn { background: #3a2a16; color: #ffd479; border-color: #d99b2f; }
+.alert-chip.crit { background: #3a1f24; color: #ffb3b3; border-color: #d64553; animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .55; } }
 
-.trend-row {
-  display: flex; justify-content: space-between; gap: 12px;
-  padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px;
+.header-actions { display: flex; align-items: center; gap: var(--gap); flex: 0 0 auto; }
+.badge {
+  padding: calc(var(--u) * 0.4) calc(var(--u) * 1.1);
+  border-radius: calc(var(--u) * 1.4); font-size: calc(var(--u) * 1.3); font-weight: 700;
+  background: #1f2a3d; color: #9fb2c6; border: 1px solid #2d3a50; white-space: nowrap;
 }
-.trend-row:last-of-type { border-bottom: 0; }
-.trend-row span { color: var(--muted); }
-.trend-row strong { font-variant-numeric: tabular-nums; }
-.trend-note { margin-top: 12px; font-size: 12px; color: var(--muted); }
+.badge.online { background: #163a26; color: #9fe3b2; border-color: #2fa76a; }
+.badge.offline { background: #3a2428; color: #ffb3b3; border-color: #d64553; }
 
-.form-card { margin-bottom: 16px; }
-form { display: flex; flex-direction: column; gap: 14px; }
-label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); }
-input, select {
-  background: #0b1120; color: var(--text); border: 1px solid #2d3a50;
-  border-radius: 8px; padding: 10px 12px; font-size: 15px; width: 100%;
+.fullscreen-switch, .switch.inline {
+  position: relative; display: inline-block; flex: 0 0 auto;
+  width: calc(var(--u) * 6); height: calc(var(--u) * 3.4);
 }
-input:focus, select:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
-.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.fullscreen-switch input, .switch.inline input { opacity: 0; width: 0; height: 0; }
+.slider-round {
+  position: absolute; cursor: pointer; inset: 0; background: #1f2a3d;
+  border: 1px solid #2d3a50; border-radius: calc(var(--u) * 2); transition: .2s;
+}
+.slider-round:before {
+  position: absolute; content: "";
+  height: calc(var(--u) * 2.6); width: calc(var(--u) * 2.6);
+  left: calc(var(--u) * 0.3); bottom: calc(var(--u) * 0.3);
+  background: #fff; border-radius: 50%; transition: .2s;
+}
+.fullscreen-switch input:checked + .slider-round,
+.switch.inline input:checked + .slider-round { background: #2f9fd8; border-color: #2f9fd8; }
+.fullscreen-switch input:checked + .slider-round:before,
+.switch.inline input:checked + .slider-round:before { transform: translateX(calc(var(--u) * 2.7)); }
+.fs-hint { font-size: calc(var(--u) * 1.15); color: #8fd7ff; display: none; white-space: nowrap; }
+.fullscreen-switch input:checked ~ .fs-hint { display: inline; }
+
+.tabs {
+  flex: 0 0 auto; display: flex; height: calc(var(--u) * 4.8);
+  background: #0f172a; border-bottom: 1px solid #1f2a3d;
+}
+.tab {
+  flex: 1; padding: 0; border: 0; background: transparent; color: #8fd7ff;
+  font-size: calc(var(--u) * 1.5); font-weight: 700; cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.tab.active { color: #8fd7ff; border-bottom-color: #2f9fd8; background: #121a2b; }
+
+.panel { display: none; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.panel.active { display: flex; }
+.panel.hidden { display: none; }
+
+.home-wrap {
+  display: flex; flex-direction: column; gap: var(--gap);
+  padding: var(--gap); width: 100%; min-height: 100%;
+}
+.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); }
+.home-bottom { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); flex: 1 1 auto; }
+
+.card {
+  background: #121a2b; border: 1px solid #1f2a3d;
+  border-radius: var(--radius); padding: var(--pad);
+  display: flex; flex-direction: column; gap: calc(var(--u) * 0.7);
+  min-height: 0; min-width: 0; overflow: hidden;
+}
+.card-title {
+  margin: 0; font-size: calc(var(--u) * 1.45); font-weight: 800;
+  letter-spacing: .04em; color: #8fd7ff;
+  border-bottom: 1px solid #1f2a3d;
+  padding-bottom: calc(var(--u) * 0.5); flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u) * 0.6);
+}
+.sensor-tag {
+  font-size: calc(var(--u) * 1); padding: calc(var(--u) * 0.2) calc(var(--u) * 0.7);
+  border-radius: calc(var(--u) * 1.2); background: #1f2a3d; color: #9fb2c6;
+  border: 1px solid #2d3a50; white-space: nowrap;
+}
+.sensor-tag.ok { background: #163a26; color: #9fe3b2; border-color: #2fa76a; }
+.sensor-tag.fail { background: #3a2428; color: #ffb3b3; border-color: #d64553; }
+.metric-value { font-size: calc(var(--u) * 5); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.metric-value small { font-size: calc(var(--u) * 1.8); color: #9fb2c6; margin-left: calc(var(--u) * 0.4); }
+.metric-foot { font-size: calc(var(--u) * 1.3); color: #9fb2c6; }
+
+.data-row {
+  display: flex; justify-content: space-between; gap: calc(var(--u) * 1.2);
+  padding: calc(var(--u) * 0.7) 0; border-bottom: 1px solid #1f2a3d;
+  font-size: calc(var(--u) * 1.4);
+}
+.data-row:last-of-type { border-bottom: 0; }
+.data-row span { color: #9fb2c6; }
+.data-row strong { font-variant-numeric: tabular-nums; }
+.data-note { margin-top: auto; font-size: calc(var(--u) * 1.15); color: #9fb2c6; }
+
+.config-wrap {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gap); padding: var(--gap); width: 100%; align-items: start;
+}
+.config-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: calc(var(--u) * 0.8); font-size: calc(var(--u) * 1.35); color: #9fb2c6;
+}
+.config-row label { flex: 0 0 auto; }
+.cfg-input, .cfg-select {
+  background: #0b1120; color: #e8eef5; border: 1px solid #2d3a50;
+  border-radius: calc(var(--u) * 1); padding: calc(var(--u) * 0.8) calc(var(--u) * 1);
+  font-size: calc(var(--u) * 1.4); min-width: 0; flex: 1 1 auto; width: 100%;
+}
+.cfg-input:focus, .cfg-select:focus { outline: 2px solid #2f9fd8; outline-offset: 1px; }
 .btn {
-  border: 0; border-radius: 8px; padding: 12px 16px; font-size: 14px;
-  font-weight: 700; cursor: pointer; align-self: flex-start;
+  border: 0; border-radius: calc(var(--u) * 1.4);
+  background: #1d2733; color: #e8eef5;
+  font-size: calc(var(--u) * 1.5); font-weight: 800; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
-.btn.primary { background: var(--blue); color: #fff; }
-.btn.danger { background: var(--red); color: #fff; margin-top: 14px; }
-.btn:disabled { opacity: .5; cursor: not-allowed; }
-.status { min-height: 22px; font-size: 13px; color: var(--accent); }
+.btn-outline { background: #16283a; border: 1px solid #2f7fd8; color: #9fd0ff; }
+.btn-block { width: 100%; padding: calc(var(--u) * 1) 0; }
+.btn:active { transform: translateY(1px); }
+.sys-info {
+  background: #0b1120; border: 1px solid #1f2a3d; border-radius: calc(var(--u) * 1);
+  padding: calc(var(--u) * 0.8); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: calc(var(--u) * 1.1); color: #9fb2c6; white-space: pre-wrap; word-break: break-word;
+  max-height: calc(var(--u) * 18); overflow: auto;
+}
+.cfg-status { min-height: calc(var(--u) * 2); font-size: calc(var(--u) * 1.25); color: #9fe3b2; }
+.cfg-status.error { color: #ffb3b3; }
 
-@media (max-width: 760px) {
-  .metrics, .secondary, .form-grid { grid-template-columns: 1fr; }
-  .app-header { padding: 10px 14px; }
-  .content { padding: 12px; }
+@media (max-width: 900px) {
+  .config-wrap { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-bottom { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .metrics { grid-template-columns: 1fr; }
+  .config-wrap { grid-template-columns: 1fr; }
+  .config-row { align-items: flex-start; flex-direction: column; }
+  .header-center { align-items: flex-start; }
+  .app-title { font-size: calc(var(--u) * 1.35); }
+  .fs-hint { display: none !important; }
 }
 
 )rawliteral";
 static const char* app_js = R"rawliteral(
+'use strict';
+
 const API = {
-  async request(path, options) {
-    const response = await fetch(path, options);
-    if (!response.ok) throw new Error((await response.text()) || ('HTTP ' + response.status));
-    return response.json();
+  async _try(method, path, body) {
+    const opts = { method };
+    if (body !== undefined) {
+      opts.headers = { 'Content-Type': 'application/json' };
+      opts.body = JSON.stringify(body);
+    }
+    const res = await fetch(path, opts);
+    const ct = res.headers.get('content-type') || '';
+    const data = ct.includes('application/json') ? await res.json() : await res.text();
+    if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + path);
+    return data;
   },
-  get(path) { return this.request(path); },
-  post(path, body) {
-    return this.request(path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-  }
+  get(path) { return this._try('GET', path); },
+  post(path, body) { return this._try('POST', path, body); }
 };
 
-const byId = (id) => document.getElementById(id);
-const fmt = (value, digits) => (Number.isFinite(value) ? value.toFixed(digits) : '--');
-const signed = (value, digits) => (Number.isFinite(value) ? (value >= 0 ? '+' : '') + value.toFixed(digits) : '--');
-
-function setTag(id, ok, labels) {
-  const el = byId(id);
-  el.textContent = ok ? labels[0] : labels[1];
-  el.className = 'sensor-tag ' + (ok ? 'ok' : 'fail');
-}
+const state = { online: false, activeTab: 'home' };
+const $ = (id) => document.getElementById(id);
+const fmt = (v, d) => (Number.isFinite(v) ? v.toFixed(d) : '--');
+const signed = (v, d) => (Number.isFinite(v) ? (v >= 0 ? '+' : '') + v.toFixed(d) : '--');
 
 function uptimeText(ms) {
   if (!Number.isFinite(ms)) return '--';
@@ -283,146 +389,251 @@ function uptimeText(ms) {
   return (h ? h + 'h ' : '') + m + 'm ' + s + 's';
 }
 
-function renderAlerts(alerts) {
-  const box = byId('alerts');
-  const items = [];
-  if (alerts.fire) items.push(['INCÊNDIO', 'crit']);
-  if (alerts.rain) items.push(['Chuva provável', 'warn']);
-  if (alerts.hot) items.push(['Calor', 'warn']);
-  if (alerts.cold) items.push(['Frio', 'info']);
-  if (alerts.dry) items.push(['Ar seco', 'warn']);
-  if (!items.length) items.push(['Sem avisos', 'ok']);
-  box.innerHTML = items.map(([text, kind]) => '<span class="chip ' + kind + '">' + text + '</span>').join('');
+function setOnline(ok) {
+  state.online = !!ok;
+  const badge = $('badge-conn');
+  if (!badge) return;
+  badge.textContent = ok ? 'Conectado' : 'Desconectado';
+  badge.className = 'badge ' + (ok ? 'online' : 'offline');
 }
 
-async function refreshSensors() {
+function setStatus(message, isError) {
+  const el = $('cfg-status');
+  if (!el) return;
+  el.textContent = message || '';
+  el.className = 'cfg-status' + (isError ? ' error' : '');
+}
+
+function setTag(id, ok, labels) {
+  const el = $(id);
+  if (!el) return;
+  el.textContent = ok ? labels[0] : labels[1];
+  el.className = 'sensor-tag ' + (ok ? 'ok' : 'fail');
+}
+
+function renderAlerts(alerts) {
+  const box = $('header-alerts');
+  if (!box) return;
+  const items = [];
+  if (alerts && alerts.fire) items.push(['INCÊNDIO', 'crit']);
+  if (alerts && alerts.rain) items.push(['Chuva provável', 'warn']);
+  if (alerts && alerts.hot) items.push(['Calor', 'warn']);
+  if (alerts && alerts.cold) items.push(['Frio', 'info']);
+  if (alerts && alerts.dry) items.push(['Ar seco', 'warn']);
+  if (!items.length) items.push(['Sem avisos', 'ok']);
+  box.innerHTML = items.map(([text, kind]) => '<span class="alert-chip ' + kind + '">' + text + '</span>').join('');
+}
+
+function selectTab(name) {
+  state.activeTab = name;
+  document.querySelectorAll('.tab').forEach((tab) => {
+    const active = tab.getAttribute('data-tab') === name;
+    tab.classList.toggle('active', active);
+    tab.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  ['home', 'config'].forEach((n) => {
+    const p = $('panel-' + n);
+    if (!p) return;
+    p.classList.toggle('active', n === name);
+    p.classList.toggle('hidden', n !== name);
+  });
+  if (name === 'config') {
+    loadConfig();
+    loadWifi();
+  }
+  try { history.replaceState(null, '', '#' + name); } catch (e) {}
+  try { localStorage.setItem('msa-tab', name); } catch (e) {}
+}
+
+function initTabs() {
+  document.querySelectorAll('.tab').forEach((tab) => {
+    tab.addEventListener('click', () => selectTab(tab.getAttribute('data-tab')));
+  });
+  let saved = '';
+  try { saved = localStorage.getItem('msa-tab') || ''; } catch (e) {}
+  const hash = location.hash.replace('#', '');
+  selectTab(['home', 'config'].includes(hash) ? hash : (['home', 'config'].includes(saved) ? saved : 'home'));
+}
+
+function applyWifiMode() {
+  const sel = $('cfg-wifi-mode');
+  if (!sel) return;
+  const isSta = sel.value === 'sta';
+  ['cfg-wifi-sta-row', 'cfg-wifi-pass-row'].forEach((id) => {
+    const el = $(id);
+    if (el) el.style.display = isSta ? 'flex' : 'none';
+  });
+  ['cfg-wifi-ap-row', 'cfg-wifi-ap-pass-row'].forEach((id) => {
+    const el = $(id);
+    if (el) el.style.display = isSta ? 'none' : 'flex';
+  });
+}
+
+function initWifiMode() {
+  const sel = $('cfg-wifi-mode');
+  if (!sel) return;
+  sel.addEventListener('change', applyWifiMode);
+  applyWifiMode();
+}
+
+function initFullscreen() {
+  const cb = $('fs-toggle');
+  if (!cb) return;
+  cb.addEventListener('change', async () => {
+    try {
+      if (cb.checked) {
+        const el = document.documentElement;
+        if (el.requestFullscreen) await el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) await document.webkitExitFullscreen();
+      }
+    } catch (e) { cb.checked = false; }
+  });
+  document.addEventListener('fullscreenchange', () => {
+    cb.checked = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  });
+}
+
+function initPwa() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+}
+
+async function fetchSensors() {
   try {
     const s = await API.get('/api/sensors');
-    byId('badge-conn').textContent = 'Online';
-    byId('badge-conn').className = 'badge online';
+    setOnline(true);
 
-    byId('value-temp').textContent = fmt(s.temperature, 1);
-    byId('value-hum').textContent = fmt(s.humidity, 1);
-    byId('value-pressure').textContent = fmt(s.pressure, 1);
-    byId('value-bmp-temp').textContent = fmt(s.bmpTemperature, 1);
-    byId('value-age').textContent = Number.isFinite(s.ageMs) ? (s.ageMs / 1000).toFixed(1) + ' s' : '--';
+    const temp = fmt(s.temperature, 1);
+    const hum = fmt(s.humidity, 1);
+    const pressure = fmt(s.pressure, 1);
+    $('value-temp').textContent = temp;
+    $('value-hum').textContent = hum;
+    $('value-pressure').textContent = pressure;
+    $('value-bmp-temp').textContent = fmt(s.bmpTemperature, 1);
+    $('value-age').textContent = Number.isFinite(s.ageMs) ? (s.ageMs / 1000).toFixed(1) + ' s' : '--';
+
+    $('ticker-text').textContent = 'T ' + temp + '°C  |  UR ' + hum + '%  |  P ' + pressure + ' hPa';
 
     setTag('tag-aht', s.aht === true, ['AHT20 ok', 'AHT20 ausente']);
     setTag('tag-aht-hum', s.aht === true, ['AHT20 ok', 'AHT20 ausente']);
     setTag('tag-bmp', s.bmp === true, ['BMP280 ok', 'BMP280 ausente']);
 
     renderAlerts(s.alerts || {});
-    byId('value-trend30m').textContent = signed(s.alerts && s.alerts.trend30m, 2) + ' hPa';
-    byId('value-trend3h').textContent = signed(s.alerts && s.alerts.trend3h, 2) + ' hPa';
-    byId('value-temprise').textContent = signed(s.alerts && s.alerts.tempRise, 2) + ' °C';
-    byId('trend-note').textContent = (s.alerts && s.alerts.trendReady)
-      ? 'Tendência disponível'
-      : 'Coletando histórico de pressão...';
-
-    byId('value-uptime').textContent = uptimeText(s.uptime);
-    byId('badge-uptime').textContent = uptimeText(s.uptime);
-
-    const info = await API.get('/api/system/info');
-    byId('value-heap').textContent = (info.heap / 1024).toFixed(1) + ' KB';
+    $('value-trend30m').textContent = signed(s.alerts && s.alerts.trend30m, 2) + ' hPa';
+    $('value-trend3h').textContent = signed(s.alerts && s.alerts.trend3h, 2) + ' hPa';
+    $('value-temprise').textContent = signed(s.alerts && s.alerts.tempRise, 2) + ' °C';
+    $('trend-note').textContent = (s.alerts && s.alerts.trendReady) ? 'Tendência disponível' : 'Coletando histórico de pressão...';
+    $('value-uptime').textContent = uptimeText(s.uptime);
   } catch (error) {
-    byId('badge-conn').textContent = 'Desconectado';
-    byId('badge-conn').className = 'badge offline';
+    setOnline(false);
   }
 }
 
 async function loadConfig() {
   try {
     const cfg = await API.get('/api/config');
-    byId('cfg-interval').value = cfg.readIntervalMs;
-    byId('cfg-hot').value = cfg.hotC;
-    byId('cfg-cold').value = cfg.coldC;
-    byId('cfg-dry').value = cfg.dryHumidityPct;
-    byId('cfg-rain').value = cfg.rainHumidityPct;
-    byId('value-interval').textContent = (cfg.readIntervalMs / 1000).toFixed(1) + ' s';
+    $('cfg-interval').value = cfg.readIntervalMs;
+    $('cfg-hot').value = cfg.hotC;
+    $('cfg-cold').value = cfg.coldC;
+    $('cfg-dry').value = cfg.dryHumidityPct;
+    $('cfg-rain').value = cfg.rainHumidityPct;
+    $('value-interval').textContent = (cfg.readIntervalMs / 1000).toFixed(1) + ' s';
+    setOnline(true);
   } catch (error) {
-    setStatus(error.message, true);
+    setOnline(false);
   }
 }
 
 async function loadWifi() {
   try {
     const wifi = await API.get('/api/wifi');
-    byId('wifi-mode').value = wifi.mode;
-    byId('wifi-ssid').value = wifi.ssid || '';
+    $('cfg-wifi-mode').value = wifi.mode || 'ap';
+    $('cfg-wifi-ssid').value = wifi.staSsid || '';
+    $('cfg-ap-ssid').value = wifi.apSsid || 'MSA-Setup';
+    applyWifiMode();
+    setOnline(true);
   } catch (error) {
-    setStatus(error.message, true);
+    setOnline(false);
   }
 }
 
-function setStatus(message, isError) {
-  const el = byId('form-status');
-  el.textContent = message;
-  el.style.color = isError ? '#ffb3b3' : '#9fe3b2';
+async function fetchSystemInfo() {
+  try {
+    const info = await API.get('/api/system/info');
+    $('cfg-system-info').textContent = JSON.stringify(info, null, 2);
+    $('value-heap').textContent = (info.heap / 1024).toFixed(1) + ' KB';
+    $('value-display').textContent = info.display ? (info.displayAddr || 'ok') : 'ausente';
+    setOnline(true);
+  } catch (error) {
+    setOnline(false);
+  }
 }
 
-document.querySelectorAll('.tab').forEach((tab) => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach((t) => {
-      t.classList.remove('active');
-      t.setAttribute('aria-selected', 'false');
+async function saveLimits() {
+  try {
+    await API.post('/api/config', {
+      readIntervalMs: Number($('cfg-interval').value),
+      hotC: Number($('cfg-hot').value),
+      coldC: Number($('cfg-cold').value),
+      dryHumidityPct: Number($('cfg-dry').value),
+      rainHumidityPct: Number($('cfg-rain').value)
     });
-    document.querySelectorAll('.panel').forEach((p) => p.classList.remove('active'));
-    tab.classList.add('active');
-    tab.setAttribute('aria-selected', 'true');
-    byId('panel-' + tab.dataset.tab).classList.add('active');
-    if (tab.dataset.tab === 'config') {
-      loadConfig();
-      loadWifi();
-    }
-  });
-});
-
-byId('form-config').addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const payload = {
-    readIntervalMs: Number(byId('cfg-interval').value),
-    hotC: Number(byId('cfg-hot').value),
-    coldC: Number(byId('cfg-cold').value),
-    dryHumidityPct: Number(byId('cfg-dry').value),
-    rainHumidityPct: Number(byId('cfg-rain').value)
-  };
-  try {
-    await API.post('/api/config', payload);
-    setStatus('Configuração salva.', false);
+    setStatus('Limites salvos.', false);
     loadConfig();
+    setOnline(true);
   } catch (error) {
-    setStatus('Erro ao salvar: ' + error.message, true);
+    setStatus('Erro ao salvar limites: ' + error.message, true);
+    setOnline(false);
   }
-});
+}
 
-byId('form-wifi').addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const payload = {
-    mode: byId('wifi-mode').value,
-    ssid: byId('wifi-ssid').value.trim(),
-    pass: byId('wifi-pass').value
-  };
+async function saveWifi() {
   try {
+    const mode = $('cfg-wifi-mode').value;
+    const payload = mode === 'sta'
+      ? { mode, ssid: $('cfg-wifi-ssid').value.trim(), pass: $('cfg-wifi-pass').value }
+      : { mode, ssid: $('cfg-ap-ssid').value.trim(), pass: $('cfg-ap-pass').value };
     await API.post('/api/wifi', payload);
-    setStatus('Wi-Fi salvo. O dispositivo vai reiniciar.', false);
+    setStatus('Wi-Fi salvo. Reiniciando...', false);
+    setOnline(true);
   } catch (error) {
     setStatus('Erro ao salvar Wi-Fi: ' + error.message, true);
+    setOnline(false);
   }
-});
+}
 
-byId('btn-restart').addEventListener('click', async () => {
-  if (!confirm('Reiniciar o MSA?')) return;
+async function restart() {
   try {
     await API.post('/api/system/restart', {});
     setStatus('Reiniciando...', false);
   } catch (error) {
     setStatus('Erro ao reiniciar: ' + error.message, true);
   }
-});
+}
 
-refreshSensors();
-loadConfig();
-setInterval(refreshSensors, 2000);
+function init() {
+  initTabs();
+  initWifiMode();
+  initFullscreen();
+  initPwa();
+
+  $('cfg-save-limits').addEventListener('click', saveLimits);
+  $('cfg-save-wifi').addEventListener('click', saveWifi);
+  $('cfg-sys-info').addEventListener('click', fetchSystemInfo);
+  $('cfg-restart').addEventListener('click', restart);
+
+  fetchSensors();
+  loadConfig();
+  loadWifi();
+  fetchSystemInfo();
+  setInterval(fetchSensors, 2000);
+}
+
+init();
 
 )rawliteral";
 static const char* manifest_json = R"rawliteral(
@@ -433,6 +644,7 @@ static const char* manifest_json = R"rawliteral(
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#0b1120",
   "theme_color": "#0b1120",
   "icons": [
@@ -453,8 +665,11 @@ static const char* favicon_svg = R"rawliteral(
 
 )rawliteral";
 static const char* sw_js = R"rawliteral(
-const CACHE = 'msa-v1';
-const ASSETS = ['/', '/style.css', '/app.js', '/manifest.json', '/favicon.svg'];
+const CACHE = 'msa-v2';
+const ASSETS = [
+  '/', '/style.css', '/app.js', '/manifest.json',
+  '/favicon.svg', '/favicon.png', '/icon-192.png', '/icon-512.png'
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting()));

@@ -2,38 +2,48 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0b1120">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MSA">
   <link rel="manifest" href="/manifest.json">
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
-  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
   <title>MSA — Sensores Ambientais</title>
-  <link rel="stylesheet" href="/style.css?v=1">
+  <link rel="stylesheet" href="/style.css?v=2">
 </head>
 <body>
   <div class="app">
+    <div class="ticker" id="ticker">
+      <span class="ticker-label">Ambiente:</span>
+      <span class="ticker-text" id="ticker-text">Iniciando leituras...</span>
+    </div>
+
     <header class="app-header">
-      <div class="logo" aria-hidden="true">&#127777;</div>
+      <div class="logo">MSA</div>
       <div class="header-center">
-        <h1 class="app-title">MSA</h1>
-        <div class="subtitle">Módulo de Sensores Ambientais</div>
+        <h1 class="app-title">Sensores Ambientais</h1>
+        <div class="header-alerts" id="header-alerts"><span class="alert-chip ok">Sem avisos</span></div>
       </div>
       <div class="header-actions">
-        <span id="badge-conn" class="badge offline">Desconectado</span>
-        <span id="badge-uptime" class="badge">--</span>
+        <div id="badge-conn" class="badge offline">Desconectado</div>
+        <label class="switch fullscreen-switch">
+          <input type="checkbox" id="fs-toggle">
+          <span class="slider-round"></span>
+        </label>
+        <span class="fs-hint">Tela cheia</span>
       </div>
     </header>
 
     <nav class="tabs" role="tablist">
-      <button class="tab active" role="tab" aria-selected="true" data-tab="painel">Painel</button>
+      <button class="tab active" role="tab" aria-selected="true" data-tab="home">Painel</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="config">Config</button>
     </nav>
 
-    <main class="content">
-      <section class="panel active" id="panel-painel">
+    <section class="panel panel-home active" id="panel-home">
+      <div class="home-wrap">
         <div class="metrics">
           <article class="card metric">
             <div class="card-title">Temperatura <span class="sensor-tag" id="tag-aht">AHT20</span></div>
@@ -43,7 +53,7 @@
           <article class="card metric">
             <div class="card-title">Umidade relativa <span class="sensor-tag" id="tag-aht-hum">AHT20</span></div>
             <div class="metric-value"><span id="value-hum">--</span><small>%</small></div>
-            <div class="metric-foot">Conforto: 40–60%</div>
+            <div class="metric-foot">Faixa de conforto: 40–60%</div>
           </article>
           <article class="card metric">
             <div class="card-title">Pressão <span class="sensor-tag" id="tag-bmp">BMP280</span></div>
@@ -52,68 +62,75 @@
           </article>
         </div>
 
-        <article class="card">
-          <div class="card-title">Avisos ambientais</div>
-          <div class="alerts" id="alerts"><span class="chip ok">Sem avisos</span></div>
-        </article>
-
-        <div class="secondary">
+        <div class="home-bottom">
           <article class="card">
             <div class="card-title">Tendência barométrica</div>
-            <div class="trend-row"><span>30 min</span><strong id="value-trend30m">--</strong></div>
-            <div class="trend-row"><span>3 h</span><strong id="value-trend3h">--</strong></div>
-            <div class="trend-row"><span>Temp. 1 min</span><strong id="value-temprise">--</strong></div>
-            <div class="trend-note" id="trend-note">Coletando histórico de pressão...</div>
+            <div class="data-row"><span>30 min</span><strong id="value-trend30m">--</strong></div>
+            <div class="data-row"><span>3 h</span><strong id="value-trend3h">--</strong></div>
+            <div class="data-row"><span>Temp. 1 min</span><strong id="value-temprise">--</strong></div>
+            <div class="data-note" id="trend-note">Coletando histórico de pressão...</div>
           </article>
           <article class="card">
-            <div class="card-title">Estado do sistema</div>
-            <div class="trend-row"><span>Amostra</span><strong id="value-interval">--</strong></div>
-            <div class="trend-row"><span>Heap livre</span><strong id="value-heap">--</strong></div>
-            <div class="trend-row"><span>Uptime</span><strong id="value-uptime">--</strong></div>
-            <div class="trend-row"><span>mDNS</span><strong>http://msa.local</strong></div>
+            <div class="card-title">Sistema</div>
+            <div class="data-row"><span>Amostra</span><strong id="value-interval">--</strong></div>
+            <div class="data-row"><span>Heap livre</span><strong id="value-heap">--</strong></div>
+            <div class="data-row"><span>Uptime</span><strong id="value-uptime">--</strong></div>
+            <div class="data-row"><span>OLED</span><strong id="value-display">--</strong></div>
+            <div class="data-note">http://msa.local</div>
           </article>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="panel" id="panel-config">
-        <article class="card form-card">
+    <section class="panel panel-config hidden" id="panel-config">
+      <div class="config-wrap">
+        <div class="card wifi-card">
+          <div class="card-title">Wi-Fi</div>
+          <div class="config-row">
+            <label>Modo</label>
+            <select id="cfg-wifi-mode" class="cfg-select">
+              <option value="ap">Access Point (configuração)</option>
+              <option value="sta">Cliente (conectar à rede)</option>
+            </select>
+          </div>
+          <div class="config-row" id="cfg-wifi-sta-row" style="display:none;">
+            <label>SSID</label><input type="text" id="cfg-wifi-ssid" class="cfg-input" placeholder="Nome da rede" autocomplete="off">
+          </div>
+          <div class="config-row" id="cfg-wifi-pass-row" style="display:none;">
+            <label>Senha</label><input type="password" id="cfg-wifi-pass" class="cfg-input" placeholder="Senha Wi-Fi" autocomplete="new-password">
+          </div>
+          <div class="config-row" id="cfg-wifi-ap-row">
+            <label>SSID AP</label><input type="text" id="cfg-ap-ssid" class="cfg-input" value="MSA-Setup">
+          </div>
+          <div class="config-row" id="cfg-wifi-ap-pass-row">
+            <label>Senha AP</label><input type="password" id="cfg-ap-pass" class="cfg-input" value="msa1234">
+          </div>
+          <button type="button" class="btn btn-outline btn-block" id="cfg-save-wifi">Salvar Wi-Fi</button>
+        </div>
+
+        <div class="card limits-card">
           <div class="card-title">Leitura e limites</div>
-          <form id="form-config">
-            <label>Intervalo de leitura (ms)
-              <input type="number" id="cfg-interval" min="500" max="60000" step="500" required>
-            </label>
-            <div class="form-grid">
-              <label>Alerta de calor (°C)<input type="number" id="cfg-hot" step="0.5" required></label>
-              <label>Alerta de frio (°C)<input type="number" id="cfg-cold" step="0.5" required></label>
-              <label>Ar seco (% UR)<input type="number" id="cfg-dry" step="1" required></label>
-              <label>Chuva (% UR)<input type="number" id="cfg-rain" step="1" required></label>
-            </div>
-            <button type="submit" class="btn primary">Salvar configuração</button>
-          </form>
-        </article>
+          <div class="config-row"><label>Intervalo (ms)</label><input type="number" id="cfg-interval" class="cfg-input" min="500" max="60000" step="500"></div>
+          <div class="config-row"><label>Alerta calor (°C)</label><input type="number" id="cfg-hot" class="cfg-input" step="0.5"></div>
+          <div class="config-row"><label>Alerta frio (°C)</label><input type="number" id="cfg-cold" class="cfg-input" step="0.5"></div>
+          <div class="config-row"><label>Ar seco (% UR)</label><input type="number" id="cfg-dry" class="cfg-input" step="1"></div>
+          <div class="config-row"><label>Chuva (% UR)</label><input type="number" id="cfg-rain" class="cfg-input" step="1"></div>
+          <button type="button" class="btn btn-outline btn-block" id="cfg-save-limits">Salvar limites</button>
+        </div>
 
-        <article class="card form-card">
-          <div class="card-title">Rede Wi-Fi</div>
-          <form id="form-wifi">
-            <label>Modo
-              <select id="wifi-mode">
-                <option value="ap">Access Point (MSA-Setup)</option>
-                <option value="sta">Conectar à rede (STA)</option>
-              </select>
-            </label>
-            <div class="form-grid">
-              <label>SSID<input type="text" id="wifi-ssid" autocomplete="off"></label>
-              <label>Senha<input type="password" id="wifi-pass" autocomplete="new-password"></label>
-            </div>
-            <button type="submit" class="btn primary">Salvar Wi-Fi e reiniciar</button>
-          </form>
-          <button type="button" class="btn danger" id="btn-restart">Reiniciar dispositivo</button>
-        </article>
-
-        <div class="status" id="form-status" role="status"></div>
-      </section>
-    </main>
+        <div class="card sys-card">
+          <div class="card-title">Sistema</div>
+          <button type="button" class="btn btn-outline btn-block" id="cfg-sys-info">Ler status do sistema</button>
+          <div id="cfg-system-info" class="sys-info"></div>
+          <div class="config-row" style="margin-top:12px;">
+            <button type="button" class="btn btn-outline btn-block" id="cfg-restart">Reiniciar MSA</button>
+          </div>
+          <div id="cfg-status" class="cfg-status" role="status"></div>
+        </div>
+      </div>
+    </section>
   </div>
-  <script src="/app.js"></script>
+
+  <script src="/app.js?v=2"></script>
 </body>
 </html>

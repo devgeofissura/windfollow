@@ -8,13 +8,12 @@
 #include "DashboardService.h"
 #include "SensorService.h"
 #include "EnvironmentAdvisor.h"
-
-static const char* AP_SSID = "MSA-Setup";
-static const char* AP_PASS = "msa1234";
+#include "DisplayService.h"
 
 ConfigManager configMgr;
 SensorService sensorService;
 EnvironmentAdvisor envAdvisor;
+DisplayService display;
 DashboardService dashboard;
 
 MsaConfig cfg;
@@ -72,7 +71,7 @@ void setup() {
   esp_reset_reason_t reason = esp_reset_reason();
   printResetReason(reason);
   Serial.println("=== MSA - Modulo de Sensores Ambientais ===");
-  Serial.println("I2C: SDA=21 SCL=22  AHT20=0x38  BMP280=0x76/0x77");
+  Serial.println("I2C: SDA=21 SCL=22  AHT20=0x38  BMP280=0x76/0x77  OLED=0x3C/0x3D");
   Serial.println();
 
   if (configMgr.begin()) {
@@ -90,7 +89,10 @@ void setup() {
   String wifiMode = wifiPrefs.getString("mode", "ap");
   String wifiSsid = wifiPrefs.getString("ssid", "");
   String wifiPass = wifiPrefs.getString("pass", "");
+  String apSsid = wifiPrefs.getString("apSsid", MSA_AP_SSID);
+  String apPass = wifiPrefs.getString("apPass", MSA_AP_PASS);
   wifiPrefs.end();
+  if (apSsid.length() == 0) apSsid = MSA_AP_SSID;
 
   bool staOk = false;
   if (wifiMode == "sta" && wifiSsid.length() > 0) {
@@ -113,8 +115,8 @@ void setup() {
 
   if (!staOk) {
     WiFi.mode(WIFI_AP);
-    WiFi.softAP(AP_SSID, AP_PASS);
-    Serial.print("AP SSID: "); Serial.println(AP_SSID);
+    WiFi.softAP(apSsid.c_str(), apPass.c_str());
+    Serial.print("AP SSID: "); Serial.println(apSsid);
     Serial.print("AP IP: "); Serial.println(WiFi.softAPIP());
   }
 
@@ -133,7 +135,11 @@ void setup() {
 
   envAdvisor.begin(&sensorService, &cfg);
 
-  if (!dashboard.begin(&configMgr, &sensorService, &envAdvisor, &cfg)) {
+  if (!display.begin(&sensorService, &envAdvisor, &cfg)) {
+    Serial.println("Display OLED nao inicializado");
+  }
+
+  if (!dashboard.begin(&configMgr, &sensorService, &envAdvisor, &cfg, &display)) {
     Serial.println("Falha ao iniciar DashboardService!");
   } else {
     Serial.println("DashboardService ativo na porta 80");
@@ -151,6 +157,7 @@ void loop() {
   dashboard.loop();
   sensorService.update();
   envAdvisor.update();
+  display.update();
 
   if (Serial.available()) {
     char cmd = Serial.read();
@@ -172,6 +179,14 @@ void loop() {
           Serial.print(found[i], HEX);
         }
         Serial.println();
+        Serial.print("OLED: ");
+        if (display.available()) {
+          Serial.print("ok em 0x");
+          if (display.address() < 16) Serial.print('0');
+          Serial.println(display.address(), HEX);
+        } else {
+          Serial.println("ausente");
+        }
         break;
       }
       case 'r':

@@ -5,6 +5,7 @@
 #include "ConfigManager.h"
 #include "SensorService.h"
 #include "EnvironmentAdvisor.h"
+#include "DisplayService.h"
 #include <WebServer.h>
 #include <ArduinoJson.h>
 
@@ -13,7 +14,8 @@ public:
   DashboardService();
 
   bool begin(ConfigManager* configMgr, SensorService* sensors,
-             EnvironmentAdvisor* envAdvisor, MsaConfig* config);
+             EnvironmentAdvisor* envAdvisor, MsaConfig* config,
+             DisplayService* display);
   void loop();
 
 private:
@@ -21,6 +23,7 @@ private:
   ConfigManager* _configMgr = nullptr;
   SensorService* _sensors = nullptr;
   EnvironmentAdvisor* _envAdvisor = nullptr;
+  DisplayService* _display = nullptr;
   MsaConfig* _config = nullptr;
 
   void setupRoutes();

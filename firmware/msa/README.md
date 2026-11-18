@@ -1,7 +1,8 @@
 # MSA — Módulo de Sensores Ambientais
 
 Firmware ESP32 para monitoramento de temperatura, umidade e pressão atmosférica,
-com dashboard embarcado, API REST, alertas e configuração persistida em NVS.
+com leitura no OLED onboard, dashboard responsivo embarcado, API REST, alertas e
+configuração persistida em NVS.
 A estrutura segue o mesmo padrão do firmware `irobot`: `*.ino` com setup/loop,
 serviços em arquivos separados, `WebAssets.h` gerado a partir de `web/` e
 detecção de porta COM por `tools/flash.ps1`.
@@ -10,23 +11,34 @@ detecção de porta COM por `tools/flash.ps1`.
 
 | Item | Especificação |
 |---|---|
-| Placa | ESP32 DevKit clássico, 4 MB de flash |
+| Placa | ESP32 clássico, 4 MB de flash; testado em LILYGO `ESP32 OLED V3.0` / `G511` |
+| Display | OLED 0,96" 128×64 SSD1306, I2C `0x3C` ou `0x3D` |
 | Sensor de temperatura/umidade | AHT20, endereço I2C `0x38` |
 | Sensor de pressão | BMP280, endereço I2C `0x76` ou `0x77` |
-| Barramento | I2C, `SDA = GPIO21`, `SCL = GPIO22`, 100 kHz |
-| Alimentação dos sensores | 3,3 V e GND comum com o ESP32 |
+| Barramento | I2C, `SDA = GPIO21` (`D1` na G511), `SCL = GPIO22` (`D0` na G511), 100 kHz |
+| Alimentação | 3,3 V e GND comum com o ESP32 |
 
-Ligação:
+Ligação na LILYGO `ESP32 OLED V3.0` / `G511`:
 
 ```text
-ESP32 3V3  -> VIN dos módulos AHT20 e BMP280
-ESP32 GND  -> GND dos módulos
-ESP32 GPIO21 (SDA) -> SDA dos módulos
-ESP32 GPIO22 (SCL) -> SCL dos módulos
+Sensor VIN -> ESP32 3V3
+Sensor GND -> ESP32 GND
+Sensor SDA -> GPIO21 (D1)
+Sensor SCL -> GPIO22 (D0)
 ```
+
+O OLED já está no barramento I2C da placa; o firmware detecta automaticamente
+`0x3C` ou `0x3D` e não exibe nada se o display não responder.
 
 Não alimentar os módulos com 5 V: os pinos I2C do ESP32 não toleram 5 V.
 Módulos que já trazem resistores pull-up não precisam de resistores externos.
+
+## Display OLED
+
+O `DisplayService` atualiza a tela a cada 1 s com temperatura, umidade, pressão,
+estado dos sensores e aviso prioritário. A prioridade dos avisos no OLED é:
+incêndio, chuva provável, calor, frio, ar seco; quando não há avisos, exibe
+`SEM AVISOS`. O cabeçalho mostra `AP` ou `STA` conforme o modo Wi-Fi atual.
 
 ## Leituras e alertas
 
@@ -50,9 +62,10 @@ pressão guarda 180 amostras (1/min) e o de temperatura 12 amostras (1/5 s).
 
 ## Rede
 
-- AP padrão: `MSA-Setup` / `msa1234` — IP `192.168.4.1`.
+- AP padrão: `MSA-Setup` / `msa1234` — IP `192.168.4.1`; SSID e senha do AP
+  podem ser alterados na aba Config, como no firmware `irobot`.
 - STA: configure SSID/senha em `/api/wifi` ou na aba Config do dashboard;
-  se a conexão falhar, o firmware volta para AP.
+  se a conexão falhar, o firmware volta para AP. Após salvar, o ESP32 reinicia.
 - mDNS: `http://msa.local` quando o roteador suporta mDNS.
 
 ## API REST
@@ -61,8 +74,8 @@ pressão guarda 180 amostras (1/min) e o de temperatura 12 amostras (1/5 s).
 |---|---|---|
 | `/api/sensors` | GET | leituras, estado dos sensores, avisos e tendências |
 | `/api/config` | GET/POST | intervalo de leitura e limites de alerta |
-| `/api/system/info` | GET | uptime, heap e clientes Wi-Fi |
-| `/api/wifi` | GET/POST | modo, SSID e senha salvos |
+| `/api/system/info` | GET | uptime, heap, clientes Wi-Fi, modo Wi-Fi e estado do OLED |
+| `/api/wifi` | GET/POST | modo, SSID/senha STA ou SSID/senha do AP salvos |
 | `/api/system/restart` | POST | reinicia o ESP32 |
 
 Exemplo de resposta de `/api/sensors`:
@@ -145,6 +158,7 @@ powershell -ExecutionPolicy Bypass -File tools/generate_web_assets.ps1
 | `ConfigManager.*` | persistência NVS da configuração |
 | `SensorService.*` | leitura e validação de AHT20 + BMP280 |
 | `EnvironmentAdvisor.*` | histórico, tendências e avisos |
+| `DisplayService.*` | OLED SSD1306, detecção de endereço e renderização |
 | `DashboardService.*` | servidor web, rotas REST e assets |
 | `WebAssets.h` | gerado a partir de `web/` |
 | `web/` | HTML, CSS, JS, manifesto e ícones da interface |

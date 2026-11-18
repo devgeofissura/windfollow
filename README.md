@@ -24,7 +24,7 @@
 | 🎥 **WindFollow** | LILYGO T-SIMCAM ESP32-S3 | Câmera seguidora por movimento (PAN com motorredutor) | `firmware/windfollow/` |
 | 🪟 **WindFollowBlind** | ESP32 DevKit (clássico) | Controle de 2 motores de cortina com 2 botões | `firmware/windfollowblind/` |
 | 🤖 **iRobot** | ESP32 DevKit (clássico) | Robô diferencial 2 rodas + caster, sensores e navegação autônoma | `firmware/irobot/` |
-| 🌡️ **MSA** | ESP32 DevKit (clássico) | Módulo de sensores ambientais AHT20 + BMP280 com dashboard e alertas | `firmware/msa/` |
+| 🌡️ **MSA** | ESP32 DevKit (clássico) | Módulo de sensores ambientais AHT20 + BMP280 com OLED, dashboard responsivo e alertas | `firmware/msa/` |
 
 Cada firmware inclui:
 
@@ -174,6 +174,7 @@ Robô diferencial com **2 rodas motrizes + 1 caster**, sensores ambientais e **n
 | I2C SDA / SCL | 21 / 22 (100 kHz) |
 | AHT20 (temp/umidade) | `0x38` |
 | BMP280 (pressão) | `0x76` ou `0x77` |
+| OLED SSD1306 128×64 (MSA / LILYGO G511) | `0x3C` ou `0x3D` |
 | VL53L0X (distância ToF) | `0x29` |
 | Placa | ESP32 DevKit clássico, 4 MB Flash |
 | FQBN | `esp32:esp32:esp32` |

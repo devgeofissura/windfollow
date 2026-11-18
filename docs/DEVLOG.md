@@ -11,6 +11,38 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-18 15:28 - feat(msa): adiciona OLED e interface responsiva
+
+**Area:** msa, raiz
+
+**Feito:**
+- DisplayService SSD1306 com deteccao automatica 0x3C/0x3D e leituras/avisos no OLED
+- Interface web reescrita no padrao irobot com PWA, tela cheia, ticker e layout responsivo
+- Configuracao Wi-Fi igual irobot com AP personalizavel, STA e reinicio ao salvar
+- Compilacao, gravacao em COM12 e serial validando AHT20 0x38, BMP280 0x77 e OLED 0x3C
+
+**Dificuldades e solucoes:**
+- Adafruit SSD1306 nao estava instalada e o display podia responder em 0x3C ou 0x3D -> instalei a lib 2.5.17 e fiz scan I2C antes do begin com periphBegin=false para nao reiniciar o Wire
+- AP do irobot so salvava SSID/senha sem aplicar -> persisti apSsid/apPass no NVS e carrego no boot antes do softAP
+- Relatorio de exploracao veio truncado -> revisei diretamente web/js/app.js, index.html e style.css do irobot para replicar a tecnologia
+
+**Arquivos:**
+- `AGENTS.md`
+- `README.md`
+- `firmware/msa/DashboardService.cpp`
+- `firmware/msa/DashboardService.h`
+- `firmware/msa/HardwareConfig.h`
+- `firmware/msa/README.md`
+- `firmware/msa/WebAssets.h`
+- `firmware/msa/msa.ino`
+- `firmware/msa/web/css/style.css`
+- `firmware/msa/web/index.html`
+- `firmware/msa/web/js/app.js`
+- `firmware/msa/web/manifest.json`
+- `firmware/msa/web/sw.js`
+- `firmware/msa/DisplayService.cpp`
+- `firmware/msa/DisplayService.h`
+
 ### 2026-11-18 14:31 - feat(msa): cria firmware de sensores ambientais
 
 **Area:** msa, raiz, tooling

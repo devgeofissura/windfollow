@@ -4,6 +4,8 @@
 #include <Arduino.h>
 
 static const char* MSA_DEVICE_NAME = "MSA";
+static const char* MSA_AP_SSID     = "MSA-Setup";
+static const char* MSA_AP_PASS     = "msa1234";
 
 static const int8_t   I2C_SDA = 21;
 static const int8_t   I2C_SCL = 22;
@@ -12,6 +14,11 @@ static const uint32_t I2C_FREQ = 100000;
 static const uint8_t AHT20_I2C_ADDR      = 0x38;
 static const uint8_t BMP280_I2C_ADDR_A   = 0x76;
 static const uint8_t BMP280_I2C_ADDR_B   = 0x77;
+static const uint8_t OLED_I2C_ADDR_A     = 0x3C;
+static const uint8_t OLED_I2C_ADDR_B     = 0x3D;
+
+static const uint16_t OLED_WIDTH  = 128;
+static const uint16_t OLED_HEIGHT = 64;
 
 static const uint16_t SENSOR_INTERVAL_DEFAULT_MS = 2000;
 static const uint16_t SENSOR_INTERVAL_MIN_MS     = 500;

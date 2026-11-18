@@ -6,11 +6,13 @@
 DashboardService::DashboardService() {}
 
 bool DashboardService::begin(ConfigManager* configMgr, SensorService* sensors,
-                             EnvironmentAdvisor* envAdvisor, MsaConfig* config) {
+                             EnvironmentAdvisor* envAdvisor, MsaConfig* config,
+                             DisplayService* display) {
   _configMgr = configMgr;
   _sensors = sensors;
   _envAdvisor = envAdvisor;
   _config = config;
+  _display = display;
 
   _server = new WebServer(80);
   setupRoutes();
@@ -105,13 +107,18 @@ void DashboardService::handleWifiGet() {
   Preferences prefs;
   prefs.begin("msa-wifi", true);
   String mode = prefs.getString("mode", "ap");
-  String ssid = prefs.getString("ssid", "");
+  String staSsid = prefs.getString("ssid", "");
+  String apSsid = prefs.getString("apSsid", MSA_AP_SSID);
   prefs.end();
 
-  DynamicJsonDocument doc(256);
+  if (apSsid.length() == 0) apSsid = MSA_AP_SSID;
+
+  DynamicJsonDocument doc(384);
   doc["mode"] = mode;
-  doc["ssid"] = ssid;
-  doc["configured"] = ssid.length() > 0;
+  doc["ssid"] = mode == "sta" ? staSsid : apSsid;
+  doc["staSsid"] = staSsid;
+  doc["apSsid"] = apSsid;
+  doc["configured"] = staSsid.length() > 0 || apSsid.length() > 0;
   String json;
   serializeJson(doc, json);
   sendWithCors(200, "application/json", json);
@@ -119,7 +126,7 @@ void DashboardService::handleWifiGet() {
 
 void DashboardService::handleWifiPost() {
   String body = _server->arg("plain");
-  DynamicJsonDocument doc(256);
+  DynamicJsonDocument doc(384);
   if (deserializeJson(doc, body)) {
     sendWithCors(400, "application/json", "{\"error\":\"json invalido\"}");
     return;
@@ -132,7 +139,7 @@ void DashboardService::handleWifiPost() {
     sendWithCors(400, "application/json", "{\"error\":\"modo invalido\"}");
     return;
   }
-  if (mode == "sta" && ssid.length() == 0) {
+  if (ssid.length() == 0) {
     sendWithCors(400, "application/json", "{\"error\":\"ssid obrigatorio\"}");
     return;
   }
@@ -140,11 +147,18 @@ void DashboardService::handleWifiPost() {
   Preferences prefs;
   prefs.begin("msa-wifi", false);
   prefs.putString("mode", mode);
-  prefs.putString("ssid", ssid);
-  prefs.putString("pass", pass);
+  if (mode == "sta") {
+    prefs.putString("ssid", ssid);
+    prefs.putString("pass", pass);
+  } else {
+    prefs.putString("apSsid", ssid);
+    prefs.putString("apPass", pass);
+  }
   prefs.end();
 
   sendWithCors(200, "application/json", "{\"ok\":true,\"restart\":true}");
+  delay(200);
+  ESP.restart();
 }
 
 void DashboardService::handleSystemRestart() {
@@ -244,11 +258,18 @@ void DashboardService::handleConfigPost() {
 }
 
 void DashboardService::handleSystemInfo() {
-  DynamicJsonDocument doc(256);
+  DynamicJsonDocument doc(384);
   doc["uptime"] = millis();
   doc["heap"] = ESP.getFreeHeap();
   doc["minHeap"] = ESP.getMinFreeHeap();
   doc["wifiClients"] = WiFi.getMode() == WIFI_AP ? WiFi.softAPgetStationNum() : 0;
+  doc["wifiMode"] = WiFi.getMode() == WIFI_AP ? "ap" : "sta";
+  doc["display"] = _display && _display->available();
+  if (_display && _display->available()) {
+    char addr[8];
+    snprintf(addr, sizeof(addr), "0x%02X", _display->address());
+    doc["displayAddr"] = addr;
+  }
   String json;
   serializeJson(doc, json);
   sendWithCors(200, "application/json", json);
