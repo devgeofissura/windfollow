@@ -1,174 +1,303 @@
-# WindFollow
+# 🤖 WindFollow — Suíte de Robótica ESP32
 
-Câmera seguidora por movimento para LILYGO T-SIMCAM ESP32-S3 + L298N + motorredutor CC.
+[![GitHub](https://img.shields.io/badge/GitHub-devtiagoabreu%2Fwindfollow-blue?logo=github)](https://github.com/devtiagoabreu/windfollow)
+[![Platform](https://img.shields.io/badge/Platform-ESP32%20%7C%20ESP32--S3-orange?logo=espressif)](https://www.espressif.com/)
+[![Framework](https://img.shields.io/badge/Framework-Arduino-green?logo=arduino)](https://www.arduino.cc/)
+[![Language](https://img.shields.io/badge/Language-C%2B%2B%20%7C%20HTML%20%7C%20CSS%20%7C%20JS-blue)](https://github.com/devtiagoabreu/windfollow)
 
-Baseado na documentação em `docs/`:
-- `hardware.md` — L298N, T-SIMCAM V1.3, motorredutor
-- `ideias_projeto_01.md` — estudo de viabilidade (detecção de movimento, PAN, zona morta)
-- `ideias_projeto_02.md` — especificação consolidada (SmartCam OS como base, 7 fases)
+> **Repositório de firmware e interfaces web para três projetos de robótica com ESP32:**
+> uma câmera seguidora de movimento, um controlador de cortinas e um robô móvel autônomo.
 
-## Hardware (do docs/hardware.md)
+---
 
-- Placa: LILYGO T-SIMCAM IR-CUT, PCB `S3_CAM_SIM V1.3`, 23/06/2022
-- MCU: ESP32-S3 dual-core LX7, 240 MHz, 16 MB Flash + 8 MB PSRAM
-- Câmera: OV5640 (confirmado no hardware, 320x240 no modo de rastreamento)
-- Driver: L298N (ponte H dupla, 2 A/canal)
-- Motor: motorredutor CC de veículo elétrico infantil (tensão/corrente a confirmar)
+## 👤 Autor
 
-## GPIOs da T-SIMCAM V1.3
+**Tiago de Abreu** — [@devtiagoabreu](https://github.com/devtiagoabreu)
 
-Câmera DVP: XCLK 14, SIOD 4, SIOC 5, D0 11, D1 9, D2 8, D3 10, D4 12, D5 17, D6 16,
-D7 15, VSYNC 6, HREF 7, PCLK 13, IR-CUT 18.  
-Microfone: 42, 41, 2. Cartão SD: 40, 38, 39, 47. UART do modem: 43, 44.  
-PCIE/modem: 48 (PCIE_PWR), 45 (TX), 46 (RX), LED 21. Power latch: 1. Botão: 0.
+---
 
-**Ligação padrão do L298N neste projeto (modem 4G desligado):**
+## 📋 Visão geral
+
+| Projeto | Placa | Finalidade | Pasta |
+|---|---|---|---|
+| 🎥 **WindFollow** | LILYGO T-SIMCAM ESP32-S3 | Câmera seguidora por movimento (PAN com motorredutor) | `firmware/windfollow/` |
+| 🪟 **WindFollowBlind** | ESP32 DevKit (clássico) | Controle de 2 motores de cortina com 2 botões | `firmware/windfollowblind/` |
+| 🤖 **iRobot** | ESP32 DevKit (clássico) | Robô diferencial 2 rodas + caster, sensores e navegação autônoma | `firmware/irobot/` |
+
+Cada firmware inclui:
+
+- 🌐 Interface web embarcada (HTML/CSS/JS embutidos no firmware via `WebAssets.h`)
+- 📡 Access Point + mDNS para configuração sem app externo
+- ⚙️ Configuração persistida em NVS (Preferences)
+- 🔌 API REST para controle e telemetria
+- 🧪 Simulador web para testar a interface sem hardware
+
+---
+
+## 📁 Estrutura do repositório
+
+```text
+windfollow/
+├── 📄 README.md                     # este arquivo
+├── 📁 docs/                         # documentação técnica e devlog
+│   ├── hardware.md
+│   ├── ideias_projeto_01.md
+│   ├── ideias_projeto_02.md
+│   ├── IROBOT_NAVEGACAO_E_SENSORES.md
+│   └── DEVLOG.md                    # histórico de desenvolvimento
+├── 📁 firmware/
+│   ├── 📁 windfollow/               # 🎥 câmera seguidora (ESP32-S3)
+│   ├── 📁 windfollowblind/          # 🪟 cortinas (ESP32 clássico)
+│   └── 📁 irobot/                   # 🤖 robô autônomo (ESP32 clássico)
+├── 📁 simulator/                    # 🧪 interfaces web para teste no PC
+├── 📁 tools/                        # 🛠️ scripts de flash e commit
+└── 📁 graphify-out/                 # 📊 grafo de conhecimento do código
+```
+
+---
+
+# 🎥 1. WindFollow — Câmera seguidora
+
+Câmera que detecta movimento e gira o suporte (PAN) para acompanhar o alvo, com zona morta e histórico de centroid.
+
+## 🧰 Hardware
+
+| Componente | Especificação |
+|---|---|
+| Placa | LILYGO T-SIMCAM IR-CUT, PCB `S3_CAM_SIM V1.3` (23/06/2022) |
+| MCU | ESP32-S3 dual-core LX7, 240 MHz, **16 MB Flash + 8 MB PSRAM** |
+| Câmera | OV5640 (320×240 no modo de rastreamento) |
+| Driver | L298N (ponte H dupla, 2 A/canal) |
+| Motor | Motorredutor CC de veículo elétrico infantil |
+
+## 🔌 GPIOs (T-SIMCAM V1.3)
 
 | Função | GPIO |
-|--------|------|
+|---|---|
+| Câmera DVP | XCLK 14, SIOD 4, SIOC 5, D0 11, D1 9, D2 8, D3 10, D4 12, D5 17, D6 16, D7 15, VSYNC 6, HREF 7, PCLK 13 |
+| IR-CUT | 18 |
+| Microfone | 42, 41, 2 |
+| Cartão SD | 40, 38, 39, 47 |
+| UART do modem | 43, 44 |
+| PCIE/modem | 48 (PCIE_PWR), 45 (TX), 46 (RX) |
+| LED | 21 |
+| Power latch | 1 |
+| Botão | 0 |
+
+**Ligação padrão do L298N (modem 4G desligado):**
+
+| Sinal | GPIO |
+|---|---|
 | IN1 | 45 |
 | IN2 | 46 |
 | ENA (PWM) | 21 |
 
-O firmware mantém GPIO48 em LOW no boot para desligar o modem e liberar 45/46.
-GPIO45/46 são strapping pins: o L298N não pode puxá-los para HIGH no boot.
-Pinos utilizáveis: 21, 45 e 46. O restante pertence à câmera, flash/PSRAM, SD,
-microfone, modem ou botão.
+> ⚠️ O firmware mantém GPIO48 em LOW no boot para desligar o modem e liberar 45/46.
+> GPIO45/46 são *strapping pins*: o L298N não pode puxá-los para HIGH no boot.
 
-## Rede e interface
+## 🌐 Rede
 
-- AP: `WindFollow-Setup` / senha `windfollow123`, IP `192.168.4.1`
-- mDNS: `http://windfollow.local`
-- Configuração salva em NVS (namespace `windfollow`)
-- Interface web embarcada com dashboard, câmera e rastreamento por movimento
+- 📶 AP: `WindFollow-Setup` / senha `windfollow123` — IP `192.168.4.1`
+- 🔖 mDNS: `http://windfollow.local`
+- 💾 NVS: namespace `windfollow`
 
-## Simulador (visualização no computador)
-
-Abra `simulator/index.html` no navegador para ver a interface web sem ESP32.
-Inclui fluxo de setup Wi-Fi, acesso via mDNS `windfollow.local` e detecção de movimento pela webcam.
-
-## Firmware (para ESP32 via Arduino IDE)
-
-Pasta `firmware/windfollow/`. Módulos:
+## 🧩 Módulos do firmware
 
 | Arquivo | Função |
-|---------|--------|
-| `HardwareConfig.h` | Struct de configuração (GPIOs, tensão, zona morta, etc.) |
-| `ConfigManager.h/.cpp` | Leitura/gravação em Preferences (NVS), migração e validação de GPIO |
-| `L298NDriver.h/.cpp` | Controle do L298N (esquerda/direita/parar/PWM) |
-| `MotionEngine.h/.cpp` | Gerenciamento de movimento com duração de pulso |
-| `MotionDetector.h/.cpp` | Detecção de diferença de quadros + centroide |
-| `CameraService.h/.cpp` | Câmera OV5640, captura JPEG, inicialização sob demanda |
+|---|---|
+| `HardwareConfig.h` | Struct de configuração (GPIOs, tensão, zona morta) |
+| `ConfigManager.h/.cpp` | Leitura/gravação em Preferences, migração e validação |
+| `L298NDriver.h/.cpp` | Controle do L298N |
+| `MotionEngine.h/.cpp` | Movimento com duração de pulso |
+| `MotionDetector.h/.cpp` | Detecção por diferença de quadros + centroide |
+| `CameraService.h/.cpp` | OV5640, captura JPEG, inicialização sob demanda |
 | `DashboardService.h/.cpp` | Servidor HTTP, API REST e assets embarcados |
-| `WebAssets.h` | HTML/CSS/JS gerados por `tools/generate_web_assets.ps1` |
-| `windfollow.ino` | Setup/loop, AP + mDNS, câmera, heartbeat e comandos seriais |
+| `WebAssets.h` | HTML/CSS/JS gerados |
+| `windfollow.ino` | Setup/loop, AP + mDNS, câmera, heartbeat |
 
-Compilação/gravação (ESP32-S3, 16 MB, PSRAM OPI, USB CDC). **A porta COM muda a
-cada replug do cabo**, então o script detecta a porta na hora e confere o chip:
+## ⌨️ Comandos seriais (115200)
 
-```text
-powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollow
-```
-
-Para só listar as portas e o chip de cada uma (sem compilar/gravar):
-
-```text
-powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollow -DetectOnly
-```
-
-Comandos pela serial (115200): `c` inicia a câmera, `i` mostra status, `p` captura, `r` reinicia.
-
-Antes de regenerar o firmware após editar `web/`, rode:
-
-```text
-powershell -ExecutionPolicy Bypass -File tools/generate_web_assets.ps1
-```
-
-## Dados pendentes antes de energizar
-
-- Tensão nominal, corrente e corrente de partida do motorredutor
-- Fonte de alimentação separada para o motor (GND comum)
-- Limites mecânicos / fins de curso
+`c` inicia a câmera · `i` status · `p` captura · `r` reinicia
 
 ---
 
-# WindFollowBlind (subprojeto — sem câmera)
+# 🪟 2. WindFollowBlind — Cortinas
 
-Pasta `firmware/windfollowblind/` e `simulator/windflollowblind/`.
+Controle de **2 motores DC via L298N** + **2 botões NA** em ESP32 DevKit, sem câmera. Cada botão alterna seu motor: parado → esquerda → parado → direita → parado → repete.
 
-Controle de **2 motores DC via L298N** + **2 botões NA** em um ESP32 DevKit (não usa a T-SIMCAM nem câmera). Cada botão alterna seu próprio motor entre: parado → esquerda (contínuo) → parado → direita (contínuo) → parado → repete. Mantém a mesma interface web (dashboard, configuração de GPIOs, Wi-Fi AP/mDNS) do WindFollow, removendo apenas a parte de câmera e rastreamento por movimento.
-
-## Hardware (do docs/documentacao_hardware_esp32_l298n.md)
+## 🔌 Hardware
 
 | Componente | GPIO | Função |
-|------------|------|--------|
-| Motor 1 IN1 | 26 | Sentido 1 do motor 1 |
-| Motor 1 IN2 | 25 | Sentido 2 do motor 1 |
+|---|---|---|
+| Motor 1 IN1 / IN2 | 26 / 25 | Sentido do motor 1 |
 | Motor 1 ENA | jumper | Habilitação (sem PWM) |
-| Motor 2 IN3 | 32 | Sentido 1 do motor 2 |
-| Motor 2 IN4 | 33 | Sentido 2 do motor 2 |
+| Motor 2 IN3 / IN4 | 32 / 33 | Sentido do motor 2 |
 | Motor 2 ENB | jumper | Habilitação (sem PWM) |
-| Botão 1 | 27 | Alterna sequencia do motor 1 |
-| Botão 2 | 14 | Alterna sequencia do motor 2 |
+| Botão 1 | 27 | Alterna sequência do motor 1 |
+| Botão 2 | 14 | Alterna sequência do motor 2 |
 
-## Comportamento por botão
-
-Os motores giram **continuamente** até receber um comando de parada. Cada toque no botão alterna o estado do motor correspondente.
+## 🔁 Comportamento por botão
 
 | Toque | Motor 1 | Motor 2 |
-|-------|---------|---------|
-| 1 | Gira para a esquerda (contínuo) | Gira para a esquerda (contínuo) |
-| 2 | Para | Para |
-| 3 | Gira para a direita (contínuo) | Gira para a direita (contínuo) |
-| 4 | Para | Para |
-| 5+ | Reinicia a sequência | Reinicia a sequência |
+|---|---|---|
+| 1 | Esquerda (contínuo) | Esquerda (contínuo) |
+| 2 | Parado | Parado |
+| 3 | Direita (contínuo) | Direita (contínuo) |
+| 4 | Parado | Parado |
+| 5+ | Reinicia sequência | Reinicia sequência |
 
-## Rede e interface
+## 🌐 Rede
 
-- AP: `WindFollowBlind-Setup` / senha `windfollow123`, IP `192.168.4.1`
-- mDNS: `http://windfollowblind.local` (captive portal: qualquer navegador conectado ao AP é redirecionado automaticamente para esta página)
-- Interface web embarcada (sem câmera): dashboard de motores, configuração de GPIOs, setup Wi-Fi
+- 📶 AP: `WindFollowBlind-Setup` / senha `windfollow123` — IP `192.168.4.1`
+- 🔖 mDNS: `http://windfollowblind.local` (captive portal)
+- 🌐 Dashboard web sem câmera, com setup Wi-Fi
 
-## Simulador
+## ⌨️ Comandos seriais (115200)
 
-Abra `simulator/windflollowblind/index.html` no navegador para simular os 2 motores e a interface sem ESP32.
-
-## Firmware (ESP32 DevKit via Arduino IDE)
-
-FQBN: `esp32:esp32:esp32`. A porta COM é detectada na hora (nunca fixa):
-
-```text
-powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollowblind
-```
-
-Antes de regenerar o firmware após editar `firmware/windfollowblind/web/`, rode:
-
-```text
-powershell -ExecutionPolicy Bypass -File tools/generate_web_assets.ps1 -WebDir "firmware/windfollowblind/web" -OutFile "firmware/windfollowblind/WebAssets.h"
-```
-
-Comandos pela serial (115200): `i` status, `r` reinicia, `1` motor1 esquerda, `2` motor1 direita, `3` motor2 esquerda, `4` motor2 direita, `0` parar tudo.
+`i` status · `r` reinicia · `1` motor1 esquerda · `2` motor1 direita · `3` motor2 esquerda · `4` motor2 direita · `0` parar tudo
 
 ---
 
-# iRobot (subprojeto — robô diferencial de 2 rodas + caster)
+# 🤖 3. iRobot — Robô autônomo
 
-Pasta `firmware/irobot/`. Mesmo ESP32 DevKit clássico do WindFollowBlind, sem botões
-e sem câmera: 2 motores DC (uma roda por motor) + roda caster livre na outra ponta.
+Robô diferencial com **2 rodas motrizes + 1 caster**, sensores ambientais e **navegação autônoma com reconhecimento de terreno**.
 
-| Sinal | GPIO |
+## 🧰 Hardware
+
+| Componente | GPIO / endereço |
 |---|---|
 | Motor esquerdo IN1 / IN2 / ENA (PWM) | 26 / 25 / 27 |
 | Motor direito IN3 / IN4 / ENB (PWM) | 32 / 33 / 14 |
+| I2C SDA / SCL | 21 / 22 (100 kHz) |
+| AHT20 (temp/umidade) | `0x38` |
+| BMP280 (pressão) | `0x76` ou `0x77` |
+| VL53L0X (distância ToF) | `0x29` |
+| Placa | ESP32 DevKit clássico, 4 MB Flash |
+| FQBN | `esp32:esp32:esp32` |
 
-- AP: `Irobot-Setup` / senha `irobot1234` — `http://irobot.local`
-- FQBN: `esp32:esp32:esp32`
-- Gravação: `powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch irobot`
-- Regenerar assets: `powershell -ExecutionPolicy Bypass -File firmware/irobot/tools/generate_web_assets.ps1` (executado dentro de `firmware/irobot`)
-- Comandos seriais (115200): `f` frente, `t` trás, `e` esquerda, `d` direita, `s` stop, `1`–`9` velocidade, `i` status, `r` reinicia, `a` autônomo ON/OFF, `m` ambiente + avisos
-- Sensores I2C (SDA 21 / SCL 22): AHT20 `0x38` (temp/umidade), BMP280 `0x76`/`0x77` (pressão), VL53L0X `0x29` (distância)
-- Modo autônomo: para a 50 cm, dá ré, gira em pivô até ter 1 m livre, detecta enroscado e desliga após 100 tentativas
-- Avisos: chuva provável (tendência de pressão), calor > 26 °C, frio < 17 °C, ar seco < 30 %, possível incêndio — visíveis no painel, `/teste`, serial e `/api/sensors`
-- Documentação completa: [`firmware/irobot/README.md`](firmware/irobot/README.md) e [`docs/IROBOT_NAVEGACAO_E_SENSORES.md`](docs/IROBOT_NAVEGACAO_E_SENSORES.md)
+## 🌐 Rede
 
+- 📶 AP: `Irobot-Setup` / senha `irobot1234`
+- 🔖 mDNS: `http://irobot.local`
+- 🔄 Modo Wi-Fi selecionável na aba Config: **AP (server)** ou **Cliente (client)** com SSID/senha
 
+## 🧭 Navegação autônoma
+
+O `AutoNavigator` é uma máquina de estados reativa baseada apenas no sensor ToF (sem encoder — heading estimado por tempo de giro):
+
+| Estado | Comportamento |
+|---|---|
+| 🔄 **Reconhecimento (SCAN)** | Varredura de **360°**: 6 passos de 60°, parando e medindo a cada passo. Leitura sem alvo registra `SCAN_MAX_MM` (8000 mm). |
+| 🎯 **Alinhamento (ALIGN_BEST)** | Gira até a direção com a maior distância medida. |
+| ⬆️ **Frente (FORWARD)** | Anda reto (PWM 140), para a 50 cm de obstáculo. |
+| ⬇️ **Ré (BACKUP)** | Recua 500 ms (800 ms a cada 3 obstáculos). |
+| 🔁 **Giro (TURN)** | Pivô no eixo até 1 m livre por 2 leituras. Troca de lado se não houver saída. |
+| ⏱️ **Medindo (SETTLE)** | Assenta 250 ms e confirma a clareza. |
+| 🛑 **Enroscado** | Após 100 tentativas sem avanço livre, desliga o autônomo e alerta. |
+
+## 🌡️ Avisos ambientais
+
+- 🌧️ Chuva provável (queda de pressão em 3 h)
+- 🔥 Possível incêndio (temperatura absoluta ou subida rápida)
+- 🔥 Calor > 26 °C / ❄️ Frio < 17 °C
+- 💧 Ar seco < 30 %
+
+## 🖥️ Interface web (3 abas)
+
+| Aba | Conteúdo |
+|---|---|
+| 🏠 **Home** | Tela inicial em paisagem: joystick à esquerda, botões Frente/Trás/Esquerda/Direita/Parar/Autônomo ao centro, badge **Conectado** superior direito, sensores e status do robô na parte inferior, letreiro de ambiente no topo e checkbox para tela cheia. |
+| 🎮 **DL** | Detalhe de locomoção: tela antiga mantida com joystick diferencial, comandos rápidos, sliders de velocidade e motores independentes, PWM, ambiente, avisos e telemetria. |
+| ⚙️ **Config** | Wi-Fi (AP/cliente), PWM e status do sistema. |
+
+- 📲 **PWA**: manifest + service worker + logo/favicon 🤖 para instalar como app
+- 📐 Layout responsivo que se molda ao tamanho da tela
+
+> ⚠️ **Nota PWA**: navegadores só oferecem "Instalar app" em **HTTPS ou localhost**.
+> No AP do ESP32 (`http://192.168.4.1`) o botão instalar pode não aparecer.
+
+## ⌨️ Comandos seriais (115200)
+
+`f` frente · `t` trás · `e` esquerda · `d` direita · `s` stop · `1`–`9` velocidade · `i` status · `r` reinicia · `a` autônomo ON/OFF · `m` ambiente + avisos
+
+## 📚 Documentação específica
+
+- [`firmware/irobot/README.md`](firmware/irobot/README.md)
+- [`docs/IROBOT_NAVEGACAO_E_SENSORES.md`](docs/IROBOT_NAVEGACAO_E_SENSORES.md)
+
+---
+
+# 🛠️ Ferramentas e fluxo de trabalho
+
+## 🔍 Detecção de placa (antes de qualquer gravação)
+
+A porta COM **muda a cada replug do cabo**. O script detecta a porta, o chip e a MAC, e bloqueia gravações incompatíveis:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch irobot -DetectOnly
+powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollowblind -DetectOnly
+powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollow -DetectOnly
+```
+
+## ⬆️ Compilar e gravar
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch irobot
+powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollowblind
+powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollow
+```
+
+## 🔄 Regenerar assets web
+
+```powershell
+# WindFollow (raiz)
+powershell -ExecutionPolicy Bypass -File tools/generate_web_assets.ps1
+
+# iRobot (dentro de firmware/irobot)
+powershell -ExecutionPolicy Bypass -File firmware/irobot/tools/generate_web_assets.ps1
+
+# WindFollowBlind
+powershell -ExecutionPolicy Bypass -File tools/generate_web_assets.ps1 -WebDir "firmware/windfollowblind/web" -OutFile "firmware/windfollowblind/WebAssets.h"
+```
+
+## 💾 Commit + push + devlog
+
+O script `tools/save.ps1` bloqueia segredos, insere uma entrada no `docs/DEVLOG.md`, commita e faz push:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/save.ps1 `
+  -Message "feat(projeto): resumo" `
+  -Summary "mudanca 1; mudanca 2" `
+  -Difficulty "dificuldade -> solucao"
+```
+
+---
+
+## 🧪 Simuladores
+
+Abra no navegador para testar as interfaces sem hardware:
+
+- `simulator/index.html` — 🎥 WindFollow
+- `simulator/windflollowblind/index.html` — 🪟 WindFollowBlind
+
+---
+
+## 📌 Dados pendentes
+
+- ⚡ Tensão nominal, corrente e corrente de partida do motorredutor do WindFollow
+- 🔋 Fonte de alimentação separada para o motor (GND comum)
+- 🛑 Limites mecânicos / fins de curso
+
+---
+
+## 📄 Licença
+
+Projeto pessoal de estudo e experimentação — [@devtiagoabreu](https://github.com/devtiagoabreu).
+
+---
+
+<div align="center">
+
+Feito com ❤️ e ☕ por **Tiago de Abreu** — [@devtiagoabreu](https://github.com/devtiagoabreu)
+
+</div>

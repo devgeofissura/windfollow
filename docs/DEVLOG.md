@@ -11,6 +11,22 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-17 21:12 - docs: README profissional com todos os projetos, hardware, API e fluxo de trabalho
+
+**Area:** raiz
+
+**Feito:**
+- README reescrito com badges, autor Tiago de Abreu @devtiagoabreu, visao geral dos 3 projetos
+- documentado hardware, GPIOs, rede, modulos, comandos seriais e navegacao autonoma do iRobot
+- adicionada secao de ferramentas flash/assets/save e simuladores
+- secao PWA com aviso HTTPS
+
+**Dificuldades e solucoes:**
+- nenhuma
+
+**Arquivos:**
+- `README.md`
+
 ### 2026-11-17 21:04 - feat(irobot): nova UI web com abas Home/DL/Config, PWA e letreiro de ambiente
 
 **Area:** irobot
