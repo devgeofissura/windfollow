@@ -1,632 +1,583 @@
+'use strict';
+
+// -------------------- API --------------------
 const API = {
   async _try(method, path, body) {
     const opts = { method };
-    if (body) {
+    if (body !== undefined) {
       opts.headers = { 'Content-Type': 'application/json' };
       opts.body = JSON.stringify(body);
     }
     const res = await fetch(path, opts);
-    if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + path);
     const ct = res.headers.get('content-type') || '';
-    return ct.includes('application/json') ? await res.json() : await res.text();
+    const data = ct.includes('application/json') ? await res.json() : await res.text();
+    if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + path);
+    return data;
   },
-
-  async post(path, body) { return this._try('POST', path, body); },
-  async get(path) { return this._try('GET', path); }
+  get(path) { return this._try('GET', path); },
+  post(path, body) { return this._try('POST', path, body); }
 };
 
-var els = {};
-var dpadBtns = [];
-var state = {
+// -------------------- estado --------------------
+const state = {
   powerOn: true,
   speedPct: 70,
   leftPct: 0,
   rightPct: 0,
-  joyX: 0,
-  joyY: 0,
-  intensity: 0,
-  active: false,
-  lastSent: { l: 0, r: 0, dir: '', speed: 0 },
   autoOn: false,
   lastStuckSeq: 0,
   lastFire: false,
-  online: false
+  online: false,
+  activeTab: 'home',
+  joystick: { base: null, knob: null, cx: 0, cy: 0, radius: 0, knobRadius: 22, active: false, touchId: null, x: 0, y: 0, intensity: 0 },
+  lastSent: { left: 0, right: 0, dir: '', speed: 0 }
 };
-var joy = { cx: 0, cy: 0, radius: 0, knobRadius: 32 };
-var activeTouchId = null;
 
-function getEls() {
-  els = {
-    badge: document.getElementById('status-badge'),
-    powerToggle: document.getElementById('power-toggle'),
-    joystickBase: document.getElementById('joystick-base'),
-    joystickKnob: document.getElementById('joystick-knob'),
-    joyDir: document.getElementById('joy-dir'),
-    joyInt: document.getElementById('joy-int'),
-    speedSlider: document.getElementById('speed-slider'),
-    speedValue: document.getElementById('speed-value'),
-    leftSlider: document.getElementById('left-slider'),
-    leftValue: document.getElementById('left-value'),
-    rightSlider: document.getElementById('right-slider'),
-    rightValue: document.getElementById('right-value'),
-    btnStop: document.getElementById('btn-stop'),
-    btnApplyDiff: document.getElementById('btn-apply-diff'),
-    btnSaveConfig: document.getElementById('btn-save-config'),
-    btnSystemInfo: document.getElementById('btn-system-info'),
-    cfgPwmMin: document.getElementById('cfg-pwm-min'),
-    cfgPwmMax: document.getElementById('cfg-pwm-max'),
-    cfgPwmDefault: document.getElementById('cfg-pwm-default'),
-    cfgMotorsEnabled: document.getElementById('cfg-motors-enabled'),
-    sysInfo: document.getElementById('system-info'),
-    envTemp: document.getElementById('env-temp'),
-    envHum: document.getElementById('env-hum'),
-    envPres: document.getElementById('env-pres'),
-    envDist: document.getElementById('env-dist'),
-    envStatus: document.getElementById('env-status'),
-    btnAuto: document.getElementById('btn-auto'),
-    alertStuck: document.getElementById('alert-stuck'),
-    btnAlertOk: document.getElementById('btn-alert-ok'),
-    adviceList: document.getElementById('advice-list'),
-    trendStatus: document.getElementById('trend-status'),
-    alertFire: document.getElementById('alert-fire'),
-    alertFireText: document.getElementById('alert-fire-text'),
-    btnFireOk: document.getElementById('btn-fire-ok'),
-    telStatus: document.getElementById('tel-status'),
-    telLeft: document.getElementById('tel-left'),
-    telRight: document.getElementById('tel-right'),
-    telMoving: document.getElementById('tel-moving'),
-    telConn: document.getElementById('tel-conn'),
-    telApiError: document.getElementById('tel-api-error'),
-    telemetry: document.getElementById('telemetry')
-  };
-  dpadBtns = Array.from(document.querySelectorAll('.dpad-btn[data-dir]'));
-}
+const joyState = {
+  home: { base: null, knob: null, cx: 0, cy: 0, radius: 0, dirEl: null, intEl: null, active: false, touchId: null, x: 0, y: 0, intensity: 0 },
+  dl:   { base: null, knob: null, cx: 0, cy: 0, radius: 0, dirEl: null, intEl: null, active: false, touchId: null, x: 0, y: 0, intensity: 0 }
+};
 
+// -------------------- util --------------------
+function $(id) { return document.getElementById(id); }
 function pctToPwm(pct) { return Math.round((pct / 100) * 255); }
-
-function initJoystickGeometry() {
-  var rect = els.joystickBase.getBoundingClientRect();
-  joy.cx = rect.left + rect.width / 2;
-  joy.cy = rect.top + rect.height / 2;
-  joy.radius = Math.max(10, (rect.width / 2) - joy.knobRadius - 6);
+function safe(v, d) { return (v === undefined || v === null || Number.isNaN(v)) ? d : v; }
+function fmtTemp(v) { return (v === undefined || v === null || Number.isNaN(v)) ? '--' : v.toFixed(1) + ' °C'; }
+function fmtHum(v) { return (v === undefined || v === null || Number.isNaN(v)) ? '--' : v.toFixed(0) + ' %'; }
+function fmtPres(v) { return (v === undefined || v === null || Number.isNaN(v)) ? '--' : v.toFixed(0) + ' hPa'; }
+function fmtDist(mm) { return (mm === undefined || mm === null || !mm) ? '--' : (mm / 10).toFixed(1) + ' cm'; }
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-function getPointerPos(e) {
-  if (e.touches && e.touches.length) {
-    return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+// -------------------- tabs --------------------
+function initTabs() {
+  const tabs = Array.from(document.querySelectorAll('.tab'));
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => selectTab(tab.getAttribute('data-tab')));
+  });
+  selectTab('home');
+}
+
+function selectTab(name) {
+  state.activeTab = name;
+  document.querySelectorAll('.tab').forEach(t => {
+    const active = t.getAttribute('data-tab') === name;
+    t.classList.toggle('active', active);
+    t.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  ['home', 'dl', 'config'].forEach(n => {
+    const p = $('panel-' + n);
+    if (p) {
+      p.classList.toggle('active', n === name);
+      p.classList.toggle('hidden', n !== name);
+    }
+  });
+  if (name === 'home') requestAnimationFrame(() => { measureJoystick('home'); });
+  if (name === 'dl') requestAnimationFrame(() => { measureJoystick('dl'); });
+  try { history.replaceState(null, '', '#' + name); } catch (e) {}
+  try { localStorage.setItem('irobot-tab', name); } catch (e) {}
+}
+
+// -------------------- conectado --------------------
+function setOnline(ok) {
+  state.online = !!ok;
+  const badge = $('badge-conn');
+  if (badge) {
+    badge.textContent = ok ? 'Conectado' : 'Desconectado';
+    badge.className = 'badge ' + (ok ? 'online' : 'offline');
   }
-  return { x: e.clientX, y: e.clientY };
-}
-
-function setKnobPosition(x, y) {
-  var dx = x - joy.cx;
-  var dy = y - joy.cy;
-  var dist = Math.hypot(dx, dy);
-
-  var clampedX = x;
-  var clampedY = y;
-  if (dist > joy.radius && dist > 0) {
-    var ratio = joy.radius / dist;
-    clampedX = joy.cx + dx * ratio;
-    clampedY = joy.cy + dy * ratio;
+  const homeConn = $('home-conn');
+  if (homeConn) {
+    homeConn.textContent = ok ? 'Conectado' : 'Desconectado';
+    homeConn.className = 'status-v ' + (ok ? 'online' : 'offline');
   }
-
-  var offsetX = clampedX - joy.cx;
-  var offsetY = clampedY - joy.cy;
-  els.joystickKnob.style.transform = 'translate(calc(-50% + ' + offsetX + 'px), calc(-50% + ' + offsetY + 'px))';
-
-  var finalDx = clampedX - joy.cx;
-  var finalDy = clampedY - joy.cy;
-  var clampedDist = Math.min(dist / joy.radius, 1);
-
-  state.joyX = finalDx / joy.radius;
-  state.joyY = -finalDy / joy.radius;
-  state.intensity = clampedDist;
-
-  if (clampedDist < 0.07) {
-    state.joyX = 0;
-    state.joyY = 0;
-    state.intensity = 0;
+  const dlConn = $('dl-tel-conn');
+  if (dlConn) {
+    dlConn.textContent = ok ? 'Online' : 'Offline';
+    dlConn.className = 'tel-value ' + (ok ? 'online' : 'offline');
   }
-
-  updateJoyVisuals();
-  updateMotorsFromJoy();
 }
 
-function resetKnob() {
-  els.joystickKnob.style.transform = 'translate(-50%, -50%)';
-  state.joyX = 0;
-  state.joyY = 0;
-  state.intensity = 0;
-  updateJoyVisuals();
-  updateMotorsFromJoy();
+// -------------------- joystick --------------------
+function measureJoystick(key) {
+  const j = joyState[key];
+  if (!j.base) return;
+  const r = j.base.getBoundingClientRect();
+  j.cx = r.left + r.width / 2;
+  j.cy = r.top + r.height / 2;
+  j.radius = Math.max(10, r.width / 2 - j.knobRadius - 4);
 }
 
-function updateJoyVisuals() {
-  var i = state.intensity;
-  var dir = getJoyDirLabel();
-  els.joyDir.textContent = dir;
-  els.joyInt.textContent = 'Int: ' + Math.round(i * 100) + '%';
+function pointerPos(e) {
+  if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY, id: e.touches[0].identifier };
+  return { x: e.clientX, y: e.clientY, id: null };
 }
 
-function getJoyDirLabel() {
-  var x = state.joyX;
-  var y = state.joyY;
-  var i = state.intensity;
+function setKnob(key, x, y) {
+  const j = joyState[key];
+  if (!j.base || !j.knob) return;
+  let dx = x - j.cx, dy = y - j.cy;
+  let dist = Math.hypot(dx, dy);
+  let cx = x, cy = y;
+  if (dist > j.radius && dist > 0) {
+    const ratio = j.radius / dist;
+    cx = j.cx + dx * ratio;
+    cy = j.cy + dy * ratio;
+  }
+  const ox = cx - j.cx, oy = cy - j.cy;
+  j.knob.style.transform = 'translate(calc(-50% + ' + ox + 'px), calc(-50% + ' + oy + 'px))';
+  const norm = Math.min(dist / j.radius, 1);
+  j.x = ox / j.radius;
+  j.y = -oy / j.radius;
+  j.intensity = norm < 0.07 ? 0 : norm;
+  if (j.intensity === 0) { j.x = 0; j.y = 0; }
+  updateJoyReadout(key);
+  sendJoystick(key);
+}
+
+function joyLabel(x, y, i) {
   if (i < 0.07) return 'Parado';
-  if (Math.abs(y) > Math.abs(x)) {
-    return y > 0 ? 'Frente' : 'Tras';
-  }
+  if (Math.abs(y) > Math.abs(x)) return y > 0 ? 'Frente' : 'Trás';
   return x > 0 ? 'Direita' : 'Esquerda';
 }
 
-function updateMotorsFromJoy() {
-  if (!state.powerOn) {
-    if (state.lastSent.l !== 0 || state.lastSent.r !== 0) {
-      sendDifferential(0, 0);
-    }
-    return;
-  }
+function updateJoyReadout(key) {
+  const j = joyState[key];
+  if (j.dirEl) j.dirEl.textContent = joyLabel(j.x, j.y, j.intensity);
+  if (j.intEl) j.intEl.textContent = 'Int: ' + Math.round(j.intensity * 100) + '%';
+}
 
-  var speedScale = state.speedPct / 100;
-  var intensity = state.intensity;
-  var forward = state.joyY * intensity;
-  var turn = state.joyX * intensity;
+function resetJoystick(key) {
+  const j = joyState[key];
+  if (j.knob) j.knob.style.transform = 'translate(-50%, -50%)';
+  j.x = 0; j.y = 0; j.intensity = 0; j.active = false; j.touchId = null;
+  updateJoyReadout(key);
+  sendDifferential(0, 0);
+}
 
-  var left = forward - turn;
-  var right = forward + turn;
+function sendJoystick(key) {
+  if (!state.powerOn) return;
+  const j = joyState[key];
+  const scale = state.speedPct / 100;
+  let left = j.y * j.intensity - j.x * j.intensity;
+  let right = j.y * j.intensity + j.x * j.intensity;
   left = Math.max(-1, Math.min(1, left));
   right = Math.max(-1, Math.min(1, right));
-
-  var lSpeed = Math.round(left * 100 * speedScale);
-  var rSpeed = Math.round(right * 100 * speedScale);
-
-  sendDifferential(lSpeed, rSpeed);
+  sendDifferential(Math.round(left * 100 * scale), Math.round(right * 100 * scale));
 }
 
+function bindJoystick(key, baseId, knobId, dirId, intId) {
+  const j = joyState[key];
+  j.base = $(baseId);
+  j.knob = $(knobId);
+  j.dirEl = $(dirId);
+  j.intEl = $(intId);
+  if (!j.base || !j.knob) return;
+  j.base.style.touchAction = 'none';
+  j.knob.style.touchAction = 'none';
+
+  const start = e => {
+    e.preventDefault(); e.stopPropagation();
+    const p = pointerPos(e);
+    measureJoystick(key);
+    j.active = true; j.touchId = p.id;
+    setKnob(key, p.x, p.y);
+  };
+  const move = e => {
+    if (!j.active) return;
+    const p = pointerPos(e);
+    if (j.touchId !== null && p.id !== j.touchId) return;
+    e.preventDefault(); e.stopPropagation();
+    setKnob(key, p.x, p.y);
+  };
+  const end = e => {
+    if (!j.active) return;
+    if (e.touches && e.touches.length) {
+      const t = e.touches[0];
+      if (j.touchId !== null && t.identifier !== j.touchId) return;
+    }
+    e.preventDefault(); e.stopPropagation();
+    resetJoystick(key);
+  };
+
+  j.base.addEventListener('mousedown', start);
+  j.base.addEventListener('touchstart', start, { passive: false });
+  window.addEventListener('mousemove', move);
+  window.addEventListener('touchmove', move, { passive: false });
+  window.addEventListener('mouseup', end);
+  window.addEventListener('touchend', end, { passive: false });
+  window.addEventListener('touchcancel', end, { passive: false });
+  window.addEventListener('resize', () => measureJoystick(key));
+}
+
+// -------------------- comandos --------------------
 async function sendDifferential(left, right) {
-  if (left === state.lastSent.l && right === state.lastSent.r) return;
+  if (left === state.lastSent.left && right === state.lastSent.right) return;
   try {
     await API.post('/api/motor/move', { leftSpeed: left, rightSpeed: right });
-    state.online = true;
-    setBadgeOnline();
-    state.lastSent = { l: left, r: right, dir: '', speed: 0 };
+    state.lastSent = { left, right, dir: '', speed: 0 };
+    setOnline(true);
   } catch (err) {
-    console.error('Erro diferencial:', err);
-    state.online = false;
-    setBadgeOffline();
-    showApiError(err.message || 'Erro desconhecido');
+    setOnline(false);
   }
 }
 
-async function sendDir(dir, speedPct) {
-  var speed = pctToPwm(speedPct);
-  if (dir === state.lastSent.dir && speed === state.lastSent.speed && !state.active) return;
+async function sendDir(dir) {
+  const speed = pctToPwm(state.speedPct);
   try {
-    await API.post('/api/motor/move', { direction: dir, speed: speed });
-    state.online = true;
-    setBadgeOnline();
-    state.lastSent = { l: 0, r: 0, dir: dir, speed: speed };
+    await API.post('/api/motor/move', { direction: dir, speed });
+    state.lastSent = { left: 0, right: 0, dir, speed };
+    setOnline(true);
+    updateStatusLocal(dir);
   } catch (err) {
-    console.error('Erro direcao:', err);
-    state.online = false;
-    setBadgeOffline();
-    showApiError(err.message || 'Erro desconhecido');
+    setOnline(false);
   }
 }
 
 async function stopAll() {
   try {
     await API.post('/api/motor/stop', {});
-    state.online = true;
-    setBadgeOnline();
+    setOnline(true);
   } catch (err) {
-    state.online = false;
-    setBadgeOffline();
-    showApiError(err.message || 'Erro desconhecido');
+    setOnline(false);
   }
-  state.lastSent = { l: 0, r: 0, dir: '', speed: 0 };
-  resetKnob();
+  state.lastSent = { left: 0, right: 0, dir: '', speed: 0 };
+  updateStatusLocal('stop');
 }
 
-async function fetchStatus() {
+function updateStatusLocal(dir) {
+  const label = { frente: 'Andando', tras: 'Andando', esquerda: 'Andando', direita: 'Andando', stop: 'Parado' }[dir] || 'Parado';
+  const el = $('home-state');
+  if (el) el.textContent = label;
+  const mov = $('home-moving');
+  if (mov) mov.textContent = label;
+  const dlSt = $('dl-tel-status');
+  if (dlSt) dlSt.textContent = ({ frente: 'Frente', tras: 'Trás', esquerda: 'Esquerda', direita: 'Direita', stop: 'Parado' }[dir] || 'Parado');
+}
+
+async function toggleAuto() {
+  const turnOn = !state.autoOn;
   try {
-    var st = await API.get('/api/motor/status');
-    state.online = true;
-    setBadgeOnline();
-    updateTelemetry(st);
-    showApiError('OK');
+    const res = await API.post('/api/auto', { enabled: turnOn });
+    state.autoOn = res.enabled === true;
+    setOnline(true);
+    syncAutoButtons();
+    if (!state.autoOn) { resetJoystick('home'); resetJoystick('dl'); }
+    fetchSensors();
   } catch (err) {
-    state.online = false;
-    setBadgeOffline();
-    showApiError(err.message || 'Erro desconhecido');
+    setOnline(false);
   }
 }
 
-function updateTelemetry(st) {
-  if (!els.telStatus) return;
-  var dirMap = { 0: 'Parado', 1: 'Frente', 2: 'Tras', 3: 'Esquerda', 4: 'Direita' };
-  els.telStatus.textContent = dirMap[st.direction] || 'Parado';
-  els.telLeft.textContent = st.leftSpeed;
-  els.telRight.textContent = st.rightSpeed;
-  els.telMoving.textContent = st.moving ? 'Sim' : 'Nao';
-  els.telMoving.className = 'tel-value ' + (st.moving ? 'online' : 'offline');
-  els.telConn.textContent = 'Online';
-  els.telConn.className = 'tel-value online';
+function syncAutoButtons() {
+  const txt = 'Modo Autonomo: ' + (state.autoOn ? 'ON' : 'OFF');
+  ['btn-home-auto', 'dl-auto', 'btn-auto'].forEach(id => {
+    const el = $(id);
+    if (el) {
+      el.textContent = txt;
+      el.classList.toggle('on', state.autoOn);
+    }
+  });
+}
+
+// -------------------- sensores --------------------
+function buildAdviceMessages(s) {
+  const a = s.alerts || {};
+  const msgs = [];
+  if (a.fire) msgs.push('INCENDIO: temperatura subiu rapido — verifique o ambiente!');
+  if (a.rainSensor) msgs.push('Chuva agora (sensor molhado)');
+  else if (a.rain) msgs.push('Pode chover: pressao caiu ' + Math.abs(a.trend3h || 0).toFixed(1) + ' hPa/3h');
+  if (a.hot) msgs.push('Calor: ligue o ar-condicionado');
+  if (a.cold) msgs.push('Frio: desligue o ar-condicionado');
+  if (a.dry) msgs.push('Ar seco: beba agua');
+  return msgs;
+}
+
+function renderTicker(s, msgs) {
+  const el = $('ticker-text');
+  if (!el) return;
+  const temp = fmtTemp(s.temperature);
+  const hum = fmtHum(s.humidity);
+  const dist = fmtDist(s.distanceMm);
+  const base = 'Temp ' + temp + ' | Umid ' + hum + ' | Dist ' + dist;
+  el.textContent = msgs.length ? (msgs.join('  •  ') + '  |  ' + base) : (base + '  |  Nenhum aviso');
+}
+
+function renderHomeSensors(s, msgs) {
+  $('home-temp').textContent = fmtTemp(s.temperature);
+  $('home-hum').textContent = fmtHum(s.humidity);
+  $('home-pres').textContent = fmtPres(s.pressure);
+  $('home-dist').textContent = fmtDist(s.distanceMm);
+  if (s.alerts && s.alerts.fire && !state.lastFire) notifyFire();
+  state.lastFire = !!(s.alerts && s.alerts.fire);
+}
+
+function renderDlSensors(s, msgs) {
+  $('dl-temp').textContent = fmtTemp(s.temperature);
+  $('dl-hum').textContent = fmtHum(s.humidity);
+  $('dl-pres').textContent = fmtPres(s.pressure);
+  $('dl-dist').textContent = fmtDist(s.distanceMm);
+  const present = [];
+  if (s.aht) present.push('AHT20');
+  if (s.bmp) present.push('BMP280');
+  if (s.tof) present.push('VL53L0X');
+  const st = $('dl-env-status');
+  if (st) st.textContent = (present.length ? 'sensores: ' + present.join(', ') : 'sensores: nenhum') +
+    (s.auto ? ' | autonomo: ' + s.autoState + ' (' + safe(s.avoidCount, 0) + '/100)' : '');
+  const list = $('dl-advice-list');
+  if (list) {
+    if (!msgs.length) list.innerHTML = '<li class="advice-none">Nenhum aviso no momento</li>';
+    else list.innerHTML = msgs.map(m => '<li>' + escapeHtml(m) + '</li>').join('');
+  }
+  const tr = $('dl-trend-status');
+  if (tr) {
+    const a = s.alerts || {};
+    if (a.trendReady) tr.textContent = 'tendencia: ' + (a.trend30m || 0).toFixed(1) + ' hPa/30min | ' + (a.trend3h || 0).toFixed(1) + ' hPa/3h';
+    else tr.textContent = 'tendencia: coletando dados...';
+  }
 }
 
 async function fetchSensors() {
   try {
-    var s = await API.get('/api/sensors');
-    if (els.envTemp) els.envTemp.textContent = (s.temperature === undefined) ? '--' : s.temperature.toFixed(1) + ' \u00b0C';
-    if (els.envHum) els.envHum.textContent = (s.humidity === undefined) ? '--' : s.humidity.toFixed(0) + ' %';
-    if (els.envPres) els.envPres.textContent = (s.pressure === undefined) ? '--' : s.pressure.toFixed(0) + ' hPa';
-    if (els.envDist) els.envDist.textContent = s.distanceMm ? (s.distanceMm / 10).toFixed(1) + ' cm' : '--';
-
-    if (els.envStatus) {
-      var present = [];
-      if (s.aht) present.push('AHT20');
-      if (s.bmp) present.push('BMP280');
-      if (s.tof) present.push('VL53L0X');
-      var autoTxt = s.auto ? (' | autonomo: ' + s.autoState + ' (' + s.avoidCount + '/100)') : '';
-      els.envStatus.textContent = (present.length ? 'sensores: ' + present.join(', ') : 'sensores: nenhum') + autoTxt;
-    }
-
-    if (els.btnAuto) {
-      els.btnAuto.textContent = 'Autonomo: ' + (s.auto ? 'ON' : 'OFF');
-      els.btnAuto.classList.toggle('btn-auto-on', !!s.auto);
-    }
-
-    if (s.alerts) renderAdvice(s, s.alerts);
-
+    const s = await API.get('/api/sensors');
+    setOnline(true);
+    state.autoOn = s.auto === true;
+    syncAutoButtons();
+    const msgs = buildAdviceMessages(s);
+    renderTicker(s, msgs);
+    renderHomeSensors(s, msgs);
+    renderDlSensors(s, msgs);
     if (s.stuck && s.stuckSeq !== state.lastStuckSeq) {
       state.lastStuckSeq = s.stuckSeq;
       notifyStuck();
     }
   } catch (err) {
-    if (els.envStatus) els.envStatus.textContent = 'sensores: falha (' + (err.message || 'erro') + ')';
+    setOnline(false);
+    const el = $('ticker-text');
+    if (el) el.textContent = 'Falha ao ler sensores: ' + (err.message || 'erro');
   }
 }
 
-function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, function (c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+async function fetchStatus() {
+  try {
+    const st = await API.get('/api/motor/status');
+    setOnline(true);
+    const dirMap = { 0: 'Parado', 1: 'Frente', 2: 'Trás', 3: 'Esquerda', 4: 'Direita' };
+    const dir = dirMap[st.direction] || 'Parado';
+    const homeState = $('home-state');
+    if (homeState) homeState.textContent = st.moving ? 'Andando' : 'Parado';
+    const homeMoving = $('home-moving');
+    if (homeMoving) homeMoving.textContent = st.moving ? 'Andando (' + dir + ')' : 'Parado';
+    const dlSt = $('dl-tel-status'); if (dlSt) dlSt.textContent = dir;
+    const dlL = $('dl-tel-left'); if (dlL) dlL.textContent = st.leftSpeed;
+    const dlR = $('dl-tel-right'); if (dlR) dlR.textContent = st.rightSpeed;
+    const dlM = $('dl-tel-moving'); if (dlM) { dlM.textContent = st.moving ? 'Sim' : 'Nao'; dlM.className = 'tel-value ' + (st.moving ? 'online' : 'offline'); }
+    const dlE = $('dl-tel-api-error'); if (dlE) { dlE.textContent = 'OK'; dlE.className = 'tel-value online'; }
+  } catch (err) {
+    setOnline(false);
+    const dlE = $('dl-tel-api-error'); if (dlE) { dlE.textContent = err.message || 'erro'; dlE.className = 'tel-value offline'; }
+  }
+}
+
+// -------------------- alertas --------------------
+function notifyFire() {
+  const el = $('alert-fire'); if (el) el.hidden = false;
+  try { if (navigator.vibrate) navigator.vibrate([900, 200, 900, 200, 1500]); } catch (e) {}
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (Ctx) {
+      const ctx = new Ctx();
+      [0, 0.4, 0.8, 1.2].forEach(t => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = 1200; g.gain.value = 0.09;
+        o.connect(g); g.connect(ctx.destination);
+        o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.25);
+      });
+    }
+  } catch (e) {}
+}
+
+function notifyStuck() {
+  const el = $('alert-stuck'); if (el) el.hidden = false;
+  try { if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 800]); } catch (e) {}
+}
+
+// -------------------- config --------------------
+async function loadConfig() {
+  try {
+    const cfg = await API.get('/api/config');
+    state.config = cfg;
+    const set = (id, v) => { const el = $(id); if (el) el.value = v; };
+    set('cfg-pwm-min', cfg.pwmMin); set('cfg-pwm-max', cfg.pwmMax); set('cfg-pwm-default', cfg.pwmDefault);
+    set('dl-pwm-min', cfg.pwmMin); set('dl-pwm-max', cfg.pwmMax); set('dl-pwm-default', cfg.pwmDefault);
+    const mot = cfg.motorsEnabled === true || cfg.motorsEnabled === 1 || cfg.motorsEnabled === 'true';
+    if ($('cfg-motors-enabled')) $('cfg-motors-enabled').checked = mot;
+    if ($('dl-motors-enabled')) $('dl-motors-enabled').checked = mot;
+    setOnline(true);
+  } catch (err) { setOnline(false); }
+}
+
+async function saveConfig(prefix) {
+  const get = id => { const el = $(id); return el ? el.value : undefined; };
+  const payload = {
+    pwmMin: parseInt(get(prefix + '-pwm-min')) || 0,
+    pwmMax: parseInt(get(prefix + '-pwm-max')) || 255,
+    pwmDefault: parseInt(get(prefix + '-pwm-default')) || 150,
+    motorsEnabled: $(prefix + '-motors-enabled') ? $(prefix + '-motors-enabled').checked : true
+  };
+  try { await API.post('/api/config', payload); setOnline(true); await loadConfig(); }
+  catch (err) { setOnline(false); }
+}
+
+async function fetchSystemInfo(target) {
+  try {
+    const info = await API.get('/api/system/info');
+    const el = $(target);
+    if (el) el.textContent = JSON.stringify(info, null, 2);
+    setOnline(true);
+  } catch (err) { setOnline(false); }
+}
+
+function initWifiMode() {
+  const sel = $('cfg-wifi-mode');
+  if (!sel) return;
+  const apply = () => {
+    const isSta = sel.value === 'sta';
+    ['cfg-wifi-sta-row', 'cfg-wifi-pass-row'].forEach(id => { const el = $(id); if (el) el.style.display = isSta ? 'flex' : 'none'; });
+    ['cfg-wifi-ap-row', 'cfg-wifi-ap-pass-row'].forEach(id => { const el = $(id); if (el) el.style.display = isSta ? 'none' : 'flex'; });
+  };
+  sel.addEventListener('change', apply);
+  apply();
+}
+
+// -------------------- tela cheia / PWA --------------------
+function initFullscreen() {
+  const cb = $('fs-toggle');
+  if (!cb) return;
+  cb.addEventListener('change', async () => {
+    try {
+      if (cb.checked) {
+        const el = document.documentElement;
+        if (el.requestFullscreen) await el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+        try { await screen.orientation.lock('landscape'); } catch (e) {}
+      } else {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) await document.webkitExitFullscreen();
+      }
+    } catch (e) { cb.checked = false; }
+  });
+  document.addEventListener('fullscreenchange', () => {
+    cb.checked = !!(document.fullscreenElement || document.webkitFullscreenElement);
   });
 }
 
-function renderAdvice(s, a) {
-  var t = (s.temperature === undefined) ? null : s.temperature;
-  var h = (s.humidity === undefined) ? null : s.humidity;
-  var items = [];
-
-  if (a.fire) {
-    var rise = a.tempRise ? a.tempRise.toFixed(1) : '0.0';
-    items.push({ cls: 'advice-crit', txt: 'POSSIVEL INCENDIO: temperatura subiu ' + rise + ' \u00b0C em 1 min' + (t !== null ? ' (agora ' + t.toFixed(1) + ' \u00b0C)' : '') + '. Verifique o ambiente!' });
+function initPwa() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
-  if (a.rainSensor) {
-    items.push({ cls: 'advice-crit', txt: 'Chuva agora: o sensor de chuva esta molhado.' });
-  } else if (a.rain) {
-    var drop = Math.abs(a.trend3h || 0).toFixed(1);
-    items.push({ cls: 'advice-warn', txt: 'Pode chover: pressao caiu ' + drop + ' hPa em 3 h' + (h !== null ? ' e umidade em ' + h.toFixed(0) + '%' : '') + '. Leve guarda-chuva.' });
-  }
-  if (a.hot && t !== null) {
-    items.push({ cls: 'advice-warn', txt: 'Calor: ' + t.toFixed(1) + ' \u00b0C (acima de 26 \u00b0C). Ligue o ar-condicionado.' });
-  }
-  if (a.cold && t !== null) {
-    items.push({ cls: 'advice-info', txt: 'Frio: ' + t.toFixed(1) + ' \u00b0C (abaixo de 17 \u00b0C). Desligue o ar-condicionado.' });
-  }
-  if (a.dry && h !== null) {
-    items.push({ cls: 'advice-warn', txt: 'Ar seco: umidade em ' + h.toFixed(0) + '% (abaixo de 30%). Beba agua.' });
-  }
-
-  if (els.adviceList) {
-    if (!items.length) {
-      els.adviceList.innerHTML = '<li class="advice-none">Nenhum aviso no momento</li>';
-    } else {
-      els.adviceList.innerHTML = items.map(function (it) {
-        return '<li class="' + it.cls + '">' + escapeHtml(it.txt) + '</li>';
-      }).join('');
-    }
-  }
-
-  if (els.trendStatus) {
-    if (a.trendReady) {
-      var d3 = (a.trend3h || 0) >= 0 ? '+' : '';
-      var d30 = (a.trend30m || 0) >= 0 ? '+' : '';
-      els.trendStatus.textContent = 'tendencia: ' + d30 + (a.trend30m || 0).toFixed(1) + ' hPa/30 min | ' + d3 + (a.trend3h || 0).toFixed(1) + ' hPa/3 h';
-    } else {
-      els.trendStatus.textContent = 'tendencia: coletando dados (30 min)';
-    }
-  }
-
-  if (a.fire && !state.lastFire) notifyFire();
-  state.lastFire = !!a.fire;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    window.__deferredPrompt = e;
+  });
 }
 
-function notifyFire() {
-  if (els.alertFire) els.alertFire.hidden = false;
-
-  try {
-    if (navigator.vibrate) navigator.vibrate([900, 200, 900, 200, 1500]);
-  } catch (e) { /* ignorado */ }
-
-  try {
-    var Ctx = window.AudioContext || window.webkitAudioContext;
-    if (Ctx) {
-      var ctx = new Ctx();
-      [0, 0.4, 0.8, 1.2].forEach(function (t0) {
-        var osc = ctx.createOscillator();
-        var gain = ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.value = 1200;
-        gain.gain.value = 0.09;
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + t0);
-        osc.stop(ctx.currentTime + t0 + 0.25);
-      });
-    }
-  } catch (e) { /* som bloqueado sem gesto do usuario */ }
-
-  try {
-    if (window.Notification && Notification.permission === 'granted') {
-      new Notification('Possivel incendio', {
-        body: 'A temperatura subiu muito rapido. Verifique o ambiente.',
-        tag: 'irobot-fire'
-      });
-    }
-  } catch (e) { /* notificacao exige HTTPS */ }
-}
-
-function hideFireAlert() {
-  if (els.alertFire) els.alertFire.hidden = true;
-}
-
-function notifyStuck() {  if (els.alertStuck) els.alertStuck.hidden = false;
-
-  try {
-    if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 800]);
-  } catch (e) { /* ignorado */ }
-
-  try {
-    var Ctx = window.AudioContext || window.webkitAudioContext;
-    if (Ctx) {
-      var ctx = new Ctx();
-      [0, 0.35, 0.7].forEach(function (t) {
-        var osc = ctx.createOscillator();
-        var gain = ctx.createGain();
-        osc.type = 'square';
-        osc.frequency.value = 880;
-        gain.gain.value = 0.08;
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + t);
-        osc.stop(ctx.currentTime + t + 0.18);
-      });
-    }
-  } catch (e) { /* som bloqueado sem gesto do usuario */ }
-
-  try {
-    if (window.Notification && Notification.permission === 'granted') {
-      new Notification('iRobot enroscado', {
-        body: 'O modo autonomo foi desligado apos 100 obstaculos seguidos.',
-        tag: 'irobot-stuck'
-      });
-    }
-  } catch (e) { /* notificacao exige HTTPS */ }
-
-  if (els.envStatus) els.envStatus.textContent = 'ALERTA: robo enroscado - autonomo desligado';
-}
-
-function hideStuckAlert() {
-  if (els.alertStuck) els.alertStuck.hidden = true;
-}
-
-async function toggleAuto() {
-  var turnOn = !(state.autoOn === true);
-  try {
-    var res = await API.post('/api/auto', { enabled: turnOn });
-    state.autoOn = res.enabled === true;
-    if (els.btnAuto) {
-      els.btnAuto.textContent = 'Autonomo: ' + (state.autoOn ? 'ON' : 'OFF');
-      els.btnAuto.classList.toggle('btn-auto-on', state.autoOn);
-    }
-    if (!state.autoOn) resetKnob();
-    fetchSensors();
-  } catch (err) {
-    if (els.envStatus) els.envStatus.textContent = 'autonomo: ' + (err.message || 'falha');
-  }
-}
-
-async function loadConfig() {
-  try {
-    var cfg = await API.get('/api/config');
-    state.config = cfg;
-    els.cfgPwmMin.value = cfg.pwmMin;
-    els.cfgPwmMax.value = cfg.pwmMax;
-    els.cfgPwmDefault.value = cfg.pwmDefault;
-    els.cfgMotorsEnabled.checked = cfg.motorsEnabled === true || cfg.motorsEnabled === 1 || cfg.motorsEnabled === 'true';
-    state.online = true;
-    setBadgeOnline();
-  } catch (err) {
-    state.online = false;
-    setBadgeOffline();
-    showApiError(err.message || 'Erro desconhecido');
-  }
-}
-
-async function saveConfig() {
-  var payload = {
-    pwmMin: parseInt(els.cfgPwmMin.value) || 0,
-    pwmMax: parseInt(els.cfgPwmMax.value) || 255,
-    pwmDefault: parseInt(els.cfgPwmDefault.value) || 150,
-    motorsEnabled: els.cfgMotorsEnabled.checked
-  };
-  try {
-    await API.post('/api/config', payload);
-    state.online = true;
-    setBadgeOnline();
-  } catch (err) {
-    state.online = false;
-    setBadgeOffline();
-    showApiError(err.message || 'Erro desconhecido');
-  }
-}
-
-async function fetchSystemInfo() {
-  try {
-    var info = await API.get('/api/system/info');
-    els.sysInfo.textContent = JSON.stringify(info, null, 2);
-    state.online = true;
-    setBadgeOnline();
-  } catch (err) {
-    els.sysInfo.textContent = 'Erro ao ler sistema';
-    state.online = false;
-    setBadgeOffline();
-    showApiError(err.message || 'Erro desconhecido');
-  }
-}
-
-function setBadgeOnline() {
-  els.badge.textContent = 'Conectado';
-  els.badge.className = 'badge online';
-  els.telConn.textContent = 'Online';
-  els.telConn.className = 'tel-value online';
-}
-
-function setBadgeOffline() {
-  els.badge.textContent = 'Desconectado';
-  els.badge.className = 'badge offline';
-  els.telConn.textContent = 'Offline';
-  els.telConn.className = 'tel-value offline';
-}
-
-function showApiError(msg) {
-  if (!els.telApiError) return;
-  els.telApiError.textContent = msg;
-  els.telApiError.className = 'tel-value offline';
-  console.error('API Error:', msg);
-}
-
-function onPointerStart(e) {
-  e.stopPropagation();
-  e.preventDefault();
-  var pos = getPointerPos(e);
-  activeTouchId = e.touches && e.touches.length ? e.touches[0].identifier : null;
-  initJoystickGeometry();
-  state.active = true;
-  setKnobPosition(pos.x, pos.y);
-  els.joystickKnob.style.cursor = 'grabbing';
-}
-
-function onPointerMove(e) {
-  if (!state.active) return;
-  var pos = getPointerPos(e);
-  if (e.touches && e.touches.length) {
-    var t = e.touches[0];
-    if (activeTouchId !== null && t.identifier !== activeTouchId) return;
-  }
-  e.stopPropagation();
-  e.preventDefault();
-  setKnobPosition(pos.x, pos.y);
-}
-
-function onPointerEnd(e) {
-  if (e.touches && e.touches.length) {
-    var t = e.touches[0];
-    if (activeTouchId !== null && t.identifier !== activeTouchId) return;
-  }
-  state.active = false;
-  activeTouchId = null;
-  resetKnob();
-  els.joystickKnob.style.cursor = 'grab';
-  sendDifferential(0, 0);
-}
-
-function onSpeedChange() {
-  state.speedPct = parseInt(els.speedSlider.value) || 0;
-  els.speedValue.textContent = state.speedPct + '%';
-  updateMotorsFromJoy();
-}
-
-function onLeftChange() {
-  state.leftPct = parseInt(els.leftSlider.value) || 0;
-  els.leftValue.textContent = state.leftPct;
-}
-
-function onRightChange() {
-  state.rightPct = parseInt(els.rightSlider.value) || 0;
-  els.rightValue.textContent = state.rightPct;
-}
-
-function applyDifferential() {
-  sendDifferential(state.leftPct, state.rightPct);
-}
-
-function onPowerChange() {
-  state.powerOn = els.powerToggle.checked;
-  if (!state.powerOn) {
-    stopAll();
-  } else {
-    updateMotorsFromJoy();
-  }
-}
-
-function onStopClick() {
-  resetKnob();
-  stopAll();
-}
-
-function onDpadClick(e) {
-  var btn = e.currentTarget;
-  var dir = btn.getAttribute('data-dir');
-  resetKnob();
-  sendDir(dir, state.speedPct);
-}
-
+// -------------------- init --------------------
 function init() {
-  getEls();
+  initTabs();
+  initWifiMode();
+  initFullscreen();
+  initPwa();
 
-  if (els.joystickBase) {
-    els.joystickBase.style.touchAction = 'none';
-    els.joystickKnob.style.touchAction = 'none';
-  }
+  bindJoystick('home', 'joy-base', 'joy-knob', 'joy-dir', 'joy-int');
+  bindJoystick('dl', 'dl-joy-base', 'dl-joy-knob', 'dl-joy-dir', 'dl-joy-int');
+  requestAnimationFrame(() => { measureJoystick('home'); measureJoystick('dl'); });
 
-  els.joystickBase.addEventListener('mousedown', onPointerStart);
-  window.addEventListener('mousemove', onPointerMove);
-  window.addEventListener('mouseup', onPointerEnd);
+  document.querySelectorAll('.dpad-btn[data-dir]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      const dir = btn.getAttribute('data-dir');
+      const key = btn.id.startsWith('dl-') ? 'dl' : 'home';
+      resetJoystick(key);
+      sendDir(dir);
+      document.querySelectorAll('.dpad-btn').forEach(b => b.classList.toggle('active', b === btn));
+      setTimeout(() => btn.classList.remove('active'), 200);
+    });
+  });
 
-  els.joystickBase.addEventListener('touchstart', onPointerStart, { passive: false });
-  els.joystickBase.addEventListener('touchmove', onPointerMove, { passive: false });
-  els.joystickBase.addEventListener('touchend', onPointerEnd, { passive: false });
-  els.joystickBase.addEventListener('touchcancel', onPointerEnd, { passive: false });
-  window.addEventListener('touchmove', onPointerMove, { passive: false });
-  window.addEventListener('touchend', onPointerEnd, { passive: false });
-  window.addEventListener('touchcancel', onPointerEnd, { passive: false });
+  const stopBtns = [$('btn-stop'), $('dl-stop')];
+  stopBtns.forEach(b => { if (b) b.addEventListener('click', () => {
+    resetJoystick('home'); resetJoystick('dl'); stopAll();
+  }); });
 
-  els.speedSlider.addEventListener('input', onSpeedChange);
-  els.leftSlider.addEventListener('input', onLeftChange);
-  els.rightSlider.addEventListener('input', onRightChange);
-  els.btnApplyDiff.addEventListener('click', applyDifferential);
-  els.powerToggle.addEventListener('change', onPowerChange);
-  els.btnStop.addEventListener('click', onStopClick);
+  ['btn-home-auto', 'dl-auto', 'btn-auto'].forEach(id => {
+    const el = $(id); if (el) el.addEventListener('click', toggleAuto);
+  });
 
-  dpadBtns.forEach(function(btn) { btn.addEventListener('click', onDpadClick); });
+  const bindSpeed = (sliderId, valId) => {
+    const sl = $(sliderId), vv = $(valId);
+    if (!sl) return;
+    sl.addEventListener('input', () => {
+      state.speedPct = parseInt(sl.value) || 0;
+      document.querySelectorAll('#home-speed, #dl-speed').forEach(s => { if (s) s.value = state.speedPct; });
+      document.querySelectorAll('#home-speed-val, #dl-speed-val').forEach(s => { if (s) s.textContent = state.speedPct + '%'; });
+    });
+  };
+  bindSpeed('home-speed', 'home-speed-val');
+  bindSpeed('dl-speed', 'dl-speed-val');
 
-  if (els.btnAlertOk) els.btnAlertOk.addEventListener('click', hideStuckAlert);
-  if (els.btnFireOk) els.btnFireOk.addEventListener('click', hideFireAlert);
-  els.btnSaveConfig.addEventListener('click', saveConfig);
-  if (els.btnAuto) els.btnAuto.addEventListener('click', toggleAuto);
-  els.btnSystemInfo.addEventListener('click', fetchSystemInfo);
+  const bindDiffSlider = (id, valId, which) => {
+    const sl = $(id), vv = $(valId);
+    if (!sl) return;
+    sl.addEventListener('input', () => {
+      const v = parseInt(sl.value) || 0;
+      if (vv) vv.textContent = v;
+      state[which] = v;
+    });
+  };
+  bindDiffSlider('dl-left', 'dl-left-val', 'leftPct');
+  bindDiffSlider('dl-right', 'dl-right-val', 'rightPct');
+  const apply = $('dl-apply-diff');
+  if (apply) apply.addEventListener('click', () => sendDifferential(state.leftPct, state.rightPct));
 
-  requestAnimationFrame(initJoystickGeometry);
-  window.addEventListener('resize', initJoystickGeometry);
+  const savePwm = $('cfg-save-pwm'); if (savePwm) savePwm.addEventListener('click', () => saveConfig('cfg'));
+  const saveDl = $('dl-save-config'); if (saveDl) saveDl.addEventListener('click', () => saveConfig('dl'));
+  const sysA = $('cfg-sys-info'); if (sysA) sysA.addEventListener('click', () => fetchSystemInfo('cfg-system-info'));
+  const sysB = $('dl-sys-info'); if (sysB) sysB.addEventListener('click', () => fetchSystemInfo('dl-system-info'));
+  const restart = $('cfg-restart'); if (restart) restart.addEventListener('click', async () => {
+    try { await fetch('/api/system/restart', { method: 'POST' }); } catch (e) {}
+  });
+  const saveWifi = $('cfg-save-wifi'); if (saveWifi) saveWifi.addEventListener('click', async () => {
+    try {
+      const mode = $('cfg-wifi-mode').value;
+      const payload = mode === 'sta'
+        ? { mode, ssid: $('cfg-wifi-ssid').value, pass: $('cfg-wifi-pass').value }
+        : { mode, ssid: $('cfg-ap-ssid').value, pass: $('cfg-ap-pass').value };
+      await API.post('/api/wifi', payload);
+      setOnline(true);
+    } catch (err) { setOnline(false); }
+  });
+
+  const fa = $('btn-fire-ok'); if (fa) fa.addEventListener('click', () => { const e = $('alert-fire'); if (e) e.hidden = true; });
+  const sa = $('btn-alert-ok'); if (sa) sa.addEventListener('click', () => { const e = $('alert-stuck'); if (e) e.hidden = true; });
+  const fb = $('dl-btn-fire-ok'); if (fb) fb.addEventListener('click', () => { const e = $('dl-alert-fire'); if (e) e.hidden = true; });
+  const sb = $('dl-btn-alert-ok'); if (sb) sb.addEventListener('click', () => { const e = $('dl-alert-stuck'); if (e) e.hidden = true; });
 
   loadConfig();
   fetchStatus();
   fetchSensors();
   setInterval(fetchStatus, 1000);
-  setInterval(fetchSensors, 1000);
+  setInterval(fetchSensors, 1500);
+
+  try {
+    const saved = localStorage.getItem('irobot-tab');
+    if (saved) selectTab(saved);
+  } catch (e) {}
+  if (location.hash) {
+    const h = location.hash.replace('#', '');
+    if (['home', 'dl', 'config'].includes(h)) selectTab(h);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);

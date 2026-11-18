@@ -11,6 +11,35 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-17 21:04 - feat(irobot): nova UI web com abas Home/DL/Config, PWA e letreiro de ambiente
+
+**Area:** irobot
+
+**Feito:**
+- index.html reescrito como SPA com abas Home (paisagem joystick esquerda botoes centro sensores/status inferior badge conectado), DL (tela antiga mantida) e Config (wifi AP/client e PWM)
+- app.js unificado com joystick duplo, D-pad, autonomo, PWA service worker e fullscreen
+- manifest.json favicon.svg sw.js adicionados e servidos
+- DashboardService rotas manifest favicon sw api/wifi restart
+- irobot.ino conecta STA quando salvo
+
+**Dificuldades e solucoes:**
+- PWA em HTTP no AP nao instala em navegadores (exige HTTPS ou localhost): mantido manifest e service worker para quando servir via HTTPS e orientacao fullscreen
+- layouts responsivos e joystick duplo exigiram rewrite do app.js
+
+**Arquivos:**
+- `firmware/irobot/DashboardService.cpp`
+- `firmware/irobot/DashboardService.h`
+- `firmware/irobot/WebAssets.h`
+- `firmware/irobot/build/esp32.esp32.esp32/build.options.json`
+- `firmware/irobot/irobot.ino`
+- `firmware/irobot/tools/generate_web_assets.ps1`
+- `firmware/irobot/web/css/style.css`
+- `firmware/irobot/web/index.html`
+- `firmware/irobot/web/js/app.js`
+- `firmware/irobot/web/favicon.svg`
+- `firmware/irobot/web/manifest.json`
+- `firmware/irobot/web/sw.js`
+
 ### 2026-11-17 20:40 - feat(irobot): reconhecimento de 360 graus e alinhamento na direcao mais livre no modo autonomo
 
 **Area:** irobot

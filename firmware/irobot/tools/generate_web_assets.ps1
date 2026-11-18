@@ -26,10 +26,13 @@ if (!(Test-Path -LiteralPath $WebDir)) {
 }
 
 $files = @(
-    @{ name = "index_html"; path = Join-Path $WebDir "index.html" }
-    @{ name = "style_css";  path = Join-Path (Join-Path $WebDir "css") "style.css" }
-    @{ name = "app_js";     path = Join-Path (Join-Path $WebDir "js") "app.js" }
-    @{ name = "teste_html"; path = Join-Path $WebDir "teste.html" }
+    @{ name = "index_html";    path = Join-Path $WebDir "index.html" }
+    @{ name = "style_css";     path = Join-Path (Join-Path $WebDir "css") "style.css" }
+    @{ name = "app_js";        path = Join-Path (Join-Path $WebDir "js") "app.js" }
+    @{ name = "teste_html";    path = Join-Path $WebDir "teste.html" }
+    @{ name = "manifest_json"; path = Join-Path $WebDir "manifest.json" }
+    @{ name = "favicon_svg";   path = Join-Path $WebDir "favicon.svg" }
+    @{ name = "sw_js";         path = Join-Path $WebDir "sw.js" }
 )
 
 $header = @"

@@ -3,161 +3,288 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>iRobot - Tela de Teste</title>
-  <link rel="stylesheet" href="/style.css?v=3">
+  <meta name="theme-color" content="#0b1120">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="iRobot">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" type="image/svg+xml" href="/favicon.svg">
+  <title>iRobot</title>
+  <link rel="stylesheet" href="/style.css?v=6">
 </head>
 <body>
-
-  <header class="app-header">
-    <div class="header-left">
-      <h1>iRobot</h1>
-      <span class="subtitulo">Teste de Comando</span>
+  <div class="app">
+    <!-- Letreiro de ambiente (topo, pequeno) -->
+    <div class="ticker" id="ticker">
+      <span class="ticker-label">Ambiente:</span>
+      <span class="ticker-text" id="ticker-text">Iniciando sensores...</span>
     </div>
-    <div class="header-right">
-      <div id="status-badge" class="badge offline">Desconectado</div>
-      <label class="switch">
-        <input type="checkbox" id="power-toggle" checked>
-        <span class="slider-round"></span>
-      </label>
-    </div>
-  </header>
 
-  <main class="test-layout">
-    <!-- Coluna esquerda: joystick -->
-    <section class="joystick-column">
-      <div class="joystick-card">
-        <div class="joystick-title">Joystick Diferencial</div>
-        <div class="joystick-base" id="joystick-base">
-          <div class="joystick-center-dot"></div>
-          <div class="joystick-knob" id="joystick-knob"></div>
-          <div class="joystick-ring" id="joystick-ring"></div>
-        </div>
-        <div class="joystick-hint">Arraste para controlar (esq/dir = curva)</div>
-        <div class="joy-readout">
-          <span id="joy-dir">Parado</span>
-          <span id="joy-int">Int: 0%</span>
-        </div>
+    <!-- Header com abas -->
+    <header class="app-header">
+      <div class="logo" id="app-logo">&#129302;</div>
+      <h1 class="app-title" id="app-title">iRobot</h1>
+      <div class="header-actions">
+        <div id="badge-conn" class="badge offline">Desconectado</div>
+        <label class="switch fullscreen-switch">
+          <input type="checkbox" id="fs-toggle">
+          <span class="slider-round"></span>
+        </label>
+        <span class="fs-hint" id="fs-hint">Tela cheia</span>
       </div>
-    </section>
+    </header>
 
-    <!-- Coluna direita: botoes e controles de teste -->
-    <section class="controls-column">
-      <!-- Botoes direcionais -->
-      <div class="card">
-        <div class="card-title">Comandos Rapidos</div>
-        <div class="dpad">
-          <button class="btn dpad-btn" id="btn-frente" data-dir="frente">Frente</button>
-          <div class="dpad-row">
-            <button class="btn dpad-btn" id="btn-esquerda" data-dir="esquerda">Esquerda</button>
-            <button class="btn dpad-btn btn-stop" id="btn-stop">Parar</button>
-            <button class="btn dpad-btn" id="btn-direita" data-dir="direita">Direita</button>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" role="tab" aria-selected="true" data-tab="home">Home</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="dl">DL</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="config">Config</button>
+    </nav>
+
+    <!-- =================== HOME =================== -->
+    <section class="panel panel-home" id="panel-home">
+      <div class="home-grid">
+        <!-- Coluna esquerda: joystick -->
+        <aside class="home-col joy-col">
+          <div class="card joy-card">
+            <div class="card-title">Joystick</div>
+            <div class="joystick-wrap">
+              <div class="joystick-base" id="joy-base">
+                <div class="joystick-center-dot"></div>
+                <div class="joystick-knob" id="joy-knob"></div>
+              </div>
+              <div class="joy-readout">
+                <span id="joy-dir">Parado</span>
+                <span id="joy-int">Int: 0%</span>
+              </div>
+            </div>
           </div>
-          <button class="btn dpad-btn" id="btn-tras" data-dir="tras">Tras</button>
-        </div>
-      </div>
+        </aside>
 
-      <!-- Velocidade geral -->
-      <div class="card">
-        <div class="card-title">Velocidade</div>
-        <div class="slider-row">
-          <label class="slider-label">Geral</label>
-          <input type="range" id="speed-slider" min="0" max="100" value="70" class="hslider">
-          <span id="speed-value" class="speed-val">70%</span>
-        </div>
-      </div>
+        <!-- Coluna central: painel de botoes -->
+        <section class="home-col center-col">
+          <div class="card btns-card">
+            <div class="card-title">Comandos</div>
+            <div class="dpad">
+              <button class="btn dpad-btn" id="btn-frente" data-dir="frente">&#9650;<span>Frente</span></button>
+              <div class="dpad-row">
+                <button class="btn dpad-btn" id="btn-esquerda" data-dir="esquerda">&#9664;<span>Esquerda</span></button>
+                <button class="btn dpad-btn btn-stop" id="btn-stop">&#9632;<span>Parar</span></button>
+                <button class="btn dpad-btn" id="btn-direita" data-dir="direita">&#9654;<span>Direita</span></button>
+              </div>
+              <button class="btn dpad-btn" id="btn-tras" data-dir="tras">&#9660;<span>Tras</span></button>
+            </div>
+            <button class="btn btn-auto btn-block" id="btn-home-auto">Modo Autonomo: OFF</button>
+            <div class="speed-row">
+              <label class="speed-label">Velocidade</label>
+              <input type="range" id="home-speed" min="0" max="100" value="70" class="hslider">
+              <span id="home-speed-val" class="speed-val">70%</span>
+            </div>
+          </div>
+        </section>
 
-      <!-- Controle diferencial independente -->
-      <div class="card">
-        <div class="card-title">Motores Independentes</div>
-        <div class="slider-row">
-          <label class="slider-label">Esquerda</label>
-          <input type="range" id="left-slider" min="-100" max="100" value="0" class="hslider">
-          <span id="left-value" class="speed-val">0</span>
-        </div>
-        <div class="slider-row">
-          <label class="slider-label">Direita</label>
-          <input type="range" id="right-slider" min="-100" max="100" value="0" class="hslider">
-          <span id="right-value" class="speed-val">0</span>
-        </div>
-        <button class="btn btn-outline btn-block" id="btn-apply-diff">Aplicar Diferencial</button>
-      </div>
-
-      <!-- Configuracao PWM -->
-      <div class="card">
-        <div class="card-title">Configuracao PWM</div>
-        <div class="config-row">
-          <label>Min</label>
-          <input type="number" id="cfg-pwm-min" min="0" max="255" value="60" class="cfg-input">
-        </div>
-        <div class="config-row">
-          <label>Max</label>
-          <input type="number" id="cfg-pwm-max" min="0" max="255" value="255" class="cfg-input">
-        </div>
-        <div class="config-row">
-          <label>Default</label>
-          <input type="number" id="cfg-pwm-default" min="0" max="255" value="150" class="cfg-input">
-        </div>
-        <div class="config-row">
-          <label>Motores</label>
-          <label class="switch inline">
-            <input type="checkbox" id="cfg-motors-enabled" checked>
-            <span class="slider-round"></span>
-          </label>
-        </div>
-        <button class="btn btn-outline btn-block" id="btn-save-config">Salvar Configuracao</button>
-      </div>
-
-      <!-- Ambiente + modo autonomo -->
-      <div class="card">
-        <div class="card-title">Ambiente (AHT20 + BMP280 + VL53L0X)</div>
-        <div class="env-grid">
-          <div class="env-item"><span>Temperatura</span><strong id="env-temp">--</strong></div>
-          <div class="env-item"><span>Umidade</span><strong id="env-hum">--</strong></div>
-          <div class="env-item"><span>Pressao</span><strong id="env-pres">--</strong></div>
-          <div class="env-item"><span>Distancia</span><strong id="env-dist">--</strong></div>
-        </div>
-        <div class="env-status" id="env-status">sensores: verificando...</div>
-        <button class="btn btn-outline btn-block" id="btn-auto">Autonomo: OFF</button>
-      </div>
-      <!-- Avisos ambientais -->
-      <div class="card">
-        <div class="card-title">Avisos</div>
-        <ul class="advice-list" id="advice-list">
-          <li class="advice-none">Nenhum aviso no momento</li>
-        </ul>
-        <div class="env-status" id="trend-status">tendencia: coletando dados...</div>
-      </div>
-
-      <!-- Sistema -->
-      <div class="card">
-        <div class="card-title">Sistema</div>
-        <button class="btn btn-outline btn-block" id="btn-system-info">Ler Status do Sistema</button>
-        <div id="system-info" class="sys-info"></div>
+        <!-- Coluna direita: sensores + status -->
+        <aside class="home-col info-col">
+          <div class="card info-card">
+            <div class="card-title">Sensores</div>
+            <div class="env-grid">
+              <div class="env-item"><span class="env-k">Temp</span><strong id="home-temp" class="env-v">--</strong></div>
+              <div class="env-item"><span class="env-k">Umidade</span><strong id="home-hum" class="env-v">--</strong></div>
+              <div class="env-item"><span class="env-k">Pressao</span><strong id="home-pres" class="env-v">--</strong></div>
+              <div class="env-item"><span class="env-k">Distancia</span><strong id="home-dist" class="env-v">--</strong></div>
+            </div>
+          </div>
+          <div class="card status-card">
+            <div class="card-title">Status do Robo</div>
+            <div class="status-row">
+              <span class="status-k">Estado:</span>
+              <strong id="home-state" class="status-v">Parado</strong>
+            </div>
+            <div class="status-row">
+              <span class="status-k">Motores:</span>
+              <strong id="home-moving" class="status-v">Parado</strong>
+            </div>
+            <div class="status-row">
+              <span class="status-k">Conexao:</span>
+              <strong id="home-conn" class="status-v offline">Desconectado</strong>
+            </div>
+          </div>
+        </aside>
       </div>
     </section>
-  </main>
 
-  <!-- Painel de telemetria ao vivo -->
-  <div class="telemetry" id="telemetry">
-    <div class="tel-item"><span class="tel-label">Status:</span> <span id="tel-status" class="tel-value">Parado</span></div>
-    <div class="tel-item"><span class="tel-label">Motor Esq:</span> <span id="tel-left" class="tel-value">0</span></div>
-    <div class="tel-item"><span class="tel-label">Motor Dir:</span> <span id="tel-right" class="tel-value">0</span></div>
-    <div class="tel-item"><span class="tel-label">Movendo:</span> <span id="tel-moving" class="tel-value">Nao</span></div>
-    <div class="tel-item"><span class="tel-label">Conexao:</span> <span id="tel-conn" class="tel-value">Offline</span></div>
-    <div class="tel-item"><span class="tel-label">Ultimo erro:</span> <span id="tel-api-error" class="tel-value offline">Nenhum</span></div>
+    <!-- =================== DL (antiga tela de teste) =================== -->
+    <section class="panel panel-dl hidden" id="panel-dl">
+      <div class="dl-wrap">
+        <section class="dl-col-left">
+          <div class="card joy-card">
+            <div class="card-title">Joystick Diferencial</div>
+            <div class="joystick-wrap">
+              <div class="joystick-base" id="dl-joy-base">
+                <div class="joystick-center-dot"></div>
+                <div class="joystick-knob" id="dl-joy-knob"></div>
+              </div>
+              <div class="joy-readout">
+                <span id="dl-joy-dir">Parado</span>
+                <span id="dl-joy-int">Int: 0%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="dl-col-right">
+          <div class="card cmds-card">
+            <div class="card-title">Comandos Rapidos</div>
+            <div class="dpad">
+              <button class="btn dpad-btn" id="dl-frente" data-dir="frente">Frente</button>
+              <div class="dpad-row">
+                <button class="btn dpad-btn" id="dl-esquerda" data-dir="esquerda">Esquerda</button>
+                <button class="btn dpad-btn btn-stop" id="dl-stop">Parar</button>
+                <button class="btn dpad-btn" id="dl-direita" data-dir="direita">Direita</button>
+              </div>
+              <button class="btn dpad-btn" id="dl-tras" data-dir="tras">Tras</button>
+            </div>
+          </div>
+
+          <div class="card speed-card">
+            <div class="card-title">Velocidade</div>
+            <div class="slider-row">
+              <label class="slider-label">Geral</label>
+              <input type="range" id="dl-speed" min="0" max="100" value="70" class="hslider">
+              <span id="dl-speed-val" class="speed-val">70%</span>
+            </div>
+          </div>
+
+          <div class="card diff-card">
+            <div class="card-title">Motores Independentes</div>
+            <div class="slider-row">
+              <label class="slider-label">Esquerda</label>
+              <input type="range" id="dl-left" min="-100" max="100" value="0" class="hslider">
+              <span id="dl-left-val" class="speed-val">0</span>
+            </div>
+            <div class="slider-row">
+              <label class="slider-label">Direita</label>
+              <input type="range" id="dl-right" min="-100" max="100" value="0" class="hslider">
+              <span id="dl-right-val" class="speed-val">0</span>
+            </div>
+            <button class="btn btn-outline btn-block" id="dl-apply-diff">Aplicar Diferencial</button>
+          </div>
+
+          <div class="card pwm-card">
+            <div class="card-title">Configuracao PWM</div>
+            <div class="config-row"><label>Min</label><input type="number" id="dl-pwm-min" min="0" max="255" value="60" class="cfg-input"></div>
+            <div class="config-row"><label>Max</label><input type="number" id="dl-pwm-max" min="0" max="255" value="255" class="cfg-input"></div>
+            <div class="config-row"><label>Default</label><input type="number" id="dl-pwm-default" min="0" max="255" value="150" class="cfg-input"></div>
+            <div class="config-row"><label>Motores</label><label class="switch inline"><input type="checkbox" id="dl-motors-enabled" checked><span class="slider-round"></span></label></div>
+            <button class="btn btn-outline btn-block" id="dl-save-config">Salvar Configuracao</button>
+          </div>
+
+          <div class="card env-card">
+            <div class="card-title">Ambiente</div>
+            <div class="env-grid">
+              <div class="env-item"><span class="env-k">Temp</span><strong id="dl-temp" class="env-v">--</strong></div>
+              <div class="env-item"><span class="env-k">Umidade</span><strong id="dl-hum" class="env-v">--</strong></div>
+              <div class="env-item"><span class="env-k">Pressao</span><strong id="dl-pres" class="env-v">--</strong></div>
+              <div class="env-item"><span class="env-k">Distancia</span><strong id="dl-dist" class="env-v">--</strong></div>
+            </div>
+            <div class="env-status" id="dl-env-status">sensores: verificando...</div>
+            <button class="btn btn-auto btn-block" id="dl-auto">Autonomo: OFF</button>
+          </div>
+
+          <div class="card advice-card">
+            <div class="card-title">Avisos</div>
+            <ul class="advice-list" id="dl-advice-list"><li class="advice-none">Nenhum aviso no momento</li></ul>
+            <div class="env-status" id="dl-trend-status">tendencia: coletando dados...</div>
+          </div>
+
+          <div class="card sys-card">
+            <div class="card-title">Sistema</div>
+            <button class="btn btn-outline btn-block" id="dl-sys-info">Ler Status do Sistema</button>
+            <div id="dl-system-info" class="sys-info"></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="telemetry" id="dl-telemetry">
+        <div class="tel-item"><span class="tel-label">Status:</span><span id="dl-tel-status" class="tel-value">Parado</span></div>
+        <div class="tel-item"><span class="tel-label">Motor Esq:</span><span id="dl-tel-left" class="tel-value">0</span></div>
+        <div class="tel-item"><span class="tel-label">Motor Dir:</span><span id="dl-tel-right" class="tel-value">0</span></div>
+        <div class="tel-item"><span class="tel-label">Movendo:</span><span id="dl-tel-moving" class="tel-value">Nao</span></div>
+        <div class="tel-item"><span class="tel-label">Conexao:</span><span id="dl-tel-conn" class="tel-value">Offline</span></div>
+        <div class="tel-item"><span class="tel-label">Ultimo erro:</span><span id="dl-tel-api-error" class="tel-value offline">Nenhum</span></div>
+      </div>
+
+      <div class="alert alert-critical" id="dl-alert-fire" hidden>
+        <strong>Possivel incendio</strong>
+        <p id="dl-alert-fire-text">A temperatura subiu muito rapido. Verifique o ambiente imediatamente.</p>
+        <button id="dl-btn-fire-ok" type="button">Entendi</button>
+      </div>
+      <div class="alert" id="dl-alert-stuck" hidden>
+        <strong>Robo enroscado</strong>
+        <p id="dl-alert-stuck-text">O modo autonomo foi desligado apos 100 obstaculos seguidos. Limpe o caminho e ligue novamente.</p>
+        <button id="dl-btn-alert-ok" type="button">Entendi</button>
+      </div>
+    </section>
+
+    <!-- =================== CONFIG =================== -->
+    <section class="panel panel-config hidden" id="panel-config">
+      <div class="config-wrap">
+        <div class="card wifi-card">
+          <div class="card-title">Wi-Fi</div>
+          <div class="config-row">
+            <label>Modo</label>
+            <select id="cfg-wifi-mode" class="cfg-select">
+              <option value="ap">Access Point (server)</option>
+              <option value="sta">Cliente (client)</option>
+            </select>
+          </div>
+          <div class="config-row sta-row" id="cfg-wifi-sta-row" style="display:none;">
+            <label>SSID</label><input type="text" id="cfg-wifi-ssid" class="cfg-input" placeholder="Nome da rede">
+          </div>
+          <div class="config-row sta-row" id="cfg-wifi-pass-row" style="display:none;">
+            <label>Senha</label><input type="password" id="cfg-wifi-pass" class="cfg-input" placeholder="Senha Wi-Fi">
+          </div>
+          <div class="config-row ap-row" id="cfg-wifi-ap-row">
+            <label>SSID AP</label><input type="text" id="cfg-ap-ssid" class="cfg-input" value="Irobot-Setup">
+          </div>
+          <div class="config-row ap-row" id="cfg-wifi-ap-pass-row">
+            <label>Senha AP</label><input type="password" id="cfg-ap-pass" class="cfg-input" value="irobot1234">
+          </div>
+          <button class="btn btn-outline btn-block" id="cfg-save-wifi">Salvar Wi-Fi</button>
+        </div>
+
+        <div class="card pwm-card">
+          <div class="card-title">PWM / Motores</div>
+          <div class="config-row"><label>Min</label><input type="number" id="cfg-pwm-min" min="0" max="255" value="60" class="cfg-input"></div>
+          <div class="config-row"><label>Max</label><input type="number" id="cfg-pwm-max" min="0" max="255" value="255" class="cfg-input"></div>
+          <div class="config-row"><label>Default</label><input type="number" id="cfg-pwm-default" min="0" max="255" value="150" class="cfg-input"></div>
+          <div class="config-row"><label>Motores habilitados</label><label class="switch inline"><input type="checkbox" id="cfg-motors-enabled" checked><span class="slider-round"></span></label></div>
+          <button class="btn btn-outline btn-block" id="cfg-save-pwm">Salvar PWM</button>
+        </div>
+
+        <div class="card sys-card">
+          <div class="card-title">Sistema</div>
+          <button class="btn btn-outline btn-block" id="cfg-sys-info">Ler Status do Sistema</button>
+          <div id="cfg-system-info" class="sys-info"></div>
+          <div class="config-row" style="margin-top:12px;">
+            <button class="btn btn-outline btn-block" id="cfg-restart">Reiniciar Robo</button>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 
   <div class="alert alert-critical" id="alert-fire" hidden>
-    <strong>Poss&#237;vel inc&#234;ndio</strong>
-    <p id="alert-fire-text">A temperatura subiu muito r&#225;pido. Verifique o ambiente imediatamente.</p>
+    <strong>Possivel incendio</strong>
+    <p id="alert-fire-text">A temperatura subiu muito rapido. Verifique o ambiente imediatamente.</p>
     <button id="btn-fire-ok" type="button">Entendi</button>
   </div>
   <div class="alert" id="alert-stuck" hidden>
-    <strong>Rob&#244; enroscado</strong>
-    <p id="alert-stuck-text">O modo aut&#244;nomo foi desligado ap&#243;s 100 obst&#225;culos seguidos. Limpe o caminho e ligue novamente.</p>
+    <strong>Robo enroscado</strong>
+    <p id="alert-stuck-text">O modo autonomo foi desligado apos 100 obstaculos seguidos. Limpe o caminho e ligue novamente.</p>
     <button id="btn-alert-ok" type="button">Entendi</button>
   </div>
 
-  <script src="/app.js?v=5"></script>
+  <script src="/app.js?v=6"></script>
 </body>
 </html>

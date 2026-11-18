@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <esp_system.h>
 #include <ESPmDNS.h>
+#include <Preferences.h>
 
 #include "HardwareConfig.h"
 #include "L298NDualDriver.h"
@@ -89,14 +90,43 @@ void setup() {
     Serial.println("MotorEngine inicializado");
   }
 
-  // Wi-Fi Access Point
-  WiFi.mode(WIFI_AP);
+  // Wi-Fi: AP por padrao; modo cliente (sta) se salvo na configuracao
   WiFi.setSleep(false);
   WiFi.setTxPower(WIFI_POWER_11dBm);
-  WiFi.softAP(AP_SSID, AP_PASS);
-  IPAddress apIP = WiFi.softAPIP();
-  Serial.print("AP SSID: "); Serial.println(AP_SSID);
-  Serial.print("AP IP: "); Serial.println(apIP);
+
+  Preferences wifiPrefs;
+  wifiPrefs.begin("irobot-wifi", true);
+  String wifiMode = wifiPrefs.getString("mode", "ap");
+  String wifiSsid = wifiPrefs.getString("ssid", "");
+  String wifiPass = wifiPrefs.getString("pass", "");
+  wifiPrefs.end();
+
+  bool staOk = false;
+  if (wifiMode == "sta" && wifiSsid.length() > 0) {
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(wifiSsid.c_str(), wifiPass.c_str());
+    Serial.print("Wi-Fi STA conectando: "); Serial.println(wifiSsid);
+    uint32_t t0 = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - t0 < 12000) {
+      delay(250);
+      Serial.print(".");
+    }
+    Serial.println();
+    staOk = WiFi.status() == WL_CONNECTED;
+    if (staOk) {
+      Serial.print("Wi-Fi conectado. IP: "); Serial.println(WiFi.localIP());
+    } else {
+      Serial.println("Falha ao conectar no Wi-Fi - voltando para AP");
+    }
+  }
+
+  if (!staOk) {
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP(AP_SSID, AP_PASS);
+    IPAddress apIP = WiFi.softAPIP();
+    Serial.print("AP SSID: "); Serial.println(AP_SSID);
+    Serial.print("AP IP: "); Serial.println(apIP);
+  }
 
   // mDNS
   if (!MDNS.begin("irobot")) {

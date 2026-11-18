@@ -2,6 +2,7 @@
 #include "WebAssets.h"
 #include <ESPmDNS.h>
 #include <WiFi.h>
+#include <Preferences.h>
 
 DashboardService::DashboardService() {}
 
@@ -31,6 +32,9 @@ void DashboardService::setupRoutes() {
   _server->on("/style.css", HTTP_GET, std::bind(&DashboardService::handleStyleCss, this));
   _server->on("/app.js", HTTP_GET, std::bind(&DashboardService::handleAppJs, this));
   _server->on("/favicon.ico", HTTP_GET, std::bind(&DashboardService::handleFavicon, this));
+  _server->on("/manifest.json", HTTP_GET, std::bind(&DashboardService::handleManifest, this));
+  _server->on("/favicon.svg", HTTP_GET, std::bind(&DashboardService::handleFaviconSvg, this));
+  _server->on("/sw.js", HTTP_GET, std::bind(&DashboardService::handleSwJs, this));
   _server->on("/api/motor/status", HTTP_GET, std::bind(&DashboardService::handleMotorStatus, this));
   _server->on("/api/motor/status", HTTP_OPTIONS, std::bind(&DashboardService::handleCorsPreflight, this));
   _server->on("/api/motor/move", HTTP_POST, std::bind(&DashboardService::handleMotorMove, this));
@@ -47,6 +51,11 @@ void DashboardService::setupRoutes() {
   _server->on("/api/auto", HTTP_OPTIONS, std::bind(&DashboardService::handleCorsPreflight, this));
   _server->on("/api/system/info", HTTP_GET, std::bind(&DashboardService::handleSystemInfo, this));
   _server->on("/api/system/info", HTTP_OPTIONS, std::bind(&DashboardService::handleCorsPreflight, this));
+  _server->on("/api/wifi", HTTP_GET, std::bind(&DashboardService::handleWifiGet, this));
+  _server->on("/api/wifi", HTTP_POST, std::bind(&DashboardService::handleWifiPost, this));
+  _server->on("/api/wifi", HTTP_OPTIONS, std::bind(&DashboardService::handleCorsPreflight, this));
+  _server->on("/api/system/restart", HTTP_POST, std::bind(&DashboardService::handleSystemRestart, this));
+  _server->on("/api/system/restart", HTTP_OPTIONS, std::bind(&DashboardService::handleCorsPreflight, this));
   _server->onNotFound(std::bind(&DashboardService::handleNotFound, this));
 }
 
@@ -80,7 +89,70 @@ void DashboardService::handleAppJs() {
 }
 
 void DashboardService::handleFavicon() {
-  sendWithCors(204, "image/x-icon", "");
+  sendWithCors(200, "image/svg+xml", favicon_svg);
+}
+
+void DashboardService::handleManifest() {
+  sendWithCors(200, "application/manifest+json", manifest_json);
+}
+
+void DashboardService::handleFaviconSvg() {
+  sendWithCors(200, "image/svg+xml", favicon_svg);
+}
+
+void DashboardService::handleSwJs() {
+  _server->sendHeader("Cache-Control", "no-cache");
+  sendWithCors(200, "application/javascript", sw_js);
+}
+
+void DashboardService::handleWifiGet() {
+  Preferences prefs;
+  prefs.begin("irobot-wifi", true);
+  String mode = prefs.getString("mode", "ap");
+  String ssid = prefs.getString("ssid", "");
+  String pass = prefs.getString("pass", "");
+  prefs.end();
+
+  DynamicJsonDocument doc(256);
+  doc["mode"] = mode;
+  doc["ssid"] = ssid;
+  doc["configured"] = ssid.length() > 0;
+  String json;
+  serializeJson(doc, json);
+  sendWithCors(200, "application/json", json);
+}
+
+void DashboardService::handleWifiPost() {
+  String body = _server->arg("plain");
+  DynamicJsonDocument doc(256);
+  DeserializationError err = deserializeJson(doc, body);
+  if (err) {
+    sendWithCors(400, "application/json", "{\"error\":\"json invalido\"}");
+    return;
+  }
+
+  String mode = doc["mode"] | "ap";
+  String ssid = doc["ssid"] | "";
+  String pass = doc["pass"] | "";
+  if (mode != "ap" && mode != "sta") {
+    sendWithCors(400, "application/json", "{\"error\":\"modo invalido\"}");
+    return;
+  }
+
+  Preferences prefs;
+  prefs.begin("irobot-wifi", false);
+  prefs.putString("mode", mode);
+  prefs.putString("ssid", ssid);
+  prefs.putString("pass", pass);
+  prefs.end();
+
+  sendWithCors(200, "application/json", "{\"ok\":true,\"restart\":true}");
+}
+
+void DashboardService::handleSystemRestart() {
+  sendWithCors(200, "application/json", "{\"ok\":true}");
+  delay(200);
+  ESP.restart();
 }
 
 void DashboardService::handleMotorStatus() {

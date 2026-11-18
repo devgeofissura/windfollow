@@ -39,6 +39,12 @@ private:
   void handleTeste();
   void handleStyleCss();
   void handleAppJs();
+  void handleManifest();
+  void handleFaviconSvg();
+  void handleSwJs();
+  void handleWifiGet();
+  void handleWifiPost();
+  void handleSystemRestart();
   void handleMotorStatus();
   void handleMotorMove();
   void handleMotorStop();

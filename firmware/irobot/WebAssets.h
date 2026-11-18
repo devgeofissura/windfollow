@@ -9,1400 +9,1098 @@ static const char* index_html = R"rawliteral(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>iRobot - Tela de Teste</title>
-  <link rel="stylesheet" href="/style.css?v=3">
+  <meta name="theme-color" content="#0b1120">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="iRobot">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" type="image/svg+xml" href="/favicon.svg">
+  <title>iRobot</title>
+  <link rel="stylesheet" href="/style.css?v=6">
 </head>
 <body>
-
-  <header class="app-header">
-    <div class="header-left">
-      <h1>iRobot</h1>
-      <span class="subtitulo">Teste de Comando</span>
+  <div class="app">
+    <!-- Letreiro de ambiente (topo, pequeno) -->
+    <div class="ticker" id="ticker">
+      <span class="ticker-label">Ambiente:</span>
+      <span class="ticker-text" id="ticker-text">Iniciando sensores...</span>
     </div>
-    <div class="header-right">
-      <div id="status-badge" class="badge offline">Desconectado</div>
-      <label class="switch">
-        <input type="checkbox" id="power-toggle" checked>
-        <span class="slider-round"></span>
-      </label>
-    </div>
-  </header>
 
-  <main class="test-layout">
-    <!-- Coluna esquerda: joystick -->
-    <section class="joystick-column">
-      <div class="joystick-card">
-        <div class="joystick-title">Joystick Diferencial</div>
-        <div class="joystick-base" id="joystick-base">
-          <div class="joystick-center-dot"></div>
-          <div class="joystick-knob" id="joystick-knob"></div>
-          <div class="joystick-ring" id="joystick-ring"></div>
-        </div>
-        <div class="joystick-hint">Arraste para controlar (esq/dir = curva)</div>
-        <div class="joy-readout">
-          <span id="joy-dir">Parado</span>
-          <span id="joy-int">Int: 0%</span>
-        </div>
+    <!-- Header com abas -->
+    <header class="app-header">
+      <div class="logo" id="app-logo">&#129302;</div>
+      <h1 class="app-title" id="app-title">iRobot</h1>
+      <div class="header-actions">
+        <div id="badge-conn" class="badge offline">Desconectado</div>
+        <label class="switch fullscreen-switch">
+          <input type="checkbox" id="fs-toggle">
+          <span class="slider-round"></span>
+        </label>
+        <span class="fs-hint" id="fs-hint">Tela cheia</span>
       </div>
-    </section>
+    </header>
 
-    <!-- Coluna direita: botoes e controles de teste -->
-    <section class="controls-column">
-      <!-- Botoes direcionais -->
-      <div class="card">
-        <div class="card-title">Comandos Rapidos</div>
-        <div class="dpad">
-          <button class="btn dpad-btn" id="btn-frente" data-dir="frente">Frente</button>
-          <div class="dpad-row">
-            <button class="btn dpad-btn" id="btn-esquerda" data-dir="esquerda">Esquerda</button>
-            <button class="btn dpad-btn btn-stop" id="btn-stop">Parar</button>
-            <button class="btn dpad-btn" id="btn-direita" data-dir="direita">Direita</button>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" role="tab" aria-selected="true" data-tab="home">Home</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="dl">DL</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="config">Config</button>
+    </nav>
+
+    <!-- =================== HOME =================== -->
+    <section class="panel panel-home" id="panel-home">
+      <div class="home-grid">
+        <!-- Coluna esquerda: joystick -->
+        <aside class="home-col joy-col">
+          <div class="card joy-card">
+            <div class="card-title">Joystick</div>
+            <div class="joystick-wrap">
+              <div class="joystick-base" id="joy-base">
+                <div class="joystick-center-dot"></div>
+                <div class="joystick-knob" id="joy-knob"></div>
+              </div>
+              <div class="joy-readout">
+                <span id="joy-dir">Parado</span>
+                <span id="joy-int">Int: 0%</span>
+              </div>
+            </div>
           </div>
-          <button class="btn dpad-btn" id="btn-tras" data-dir="tras">Tras</button>
-        </div>
-      </div>
+        </aside>
 
-      <!-- Velocidade geral -->
-      <div class="card">
-        <div class="card-title">Velocidade</div>
-        <div class="slider-row">
-          <label class="slider-label">Geral</label>
-          <input type="range" id="speed-slider" min="0" max="100" value="70" class="hslider">
-          <span id="speed-value" class="speed-val">70%</span>
-        </div>
-      </div>
+        <!-- Coluna central: painel de botoes -->
+        <section class="home-col center-col">
+          <div class="card btns-card">
+            <div class="card-title">Comandos</div>
+            <div class="dpad">
+              <button class="btn dpad-btn" id="btn-frente" data-dir="frente">&#9650;<span>Frente</span></button>
+              <div class="dpad-row">
+                <button class="btn dpad-btn" id="btn-esquerda" data-dir="esquerda">&#9664;<span>Esquerda</span></button>
+                <button class="btn dpad-btn btn-stop" id="btn-stop">&#9632;<span>Parar</span></button>
+                <button class="btn dpad-btn" id="btn-direita" data-dir="direita">&#9654;<span>Direita</span></button>
+              </div>
+              <button class="btn dpad-btn" id="btn-tras" data-dir="tras">&#9660;<span>Tras</span></button>
+            </div>
+            <button class="btn btn-auto btn-block" id="btn-home-auto">Modo Autonomo: OFF</button>
+            <div class="speed-row">
+              <label class="speed-label">Velocidade</label>
+              <input type="range" id="home-speed" min="0" max="100" value="70" class="hslider">
+              <span id="home-speed-val" class="speed-val">70%</span>
+            </div>
+          </div>
+        </section>
 
-      <!-- Controle diferencial independente -->
-      <div class="card">
-        <div class="card-title">Motores Independentes</div>
-        <div class="slider-row">
-          <label class="slider-label">Esquerda</label>
-          <input type="range" id="left-slider" min="-100" max="100" value="0" class="hslider">
-          <span id="left-value" class="speed-val">0</span>
-        </div>
-        <div class="slider-row">
-          <label class="slider-label">Direita</label>
-          <input type="range" id="right-slider" min="-100" max="100" value="0" class="hslider">
-          <span id="right-value" class="speed-val">0</span>
-        </div>
-        <button class="btn btn-outline btn-block" id="btn-apply-diff">Aplicar Diferencial</button>
-      </div>
-
-      <!-- Configuracao PWM -->
-      <div class="card">
-        <div class="card-title">Configuracao PWM</div>
-        <div class="config-row">
-          <label>Min</label>
-          <input type="number" id="cfg-pwm-min" min="0" max="255" value="60" class="cfg-input">
-        </div>
-        <div class="config-row">
-          <label>Max</label>
-          <input type="number" id="cfg-pwm-max" min="0" max="255" value="255" class="cfg-input">
-        </div>
-        <div class="config-row">
-          <label>Default</label>
-          <input type="number" id="cfg-pwm-default" min="0" max="255" value="150" class="cfg-input">
-        </div>
-        <div class="config-row">
-          <label>Motores</label>
-          <label class="switch inline">
-            <input type="checkbox" id="cfg-motors-enabled" checked>
-            <span class="slider-round"></span>
-          </label>
-        </div>
-        <button class="btn btn-outline btn-block" id="btn-save-config">Salvar Configuracao</button>
-      </div>
-
-      <!-- Ambiente + modo autonomo -->
-      <div class="card">
-        <div class="card-title">Ambiente (AHT20 + BMP280 + VL53L0X)</div>
-        <div class="env-grid">
-          <div class="env-item"><span>Temperatura</span><strong id="env-temp">--</strong></div>
-          <div class="env-item"><span>Umidade</span><strong id="env-hum">--</strong></div>
-          <div class="env-item"><span>Pressao</span><strong id="env-pres">--</strong></div>
-          <div class="env-item"><span>Distancia</span><strong id="env-dist">--</strong></div>
-        </div>
-        <div class="env-status" id="env-status">sensores: verificando...</div>
-        <button class="btn btn-outline btn-block" id="btn-auto">Autonomo: OFF</button>
-      </div>
-      <!-- Avisos ambientais -->
-      <div class="card">
-        <div class="card-title">Avisos</div>
-        <ul class="advice-list" id="advice-list">
-          <li class="advice-none">Nenhum aviso no momento</li>
-        </ul>
-        <div class="env-status" id="trend-status">tendencia: coletando dados...</div>
-      </div>
-
-      <!-- Sistema -->
-      <div class="card">
-        <div class="card-title">Sistema</div>
-        <button class="btn btn-outline btn-block" id="btn-system-info">Ler Status do Sistema</button>
-        <div id="system-info" class="sys-info"></div>
+        <!-- Coluna direita: sensores + status -->
+        <aside class="home-col info-col">
+          <div class="card info-card">
+            <div class="card-title">Sensores</div>
+            <div class="env-grid">
+              <div class="env-item"><span class="env-k">Temp</span><strong id="home-temp" class="env-v">--</strong></div>
+              <div class="env-item"><span class="env-k">Umidade</span><strong id="home-hum" class="env-v">--</strong></div>
+              <div class="env-item"><span class="env-k">Pressao</span><strong id="home-pres" class="env-v">--</strong></div>
+              <div class="env-item"><span class="env-k">Distancia</span><strong id="home-dist" class="env-v">--</strong></div>
+            </div>
+          </div>
+          <div class="card status-card">
+            <div class="card-title">Status do Robo</div>
+            <div class="status-row">
+              <span class="status-k">Estado:</span>
+              <strong id="home-state" class="status-v">Parado</strong>
+            </div>
+            <div class="status-row">
+              <span class="status-k">Motores:</span>
+              <strong id="home-moving" class="status-v">Parado</strong>
+            </div>
+            <div class="status-row">
+              <span class="status-k">Conexao:</span>
+              <strong id="home-conn" class="status-v offline">Desconectado</strong>
+            </div>
+          </div>
+        </aside>
       </div>
     </section>
-  </main>
 
-  <!-- Painel de telemetria ao vivo -->
-  <div class="telemetry" id="telemetry">
-    <div class="tel-item"><span class="tel-label">Status:</span> <span id="tel-status" class="tel-value">Parado</span></div>
-    <div class="tel-item"><span class="tel-label">Motor Esq:</span> <span id="tel-left" class="tel-value">0</span></div>
-    <div class="tel-item"><span class="tel-label">Motor Dir:</span> <span id="tel-right" class="tel-value">0</span></div>
-    <div class="tel-item"><span class="tel-label">Movendo:</span> <span id="tel-moving" class="tel-value">Nao</span></div>
-    <div class="tel-item"><span class="tel-label">Conexao:</span> <span id="tel-conn" class="tel-value">Offline</span></div>
-    <div class="tel-item"><span class="tel-label">Ultimo erro:</span> <span id="tel-api-error" class="tel-value offline">Nenhum</span></div>
+    <!-- =================== DL (antiga tela de teste) =================== -->
+    <section class="panel panel-dl hidden" id="panel-dl">
+      <div class="dl-wrap">
+        <section class="dl-col-left">
+          <div class="card joy-card">
+            <div class="card-title">Joystick Diferencial</div>
+            <div class="joystick-wrap">
+              <div class="joystick-base" id="dl-joy-base">
+                <div class="joystick-center-dot"></div>
+                <div class="joystick-knob" id="dl-joy-knob"></div>
+              </div>
+              <div class="joy-readout">
+                <span id="dl-joy-dir">Parado</span>
+                <span id="dl-joy-int">Int: 0%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="dl-col-right">
+          <div class="card cmds-card">
+            <div class="card-title">Comandos Rapidos</div>
+            <div class="dpad">
+              <button class="btn dpad-btn" id="dl-frente" data-dir="frente">Frente</button>
+              <div class="dpad-row">
+                <button class="btn dpad-btn" id="dl-esquerda" data-dir="esquerda">Esquerda</button>
+                <button class="btn dpad-btn btn-stop" id="dl-stop">Parar</button>
+                <button class="btn dpad-btn" id="dl-direita" data-dir="direita">Direita</button>
+              </div>
+              <button class="btn dpad-btn" id="dl-tras" data-dir="tras">Tras</button>
+            </div>
+          </div>
+
+          <div class="card speed-card">
+            <div class="card-title">Velocidade</div>
+            <div class="slider-row">
+              <label class="slider-label">Geral</label>
+              <input type="range" id="dl-speed" min="0" max="100" value="70" class="hslider">
+              <span id="dl-speed-val" class="speed-val">70%</span>
+            </div>
+          </div>
+
+          <div class="card diff-card">
+            <div class="card-title">Motores Independentes</div>
+            <div class="slider-row">
+              <label class="slider-label">Esquerda</label>
+              <input type="range" id="dl-left" min="-100" max="100" value="0" class="hslider">
+              <span id="dl-left-val" class="speed-val">0</span>
+            </div>
+            <div class="slider-row">
+              <label class="slider-label">Direita</label>
+              <input type="range" id="dl-right" min="-100" max="100" value="0" class="hslider">
+              <span id="dl-right-val" class="speed-val">0</span>
+            </div>
+            <button class="btn btn-outline btn-block" id="dl-apply-diff">Aplicar Diferencial</button>
+          </div>
+
+          <div class="card pwm-card">
+            <div class="card-title">Configuracao PWM</div>
+            <div class="config-row"><label>Min</label><input type="number" id="dl-pwm-min" min="0" max="255" value="60" class="cfg-input"></div>
+            <div class="config-row"><label>Max</label><input type="number" id="dl-pwm-max" min="0" max="255" value="255" class="cfg-input"></div>
+            <div class="config-row"><label>Default</label><input type="number" id="dl-pwm-default" min="0" max="255" value="150" class="cfg-input"></div>
+            <div class="config-row"><label>Motores</label><label class="switch inline"><input type="checkbox" id="dl-motors-enabled" checked><span class="slider-round"></span></label></div>
+            <button class="btn btn-outline btn-block" id="dl-save-config">Salvar Configuracao</button>
+          </div>
+
+          <div class="card env-card">
+            <div class="card-title">Ambiente</div>
+            <div class="env-grid">
+              <div class="env-item"><span class="env-k">Temp</span><strong id="dl-temp" class="env-v">--</strong></div>
+              <div class="env-item"><span class="env-k">Umidade</span><strong id="dl-hum" class="env-v">--</strong></div>
+              <div class="env-item"><span class="env-k">Pressao</span><strong id="dl-pres" class="env-v">--</strong></div>
+              <div class="env-item"><span class="env-k">Distancia</span><strong id="dl-dist" class="env-v">--</strong></div>
+            </div>
+            <div class="env-status" id="dl-env-status">sensores: verificando...</div>
+            <button class="btn btn-auto btn-block" id="dl-auto">Autonomo: OFF</button>
+          </div>
+
+          <div class="card advice-card">
+            <div class="card-title">Avisos</div>
+            <ul class="advice-list" id="dl-advice-list"><li class="advice-none">Nenhum aviso no momento</li></ul>
+            <div class="env-status" id="dl-trend-status">tendencia: coletando dados...</div>
+          </div>
+
+          <div class="card sys-card">
+            <div class="card-title">Sistema</div>
+            <button class="btn btn-outline btn-block" id="dl-sys-info">Ler Status do Sistema</button>
+            <div id="dl-system-info" class="sys-info"></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="telemetry" id="dl-telemetry">
+        <div class="tel-item"><span class="tel-label">Status:</span><span id="dl-tel-status" class="tel-value">Parado</span></div>
+        <div class="tel-item"><span class="tel-label">Motor Esq:</span><span id="dl-tel-left" class="tel-value">0</span></div>
+        <div class="tel-item"><span class="tel-label">Motor Dir:</span><span id="dl-tel-right" class="tel-value">0</span></div>
+        <div class="tel-item"><span class="tel-label">Movendo:</span><span id="dl-tel-moving" class="tel-value">Nao</span></div>
+        <div class="tel-item"><span class="tel-label">Conexao:</span><span id="dl-tel-conn" class="tel-value">Offline</span></div>
+        <div class="tel-item"><span class="tel-label">Ultimo erro:</span><span id="dl-tel-api-error" class="tel-value offline">Nenhum</span></div>
+      </div>
+
+      <div class="alert alert-critical" id="dl-alert-fire" hidden>
+        <strong>Possivel incendio</strong>
+        <p id="dl-alert-fire-text">A temperatura subiu muito rapido. Verifique o ambiente imediatamente.</p>
+        <button id="dl-btn-fire-ok" type="button">Entendi</button>
+      </div>
+      <div class="alert" id="dl-alert-stuck" hidden>
+        <strong>Robo enroscado</strong>
+        <p id="dl-alert-stuck-text">O modo autonomo foi desligado apos 100 obstaculos seguidos. Limpe o caminho e ligue novamente.</p>
+        <button id="dl-btn-alert-ok" type="button">Entendi</button>
+      </div>
+    </section>
+
+    <!-- =================== CONFIG =================== -->
+    <section class="panel panel-config hidden" id="panel-config">
+      <div class="config-wrap">
+        <div class="card wifi-card">
+          <div class="card-title">Wi-Fi</div>
+          <div class="config-row">
+            <label>Modo</label>
+            <select id="cfg-wifi-mode" class="cfg-select">
+              <option value="ap">Access Point (server)</option>
+              <option value="sta">Cliente (client)</option>
+            </select>
+          </div>
+          <div class="config-row sta-row" id="cfg-wifi-sta-row" style="display:none;">
+            <label>SSID</label><input type="text" id="cfg-wifi-ssid" class="cfg-input" placeholder="Nome da rede">
+          </div>
+          <div class="config-row sta-row" id="cfg-wifi-pass-row" style="display:none;">
+            <label>Senha</label><input type="password" id="cfg-wifi-pass" class="cfg-input" placeholder="Senha Wi-Fi">
+          </div>
+          <div class="config-row ap-row" id="cfg-wifi-ap-row">
+            <label>SSID AP</label><input type="text" id="cfg-ap-ssid" class="cfg-input" value="Irobot-Setup">
+          </div>
+          <div class="config-row ap-row" id="cfg-wifi-ap-pass-row">
+            <label>Senha AP</label><input type="password" id="cfg-ap-pass" class="cfg-input" value="irobot1234">
+          </div>
+          <button class="btn btn-outline btn-block" id="cfg-save-wifi">Salvar Wi-Fi</button>
+        </div>
+
+        <div class="card pwm-card">
+          <div class="card-title">PWM / Motores</div>
+          <div class="config-row"><label>Min</label><input type="number" id="cfg-pwm-min" min="0" max="255" value="60" class="cfg-input"></div>
+          <div class="config-row"><label>Max</label><input type="number" id="cfg-pwm-max" min="0" max="255" value="255" class="cfg-input"></div>
+          <div class="config-row"><label>Default</label><input type="number" id="cfg-pwm-default" min="0" max="255" value="150" class="cfg-input"></div>
+          <div class="config-row"><label>Motores habilitados</label><label class="switch inline"><input type="checkbox" id="cfg-motors-enabled" checked><span class="slider-round"></span></label></div>
+          <button class="btn btn-outline btn-block" id="cfg-save-pwm">Salvar PWM</button>
+        </div>
+
+        <div class="card sys-card">
+          <div class="card-title">Sistema</div>
+          <button class="btn btn-outline btn-block" id="cfg-sys-info">Ler Status do Sistema</button>
+          <div id="cfg-system-info" class="sys-info"></div>
+          <div class="config-row" style="margin-top:12px;">
+            <button class="btn btn-outline btn-block" id="cfg-restart">Reiniciar Robo</button>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 
   <div class="alert alert-critical" id="alert-fire" hidden>
-    <strong>Poss&#237;vel inc&#234;ndio</strong>
-    <p id="alert-fire-text">A temperatura subiu muito r&#225;pido. Verifique o ambiente imediatamente.</p>
+    <strong>Possivel incendio</strong>
+    <p id="alert-fire-text">A temperatura subiu muito rapido. Verifique o ambiente imediatamente.</p>
     <button id="btn-fire-ok" type="button">Entendi</button>
   </div>
   <div class="alert" id="alert-stuck" hidden>
-    <strong>Rob&#244; enroscado</strong>
-    <p id="alert-stuck-text">O modo aut&#244;nomo foi desligado ap&#243;s 100 obst&#225;culos seguidos. Limpe o caminho e ligue novamente.</p>
+    <strong>Robo enroscado</strong>
+    <p id="alert-stuck-text">O modo autonomo foi desligado apos 100 obstaculos seguidos. Limpe o caminho e ligue novamente.</p>
     <button id="btn-alert-ok" type="button">Entendi</button>
   </div>
 
-  <script src="/app.js?v=5"></script>
+  <script src="/app.js?v=6"></script>
 </body>
 </html>
 
 )rawliteral";
 static const char* style_css = R"rawliteral(
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-:root {
-  --bg: #0b0f19;
-  --panel: #111827;
-  --panel-hover: #1f2937;
-  --accent: #38bdf8;
-  --accent-dim: #0ea5e9;
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --danger: #ef4444;
-  --danger-hover: #b91c1c;
-  --success: #22c55e;
-  --border: #1e293b;
-  --ring: rgba(56, 189, 248, 0.35);
-}
-
+* { box-sizing: border-box; }
 html, body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-  touch-action: none;
-  -webkit-tap-highlight-color: transparent;
+  margin: 0; padding: 0;
+  height: 100%; width: 100%;
+  background: #0b1120; color: #e8eef5;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-user-select: none; user-select: none; touch-action: manipulation;
+  overflow: hidden;
 }
+body { display: flex; flex-direction: column; }
 
-body {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  padding: 0;
-}
-
-/* ===== Header ===== */
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border);
-  background: #0f172a;
-  flex-shrink: 0;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.app-header h1 {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.subtitulo {
-  font-size: 0.75rem;
-  color: var(--muted);
-  background: rgba(255,255,255,0.05);
-  padding: 0.12rem 0.5rem;
-  border-radius: 4px;
-  border: 1px solid rgba(255,255,255,0.08);
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-}
-
-.badge {
-  padding: 0.2rem 0.6rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border: 1px solid;
-}
-
-.badge.offline { background: #1e293b; color: #94a3b8; border-color: #334155; }
-.badge.online  { background: #064e3b; color: #bbf7d0; border-color: #15803d; }
-
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 24px;
-}
-
-.switch input { opacity: 0; width: 0; height: 0; }
-
-.slider-round {
-  position: absolute;
-  cursor: pointer;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: #334155;
-  border-radius: 34px;
-  transition: 0.2s;
-}
-
-.switch input:checked + .slider-round { background: #10b981; }
-
-.slider-round:before {
-  position: absolute; content: "";
-  height: 18px; width: 18px;
-  left: 3px; bottom: 3px;
-  background: white;
-  border-radius: 50%;
-  transition: 0.2s;
-}
-
-.switch input:checked + .slider-round:before { transform: translateX(20px); }
-
-.switch.inline { width: 44px; height: 24px; }
-
-/* ===== Main layout ===== */
-main.test-layout {
-  flex: 1;
-  overflow: auto;
-  padding: 0.75rem;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
-  align-items: start;
-}
-
-@media (min-width: 768px) and (orientation: landscape) {
-  main.test-layout {
-    grid-template-columns: 320px 1fr;
-    gap: 1rem;
-    padding: 1rem;
-    align-items: start;
-  }
-}
-
-@media (min-width: 1024px) {
-  main.test-layout {
-    grid-template-columns: 340px 1fr;
-  }
-}
-
-/* ===== Cards ===== */
-.card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 0.9rem;
-  padding: 0.85rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-}
-
-.card-title {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.4rem;
-  margin-bottom: 0.2rem;
-}
-
-.joystick-card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 0.9rem;
-  padding: 0.85rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.joystick-title {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* ===== Joystick ===== */
-.joystick-base {
-  position: relative;
-  width: 220px;
-  height: 220px;
-  background: radial-gradient(circle, #1e293b 0%, #0f172a 70%);
-  border: 2px solid var(--border);
-  border-radius: 50%;
-  box-shadow: inset 0 0 24px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03);
-  touch-action: none;
-  user-select: none;
-}
-
-.joystick-ring {
-  position: absolute;
-  top: 50%; left: 50%;
-  width: 100%; height: 100%;
-  border: 1px dashed rgba(56, 189, 248, 0.15);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-}
-
-.joystick-center-dot {
-  position: absolute;
-  top: 50%; left: 50%;
-  width: 10px; height: 10px;
-  background: #475569;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-}
-
-.joystick-knob {
-  position: absolute;
-  top: 50%; left: 50%;
-  width: 64px; height: 64px;
-  background: var(--accent);
-  border: 3px solid var(--accent-dim);
-  border-radius: 50%;
-  box-shadow: 0 0 24px rgba(56, 189, 248, 0.55);
-  transform: translate(-50%, -50%);
-  touch-action: none;
-  user-select: none;
-  cursor: grab;
-  transition: transform 0.05s ease-out;
-}
-
-.joystick-knob:active { cursor: grabbing; }
-
-.joystick-hint {
-  font-size: 0.78rem;
-  color: var(--muted);
-  text-align: center;
-  max-width: 200px;
-}
-
-.joy-readout {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.8rem;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
-/* ===== DPad ===== */
-.dpad {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 0.5rem;
-  margin-top: 0.2rem;
-}
-
-.dpad .dpad-btn:nth-child(1) { grid-column: 2; grid-row: 1; }      /* Frente */
-.dpad .dpad-btn:nth-child(4) { grid-column: 1; grid-row: 2; }      /* Esquerda */
-.dpad .dpad-btn:nth-child(5) { grid-column: 2; grid-row: 2; }      /* Parar */
-.dpad .dpad-btn:nth-child(6) { grid-column: 3; grid-row: 2; }      /* Direita */
-.dpad .dpad-btn:nth-child(7) { grid-column: 2; grid-row: 3; }      /* Tras */
-
-.dpad-btn {
-  border: none;
-  border-radius: 0.85rem;
-  padding: 0.95rem 0.6rem;
-  font-size: 0.9rem;
-  font-weight: 800;
-  cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  transition: all 0.1s;
-  touch-action: manipulation;
-  background: var(--panel-hover);
-  color: var(--text);
-  border: 1px solid var(--border);
-}
-
-.dpad-btn:active {
-  transform: scale(0.94);
-  filter: brightness(1.15);
-}
-
-.dpad-btn.btn-stop {
-  background: var(--danger);
-  color: #fff;
-  border-color: #b91c1c;
-}
-
-.dpad-btn.btn-stop:active {
-  background: var(--danger-hover);
-}
-
-/* ===== Sliders ===== */
-.slider-row {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
+/* Letreiro de ambiente */
+.ticker {
   width: 100%;
-}
-
-.slider-label {
+  background: #121a2b;
+  color: #cfe3f5;
   font-size: 0.82rem;
-  color: var(--muted);
-  width: 62px;
-  flex-shrink: 0;
-}
-
-.hslider {
-  flex: 1;
-  height: 6px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: #334155;
-  border-radius: 3px;
-  outline: none;
-  accent-color: var(--accent);
-  cursor: pointer;
-  touch-action: none;
-}
-
-.hslider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 18px; height: 18px;
-  background: var(--accent);
-  border: 2px solid #fff;
-  border-radius: 50%;
-  cursor: pointer;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
-}
-
-.hslider::-moz-range-thumb {
-  width: 18px; height: 18px;
-  background: var(--accent);
-  border: 2px solid #fff;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.speed-val {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--accent);
-  min-width: 34px;
-  text-align: right;
-  flex-shrink: 0;
-}
-
-/* Config inputs */
-.config-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  width: 100%;
-}
-
-.config-row label {
-  font-size: 0.82rem;
-  color: var(--muted);
-  width: 78px;
-  flex-shrink: 0;
-}
-
-.cfg-input {
-  flex: 1;
-  background: #0f172a;
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 0.45rem 0.55rem;
-  border-radius: 0.5rem;
-  font-size: 0.85rem;
-  max-width: 90px;
-}
-
-/* ===== Buttons gerais ===== */
-.btn {
-  border: none;
-  border-radius: 0.75rem;
-  padding: 0.8rem 1rem;
-  font-size: 0.88rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-  text-transform: uppercase;
-  width: 100%;
-  touch-action: manipulation;
-  background: var(--panel-hover);
-  color: var(--text);
-  border: 1px solid var(--border);
-}
-
-.btn:active { transform: scale(0.97); }
-
-.btn-outline {
-  background: transparent;
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
-.btn-outline:active {
-  background: rgba(56, 189, 248, 0.12);
-}
-
-.btn-block { width: 100%; }
-
-.btn-danger {
-  background: var(--danger);
-  color: #fff;
-  border-color: #b91c1c;
-}
-
-.btn-danger:hover { background: var(--danger-hover); }
-
-/* ===== Sistema info ===== */
-.sys-info {
-  margin-top: 0.5rem;
-  padding: 0.6rem;
-  background: #0f172a;
-  border: 1px solid var(--border);
-  border-radius: 0.6rem;
-  font-family: monospace;
-  font-size: 0.72rem;
-  color: var(--muted);
-  line-height: 1.5;
-  white-space: pre-wrap;
-}
-
-/* ===== Telemetria ao vivo ===== */
-.telemetry {
-  position: fixed;
-  bottom: 0.5rem;
-  left: 0.5rem;
-  right: 0.5rem;
-  background: rgba(15, 23, 42, 0.92);
-  border: 1px solid var(--border);
-  border-radius: 0.7rem;
-  padding: 0.65rem 0.9rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.9rem 1.6rem;
-  font-family: monospace;
-  font-size: 0.75rem;
-  color: var(--muted);
-  pointer-events: none;
-  max-width: 900px;
-  margin: 0 auto;
+  padding: 4px 10px;
+  overflow: hidden;
+  white-space: nowrap;
+  border-bottom: 1px solid #1f2a3d;
   z-index: 40;
 }
+.ticker-label { color: #8fd7ff; margin-right: 8px; font-weight: 600; }
+.ticker-text { display: inline-block; animation: ticker 20s linear infinite; }
+@keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-.telemetry.hidden { display: none; }
+/* Header */
+.app-header {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px; padding: 0 14px;
+  background: #0f172a; border-bottom: 1px solid #1f2a3d;
+  z-index: 30;
+}
+.logo { font-size: 1.6rem; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #1d2733; }
+.app-title { margin: 0 0 0 10px; font-size: 1.15rem; font-weight: 600; letter-spacing: 0.02em; color: #8fd7ff; }
+.header-actions { display: flex; align-items: center; gap: 10px; }
+.badge {
+  padding: 4px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600;
+  background: #1f2a3d; color: #9fb2c6; border: 1px solid #2d3a50;
+}
+.badge.online { background: #163a26; color: #9fe3b2; border-color: #2fa76a; }
+.badge.offline { background: #3a2428; color: #ffb3b3; border-color: #d64553; }
 
-.tel-item { display: flex; align-items: baseline; gap: 0.35rem; }
-.tel-label { color: #64748b; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; }
-.tel-value { color: var(--text); font-variant-numeric: tabular-nums; }
+/* Tela cheia switch */
+.fullscreen-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.fullscreen-switch input { opacity: 0; width: 0; height: 0; }
+.slider-round {
+  position: absolute; cursor: pointer; inset: 0; background: #1f2a3d;
+  border: 1px solid #2d3a50; border-radius: 24px; transition: .2s;
+}
+.slider-round:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+.fullscreen-switch input:checked + .slider-round { background: #2f9fd8; border-color: #2f9fd8; }
+.fullscreen-switch input:checked + .slider-round:before { transform: translateX(20px); }
+.fs-hint { font-size: 0.72rem; color: #8fd7ff; display: none; }
+.fullscreen-switch input:checked ~ .fs-hint { display: inline; }
 
-.tel-value.online { color: var(--success); }
-.tel-value.offline { color: #ef4444; }
+/* Tabs */
+.tabs {
+  display: flex; background: #0f172a; border-bottom: 1px solid #1f2a3d; gap: 0;
+}
+.tab {
+  flex: 1; padding: 10px 4px; border: 0; background: transparent; color: #8fd7ff;
+  font-size: 0.9rem; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent;
+}
+.tab.active { color: #8fd7ff; border-bottom-color: #2f9fd8; background: #121a2b; }
 
-/* ===== Util ===== */
+/* Panels */
+.app > main, .app { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.panel { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+.panel.active { display: flex; }
+
+/* ---------- HOME (paisagem) ---------- */
+.panel-home { position: relative; }
+.home-grid {
+  display: grid;
+  grid-template-columns: 250px 1fr 260px;
+  grid-template-rows: 1fr auto;
+  gap: 10px; padding: 10px; height: calc(100% - 56px);
+  overflow: hidden;
+}
+.home-col { display: flex; flex-direction: column; gap: 10px; }
+.joy-col { grid-column: 1; grid-row: 1 / 3; }
+.center-col { grid-column: 2; grid-row: 1 / 3; }
+.info-col { grid-column: 3; grid-row: 1 / 3; }
+.home-grid > .card { flex: 1; }
+
+/* Quando modo retrato, empilha colunas */
+@media (max-width: 720px) and (orientation: portrait) {
+  .home-grid { grid-template-columns: 1fr; grid-template-rows: auto auto auto; }
+  .joy-col, .center-col, .info-col { grid-column: 1; }
+}
+
+/* Cards */
+.card {
+  background: #121a2b; border: 1px solid #1f2a3d; border-radius: 14px;
+  padding: 12px; display: flex; flex-direction: column; gap: 10px;
+}
+.card-title {
+  margin: 0; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em;
+  color: #8fd7ff; border-bottom: 1px solid #1f2a3d; padding-bottom: 6px;
+}
+
+/* Joystick */
+.joy-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.joystick-base {
+  position: relative; width: 150px; height: 150px; border-radius: 50%;
+  background: #1d2733; border: 2px solid #2d3a50; touch-action: none;
+}
+.joystick-center-dot {
+  position: absolute; left: 50%; top: 50%; width: 10px; height: 10px;
+  background: #2d3a50; border-radius: 50%; transform: translate(-50%, -50%);
+}
+.joystick-knob {
+  position: absolute; left: 50%; top: 50%; width: 44px; height: 44px;
+  background: #2f9fd8; border-radius: 50%; transform: translate(-50%, -50%);
+  border: 2px solid #121a2b; box-shadow: 0 4px 12px rgba(47,159,216,0.35);
+  cursor: grab; touch-action: none;
+}
+.joy-readout { display: flex; gap: 12px; font-size: 0.8rem; color: #9fb2c6; }
+
+/* D-pad */
+.dpad {
+  display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+  gap: 10px; margin-top: 6px;
+}
+.btn {
+  border: 0; border-radius: 12px; background: #1d2733; color: #e8eef5;
+  font-size: 1rem; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  transition: background .1s, transform .05s;
+}
+.btn span { font-size: 0.72rem; color: #9fb2c6; }
+.btn:active, .btn.active { background: #2f9fd8; transform: scale(0.96); }
+.btn:active span, .btn.active span { color: #eaf7ff; }
+.btn-stop { background: #3a1f24; }
+.btn-stop span { color: #ffb3b3; }
+.btn-stop:active, .btn-stop.active { background: #d64553; }
+.btn-outline { background: transparent; border: 1px solid #2d3a50; color: #8fd7ff; }
+.btn-outline:active { background: #1f2a3d; }
+.btn-block { width: 100%; flex-direction: row; padding: 10px 14px; justify-content: center; }
+.btn-auto { background: #16202b; border: 1px solid #2f4257; color: #cfe3f5; }
+.btn-auto.on { background: #1f7a4d; border-color: #2fa76a; color: #eafff3; }
+
+/* Velocidade home */
+.speed-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.speed-label { font-size: 0.8rem; color: #9fb2c6; width: 70px; }
+.hslider { -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: #1f2a3d; outline: 0; }
+.hslider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #2f9fd8; cursor: pointer; }
+.speed-val { font-size: 0.8rem; color: #8fd7ff; min-width: 36px; text-align: right; }
+
+/* Sensores / info */
+.env-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; margin-top: 4px; }
+.env-item { display: flex; justify-content: space-between; font-size: 0.78rem; }
+.env-k { color: #9fb2c6; }
+.env-v { color: #cfe3f5; font-variant-numeric: tabular-nums; }
+.status-row { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 4px 0; border-bottom: 1px solid #161e2f; }
+.status-row:last-child { border-bottom: 0; }
+.status-k { color: #9fb2c6; }
+.status-v { color: #cfe3f5; }
+
+/* ---------- DL (antiga tela, mantida) ---------- */
+.panel-dl { position: relative; }
+.dl-wrap {
+  display: grid; grid-template-columns: 260px 1fr; gap: 10px; padding: 10px;
+  height: calc(100% - 56px); overflow: hidden;
+}
+.dl-col-left, .dl-col-right { display: flex; flex-direction: column; gap: 10px; }
+.dl-col-left { grid-column: 1; }
+.dl-col-right { grid-column: 2; }
+.dl-card, .dl-card > .card { flex: 1; }
+.telemetry {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: #121a2b; border-top: 1px solid #1f2a3d;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 6px; padding: 6px 10px; font-size: 0.72rem; z-index: 20;
+}
+.tel-item { display: flex; justify-content: space-between; gap: 8px; }
+.tel-label { color: #9fb2c6; font-size: 0.72rem; }
+.tel-value { color: #cfe3f5; font-variant-numeric: tabular-nums; }
+.tel-value.online { color: #9fe3b2; }
+.tel-value.offline { color: #ffb3b3; }
+
+/* Alerts */
+.alert {
+  position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+  padding: 12px 18px; border-radius: 10px; z-index: 100;
+  background: #121a2b; border: 1px solid #1f2a3d; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  max-width: 90%; font-size: 0.85rem;
+}
+.alert-critical { background: #2a1f22; border-color: #d64553; color: #ffb3b3; }
+.alert button { margin-top: 8px; background: #2f9fd8; border: 0; border-radius: 8px; color: #fff; padding: 6px 14px; cursor: pointer; }
+.advice-list { margin: 4px 0 0 0; padding-left: 16px; font-size: 0.78rem; color: #9fb2c6; }
+.advice-none { color: #5c6b7c; }
+
+/* Config */
+.config-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; height: calc(100% - 56px); overflow-y: auto; }
+.config-wrap > .card { height: fit-content; }
+.config-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #161e2f; }
+.config-row:last-child { border-bottom: 0; }
+.config-row label { font-size: 0.8rem; color: #9fb2c6; }
+.cfg-input, .cfg-select { background: #1d2733; border: 1px solid #2d3a50; color: #e8eef5; border-radius: 8px; padding: 6px 10px; font-size: 0.85rem; }
+.sta-row { display: none; }
+
+/* Switch inline */
+.switch.inline { position: relative; display: inline-block; width: 44px; height: 24px; }
+.switch.inline input { opacity: 0; width: 0; height: 0; }
+.switch.inline .slider-round { position: absolute; inset: 0; background: #1f2a3d; border: 1px solid #2d3a50; border-radius: 24px; cursor: pointer; transition: .2s; }
+.switch.inline .slider-round:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+.switch.inline input:checked + .slider-round { background: #2f9fd8; border-color: #2f9fd8; }
+.switch.inline input:checked + .slider-round:before { transform: translateX(20px); }
+
 .hidden { display: none !important; }
 
-/* --- Ambiente / sensores --- */
-.env-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 8px;
+/* Paisagem forcada na home quando instalado/fullscreen */
+@media screen and (orientation: portrait) {
+  .panel-home { orientation: landscape; }
 }
 
-.env-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 10px;
-}
+/* Esconde barra de endereco visualmente quando PWA (não pode remover de verdade sem install) */
+.app { display: flex; flex-direction: column; height: 100vh; height: -webkit-fill-available; }
 
-.env-item span {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.65;
-}
-
-.env-item strong {
-  font-size: 1.05rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.env-status {
-  font-size: 0.78rem;
-  opacity: 0.7;
-  margin-bottom: 8px;
-}
-
-.btn-auto-on {
-  background: #1f7a4d !important;
-  border-color: #2fa76a !important;
-  color: #eafff3 !important;
-}
-
-/* --- Alerta de robo enroscado --- */
-.alert {
-  position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: 12px;
-  z-index: 50;
-  padding: 14px 16px;
-  background: #3a1116;
-  border: 1px solid #d64553;
-  border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-  color: #ffe9ec;
-}
-
-.alert[hidden] { display: none; }
-
-.alert strong { display: block; margin-bottom: 4px; font-size: 1rem; }
-
-.alert p { margin: 0 0 10px; font-size: 0.86rem; line-height: 1.35; opacity: 0.9; }
-
-.alert button {
-  border: 0;
-  border-radius: 10px;
-  padding: 8px 16px;
-  background: #d64553;
-  color: #fff;
-  font-family: inherit;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.advice-list {
-  list-style: none;
-  margin: 0 0 8px;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.advice-list li {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 7px 10px;
-  border-radius: 10px;
-  font-size: 0.84rem;
-  line-height: 1.3;
-  background: rgba(255, 255, 255, 0.05);
-  border-left: 3px solid rgba(255, 255, 255, 0.25);
-}
-
-.advice-list li::before {
-  content: "";
-  flex: 0 0 8px;
-  width: 8px;
-  height: 8px;
-  margin-top: 5px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.85;
-}
-
-.advice-list li.advice-none {
-  opacity: 0.55;
-  font-style: italic;
-}
-
-.advice-list li.advice-none::before { display: none; }
-
-.advice-list li.advice-warn {
-  color: #ffd479;
-  border-left-color: #ffd479;
-  background: rgba(255, 212, 121, 0.08);
-}
-
-.advice-list li.advice-info {
-  color: #8fd0ff;
-  border-left-color: #8fd0ff;
-  background: rgba(143, 208, 255, 0.08);
-}
-
-.advice-list li.advice-crit {
-  color: #ff8a8a;
-  border-left-color: #ff4d4d;
-  background: rgba(255, 77, 77, 0.12);
-  font-weight: 600;
-}
-
-.alert-critical {
-  border: 1px solid #ff4d4d;
-  background: rgba(120, 12, 18, 0.97);
-}
 )rawliteral";
 static const char* app_js = R"rawliteral(
+'use strict';
+
+// -------------------- API --------------------
 const API = {
   async _try(method, path, body) {
     const opts = { method };
-    if (body) {
+    if (body !== undefined) {
       opts.headers = { 'Content-Type': 'application/json' };
       opts.body = JSON.stringify(body);
     }
     const res = await fetch(path, opts);
-    if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + path);
     const ct = res.headers.get('content-type') || '';
-    return ct.includes('application/json') ? await res.json() : await res.text();
+    const data = ct.includes('application/json') ? await res.json() : await res.text();
+    if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + path);
+    return data;
   },
-
-  async post(path, body) { return this._try('POST', path, body); },
-  async get(path) { return this._try('GET', path); }
+  get(path) { return this._try('GET', path); },
+  post(path, body) { return this._try('POST', path, body); }
 };
 
-var els = {};
-var dpadBtns = [];
-var state = {
+// -------------------- estado --------------------
+const state = {
   powerOn: true,
   speedPct: 70,
   leftPct: 0,
   rightPct: 0,
-  joyX: 0,
-  joyY: 0,
-  intensity: 0,
-  active: false,
-  lastSent: { l: 0, r: 0, dir: '', speed: 0 },
   autoOn: false,
   lastStuckSeq: 0,
   lastFire: false,
-  online: false
+  online: false,
+  activeTab: 'home',
+  joystick: { base: null, knob: null, cx: 0, cy: 0, radius: 0, knobRadius: 22, active: false, touchId: null, x: 0, y: 0, intensity: 0 },
+  lastSent: { left: 0, right: 0, dir: '', speed: 0 }
 };
-var joy = { cx: 0, cy: 0, radius: 0, knobRadius: 32 };
-var activeTouchId = null;
 
-function getEls() {
-  els = {
-    badge: document.getElementById('status-badge'),
-    powerToggle: document.getElementById('power-toggle'),
-    joystickBase: document.getElementById('joystick-base'),
-    joystickKnob: document.getElementById('joystick-knob'),
-    joyDir: document.getElementById('joy-dir'),
-    joyInt: document.getElementById('joy-int'),
-    speedSlider: document.getElementById('speed-slider'),
-    speedValue: document.getElementById('speed-value'),
-    leftSlider: document.getElementById('left-slider'),
-    leftValue: document.getElementById('left-value'),
-    rightSlider: document.getElementById('right-slider'),
-    rightValue: document.getElementById('right-value'),
-    btnStop: document.getElementById('btn-stop'),
-    btnApplyDiff: document.getElementById('btn-apply-diff'),
-    btnSaveConfig: document.getElementById('btn-save-config'),
-    btnSystemInfo: document.getElementById('btn-system-info'),
-    cfgPwmMin: document.getElementById('cfg-pwm-min'),
-    cfgPwmMax: document.getElementById('cfg-pwm-max'),
-    cfgPwmDefault: document.getElementById('cfg-pwm-default'),
-    cfgMotorsEnabled: document.getElementById('cfg-motors-enabled'),
-    sysInfo: document.getElementById('system-info'),
-    envTemp: document.getElementById('env-temp'),
-    envHum: document.getElementById('env-hum'),
-    envPres: document.getElementById('env-pres'),
-    envDist: document.getElementById('env-dist'),
-    envStatus: document.getElementById('env-status'),
-    btnAuto: document.getElementById('btn-auto'),
-    alertStuck: document.getElementById('alert-stuck'),
-    btnAlertOk: document.getElementById('btn-alert-ok'),
-    adviceList: document.getElementById('advice-list'),
-    trendStatus: document.getElementById('trend-status'),
-    alertFire: document.getElementById('alert-fire'),
-    alertFireText: document.getElementById('alert-fire-text'),
-    btnFireOk: document.getElementById('btn-fire-ok'),
-    telStatus: document.getElementById('tel-status'),
-    telLeft: document.getElementById('tel-left'),
-    telRight: document.getElementById('tel-right'),
-    telMoving: document.getElementById('tel-moving'),
-    telConn: document.getElementById('tel-conn'),
-    telApiError: document.getElementById('tel-api-error'),
-    telemetry: document.getElementById('telemetry')
-  };
-  dpadBtns = Array.from(document.querySelectorAll('.dpad-btn[data-dir]'));
-}
+const joyState = {
+  home: { base: null, knob: null, cx: 0, cy: 0, radius: 0, dirEl: null, intEl: null, active: false, touchId: null, x: 0, y: 0, intensity: 0 },
+  dl:   { base: null, knob: null, cx: 0, cy: 0, radius: 0, dirEl: null, intEl: null, active: false, touchId: null, x: 0, y: 0, intensity: 0 }
+};
 
+// -------------------- util --------------------
+function $(id) { return document.getElementById(id); }
 function pctToPwm(pct) { return Math.round((pct / 100) * 255); }
-
-function initJoystickGeometry() {
-  var rect = els.joystickBase.getBoundingClientRect();
-  joy.cx = rect.left + rect.width / 2;
-  joy.cy = rect.top + rect.height / 2;
-  joy.radius = Math.max(10, (rect.width / 2) - joy.knobRadius - 6);
+function safe(v, d) { return (v === undefined || v === null || Number.isNaN(v)) ? d : v; }
+function fmtTemp(v) { return (v === undefined || v === null || Number.isNaN(v)) ? '--' : v.toFixed(1) + ' °C'; }
+function fmtHum(v) { return (v === undefined || v === null || Number.isNaN(v)) ? '--' : v.toFixed(0) + ' %'; }
+function fmtPres(v) { return (v === undefined || v === null || Number.isNaN(v)) ? '--' : v.toFixed(0) + ' hPa'; }
+function fmtDist(mm) { return (mm === undefined || mm === null || !mm) ? '--' : (mm / 10).toFixed(1) + ' cm'; }
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-function getPointerPos(e) {
-  if (e.touches && e.touches.length) {
-    return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+// -------------------- tabs --------------------
+function initTabs() {
+  const tabs = Array.from(document.querySelectorAll('.tab'));
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => selectTab(tab.getAttribute('data-tab')));
+  });
+  selectTab('home');
+}
+
+function selectTab(name) {
+  state.activeTab = name;
+  document.querySelectorAll('.tab').forEach(t => {
+    const active = t.getAttribute('data-tab') === name;
+    t.classList.toggle('active', active);
+    t.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  ['home', 'dl', 'config'].forEach(n => {
+    const p = $('panel-' + n);
+    if (p) {
+      p.classList.toggle('active', n === name);
+      p.classList.toggle('hidden', n !== name);
+    }
+  });
+  if (name === 'home') requestAnimationFrame(() => { measureJoystick('home'); });
+  if (name === 'dl') requestAnimationFrame(() => { measureJoystick('dl'); });
+  try { history.replaceState(null, '', '#' + name); } catch (e) {}
+  try { localStorage.setItem('irobot-tab', name); } catch (e) {}
+}
+
+// -------------------- conectado --------------------
+function setOnline(ok) {
+  state.online = !!ok;
+  const badge = $('badge-conn');
+  if (badge) {
+    badge.textContent = ok ? 'Conectado' : 'Desconectado';
+    badge.className = 'badge ' + (ok ? 'online' : 'offline');
   }
-  return { x: e.clientX, y: e.clientY };
-}
-
-function setKnobPosition(x, y) {
-  var dx = x - joy.cx;
-  var dy = y - joy.cy;
-  var dist = Math.hypot(dx, dy);
-
-  var clampedX = x;
-  var clampedY = y;
-  if (dist > joy.radius && dist > 0) {
-    var ratio = joy.radius / dist;
-    clampedX = joy.cx + dx * ratio;
-    clampedY = joy.cy + dy * ratio;
+  const homeConn = $('home-conn');
+  if (homeConn) {
+    homeConn.textContent = ok ? 'Conectado' : 'Desconectado';
+    homeConn.className = 'status-v ' + (ok ? 'online' : 'offline');
   }
-
-  var offsetX = clampedX - joy.cx;
-  var offsetY = clampedY - joy.cy;
-  els.joystickKnob.style.transform = 'translate(calc(-50% + ' + offsetX + 'px), calc(-50% + ' + offsetY + 'px))';
-
-  var finalDx = clampedX - joy.cx;
-  var finalDy = clampedY - joy.cy;
-  var clampedDist = Math.min(dist / joy.radius, 1);
-
-  state.joyX = finalDx / joy.radius;
-  state.joyY = -finalDy / joy.radius;
-  state.intensity = clampedDist;
-
-  if (clampedDist < 0.07) {
-    state.joyX = 0;
-    state.joyY = 0;
-    state.intensity = 0;
+  const dlConn = $('dl-tel-conn');
+  if (dlConn) {
+    dlConn.textContent = ok ? 'Online' : 'Offline';
+    dlConn.className = 'tel-value ' + (ok ? 'online' : 'offline');
   }
-
-  updateJoyVisuals();
-  updateMotorsFromJoy();
 }
 
-function resetKnob() {
-  els.joystickKnob.style.transform = 'translate(-50%, -50%)';
-  state.joyX = 0;
-  state.joyY = 0;
-  state.intensity = 0;
-  updateJoyVisuals();
-  updateMotorsFromJoy();
+// -------------------- joystick --------------------
+function measureJoystick(key) {
+  const j = joyState[key];
+  if (!j.base) return;
+  const r = j.base.getBoundingClientRect();
+  j.cx = r.left + r.width / 2;
+  j.cy = r.top + r.height / 2;
+  j.radius = Math.max(10, r.width / 2 - j.knobRadius - 4);
 }
 
-function updateJoyVisuals() {
-  var i = state.intensity;
-  var dir = getJoyDirLabel();
-  els.joyDir.textContent = dir;
-  els.joyInt.textContent = 'Int: ' + Math.round(i * 100) + '%';
+function pointerPos(e) {
+  if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY, id: e.touches[0].identifier };
+  return { x: e.clientX, y: e.clientY, id: null };
 }
 
-function getJoyDirLabel() {
-  var x = state.joyX;
-  var y = state.joyY;
-  var i = state.intensity;
+function setKnob(key, x, y) {
+  const j = joyState[key];
+  if (!j.base || !j.knob) return;
+  let dx = x - j.cx, dy = y - j.cy;
+  let dist = Math.hypot(dx, dy);
+  let cx = x, cy = y;
+  if (dist > j.radius && dist > 0) {
+    const ratio = j.radius / dist;
+    cx = j.cx + dx * ratio;
+    cy = j.cy + dy * ratio;
+  }
+  const ox = cx - j.cx, oy = cy - j.cy;
+  j.knob.style.transform = 'translate(calc(-50% + ' + ox + 'px), calc(-50% + ' + oy + 'px))';
+  const norm = Math.min(dist / j.radius, 1);
+  j.x = ox / j.radius;
+  j.y = -oy / j.radius;
+  j.intensity = norm < 0.07 ? 0 : norm;
+  if (j.intensity === 0) { j.x = 0; j.y = 0; }
+  updateJoyReadout(key);
+  sendJoystick(key);
+}
+
+function joyLabel(x, y, i) {
   if (i < 0.07) return 'Parado';
-  if (Math.abs(y) > Math.abs(x)) {
-    return y > 0 ? 'Frente' : 'Tras';
-  }
+  if (Math.abs(y) > Math.abs(x)) return y > 0 ? 'Frente' : 'Trás';
   return x > 0 ? 'Direita' : 'Esquerda';
 }
 
-function updateMotorsFromJoy() {
-  if (!state.powerOn) {
-    if (state.lastSent.l !== 0 || state.lastSent.r !== 0) {
-      sendDifferential(0, 0);
-    }
-    return;
-  }
+function updateJoyReadout(key) {
+  const j = joyState[key];
+  if (j.dirEl) j.dirEl.textContent = joyLabel(j.x, j.y, j.intensity);
+  if (j.intEl) j.intEl.textContent = 'Int: ' + Math.round(j.intensity * 100) + '%';
+}
 
-  var speedScale = state.speedPct / 100;
-  var intensity = state.intensity;
-  var forward = state.joyY * intensity;
-  var turn = state.joyX * intensity;
+function resetJoystick(key) {
+  const j = joyState[key];
+  if (j.knob) j.knob.style.transform = 'translate(-50%, -50%)';
+  j.x = 0; j.y = 0; j.intensity = 0; j.active = false; j.touchId = null;
+  updateJoyReadout(key);
+  sendDifferential(0, 0);
+}
 
-  var left = forward - turn;
-  var right = forward + turn;
+function sendJoystick(key) {
+  if (!state.powerOn) return;
+  const j = joyState[key];
+  const scale = state.speedPct / 100;
+  let left = j.y * j.intensity - j.x * j.intensity;
+  let right = j.y * j.intensity + j.x * j.intensity;
   left = Math.max(-1, Math.min(1, left));
   right = Math.max(-1, Math.min(1, right));
-
-  var lSpeed = Math.round(left * 100 * speedScale);
-  var rSpeed = Math.round(right * 100 * speedScale);
-
-  sendDifferential(lSpeed, rSpeed);
+  sendDifferential(Math.round(left * 100 * scale), Math.round(right * 100 * scale));
 }
 
+function bindJoystick(key, baseId, knobId, dirId, intId) {
+  const j = joyState[key];
+  j.base = $(baseId);
+  j.knob = $(knobId);
+  j.dirEl = $(dirId);
+  j.intEl = $(intId);
+  if (!j.base || !j.knob) return;
+  j.base.style.touchAction = 'none';
+  j.knob.style.touchAction = 'none';
+
+  const start = e => {
+    e.preventDefault(); e.stopPropagation();
+    const p = pointerPos(e);
+    measureJoystick(key);
+    j.active = true; j.touchId = p.id;
+    setKnob(key, p.x, p.y);
+  };
+  const move = e => {
+    if (!j.active) return;
+    const p = pointerPos(e);
+    if (j.touchId !== null && p.id !== j.touchId) return;
+    e.preventDefault(); e.stopPropagation();
+    setKnob(key, p.x, p.y);
+  };
+  const end = e => {
+    if (!j.active) return;
+    if (e.touches && e.touches.length) {
+      const t = e.touches[0];
+      if (j.touchId !== null && t.identifier !== j.touchId) return;
+    }
+    e.preventDefault(); e.stopPropagation();
+    resetJoystick(key);
+  };
+
+  j.base.addEventListener('mousedown', start);
+  j.base.addEventListener('touchstart', start, { passive: false });
+  window.addEventListener('mousemove', move);
+  window.addEventListener('touchmove', move, { passive: false });
+  window.addEventListener('mouseup', end);
+  window.addEventListener('touchend', end, { passive: false });
+  window.addEventListener('touchcancel', end, { passive: false });
+  window.addEventListener('resize', () => measureJoystick(key));
+}
+
+// -------------------- comandos --------------------
 async function sendDifferential(left, right) {
-  if (left === state.lastSent.l && right === state.lastSent.r) return;
+  if (left === state.lastSent.left && right === state.lastSent.right) return;
   try {
     await API.post('/api/motor/move', { leftSpeed: left, rightSpeed: right });
-    state.online = true;
-    setBadgeOnline();
-    state.lastSent = { l: left, r: right, dir: '', speed: 0 };
+    state.lastSent = { left, right, dir: '', speed: 0 };
+    setOnline(true);
   } catch (err) {
-    console.error('Erro diferencial:', err);
-    state.online = false;
-    setBadgeOffline();
-    showApiError(err.message || 'Erro desconhecido');
+    setOnline(false);
   }
 }
 
-async function sendDir(dir, speedPct) {
-  var speed = pctToPwm(speedPct);
-  if (dir === state.lastSent.dir && speed === state.lastSent.speed && !state.active) return;
+async function sendDir(dir) {
+  const speed = pctToPwm(state.speedPct);
   try {
-    await API.post('/api/motor/move', { direction: dir, speed: speed });
-    state.online = true;
-    setBadgeOnline();
-    state.lastSent = { l: 0, r: 0, dir: dir, speed: speed };
+    await API.post('/api/motor/move', { direction: dir, speed });
+    state.lastSent = { left: 0, right: 0, dir, speed };
+    setOnline(true);
+    updateStatusLocal(dir);
   } catch (err) {
-    console.error('Erro direcao:', err);
-    state.online = false;
-    setBadgeOffline();
-    showApiError(err.message || 'Erro desconhecido');
+    setOnline(false);
   }
 }
 
 async function stopAll() {
   try {
     await API.post('/api/motor/stop', {});
-    state.online = true;
-    setBadgeOnline();
+    setOnline(true);
   } catch (err) {
-    state.online = false;
-    setBadgeOffline();
-    showApiError(err.message || 'Erro desconhecido');
+    setOnline(false);
   }
-  state.lastSent = { l: 0, r: 0, dir: '', speed: 0 };
-  resetKnob();
+  state.lastSent = { left: 0, right: 0, dir: '', speed: 0 };
+  updateStatusLocal('stop');
 }
 
-async function fetchStatus() {
+function updateStatusLocal(dir) {
+  const label = { frente: 'Andando', tras: 'Andando', esquerda: 'Andando', direita: 'Andando', stop: 'Parado' }[dir] || 'Parado';
+  const el = $('home-state');
+  if (el) el.textContent = label;
+  const mov = $('home-moving');
+  if (mov) mov.textContent = label;
+  const dlSt = $('dl-tel-status');
+  if (dlSt) dlSt.textContent = ({ frente: 'Frente', tras: 'Trás', esquerda: 'Esquerda', direita: 'Direita', stop: 'Parado' }[dir] || 'Parado');
+}
+
+async function toggleAuto() {
+  const turnOn = !state.autoOn;
   try {
-    var st = await API.get('/api/motor/status');
-    state.online = true;
-    setBadgeOnline();
-    updateTelemetry(st);
-    showApiError('OK');
+    const res = await API.post('/api/auto', { enabled: turnOn });
+    state.autoOn = res.enabled === true;
+    setOnline(true);
+    syncAutoButtons();
+    if (!state.autoOn) { resetJoystick('home'); resetJoystick('dl'); }
+    fetchSensors();
   } catch (err) {
-    state.online = false;
-    setBadgeOffline();
-    showApiError(err.message || 'Erro desconhecido');
+    setOnline(false);
   }
 }
 
-function updateTelemetry(st) {
-  if (!els.telStatus) return;
-  var dirMap = { 0: 'Parado', 1: 'Frente', 2: 'Tras', 3: 'Esquerda', 4: 'Direita' };
-  els.telStatus.textContent = dirMap[st.direction] || 'Parado';
-  els.telLeft.textContent = st.leftSpeed;
-  els.telRight.textContent = st.rightSpeed;
-  els.telMoving.textContent = st.moving ? 'Sim' : 'Nao';
-  els.telMoving.className = 'tel-value ' + (st.moving ? 'online' : 'offline');
-  els.telConn.textContent = 'Online';
-  els.telConn.className = 'tel-value online';
+function syncAutoButtons() {
+  const txt = 'Modo Autonomo: ' + (state.autoOn ? 'ON' : 'OFF');
+  ['btn-home-auto', 'dl-auto', 'btn-auto'].forEach(id => {
+    const el = $(id);
+    if (el) {
+      el.textContent = txt;
+      el.classList.toggle('on', state.autoOn);
+    }
+  });
+}
+
+// -------------------- sensores --------------------
+function buildAdviceMessages(s) {
+  const a = s.alerts || {};
+  const msgs = [];
+  if (a.fire) msgs.push('INCENDIO: temperatura subiu rapido — verifique o ambiente!');
+  if (a.rainSensor) msgs.push('Chuva agora (sensor molhado)');
+  else if (a.rain) msgs.push('Pode chover: pressao caiu ' + Math.abs(a.trend3h || 0).toFixed(1) + ' hPa/3h');
+  if (a.hot) msgs.push('Calor: ligue o ar-condicionado');
+  if (a.cold) msgs.push('Frio: desligue o ar-condicionado');
+  if (a.dry) msgs.push('Ar seco: beba agua');
+  return msgs;
+}
+
+function renderTicker(s, msgs) {
+  const el = $('ticker-text');
+  if (!el) return;
+  const temp = fmtTemp(s.temperature);
+  const hum = fmtHum(s.humidity);
+  const dist = fmtDist(s.distanceMm);
+  const base = 'Temp ' + temp + ' | Umid ' + hum + ' | Dist ' + dist;
+  el.textContent = msgs.length ? (msgs.join('  •  ') + '  |  ' + base) : (base + '  |  Nenhum aviso');
+}
+
+function renderHomeSensors(s, msgs) {
+  $('home-temp').textContent = fmtTemp(s.temperature);
+  $('home-hum').textContent = fmtHum(s.humidity);
+  $('home-pres').textContent = fmtPres(s.pressure);
+  $('home-dist').textContent = fmtDist(s.distanceMm);
+  if (s.alerts && s.alerts.fire && !state.lastFire) notifyFire();
+  state.lastFire = !!(s.alerts && s.alerts.fire);
+}
+
+function renderDlSensors(s, msgs) {
+  $('dl-temp').textContent = fmtTemp(s.temperature);
+  $('dl-hum').textContent = fmtHum(s.humidity);
+  $('dl-pres').textContent = fmtPres(s.pressure);
+  $('dl-dist').textContent = fmtDist(s.distanceMm);
+  const present = [];
+  if (s.aht) present.push('AHT20');
+  if (s.bmp) present.push('BMP280');
+  if (s.tof) present.push('VL53L0X');
+  const st = $('dl-env-status');
+  if (st) st.textContent = (present.length ? 'sensores: ' + present.join(', ') : 'sensores: nenhum') +
+    (s.auto ? ' | autonomo: ' + s.autoState + ' (' + safe(s.avoidCount, 0) + '/100)' : '');
+  const list = $('dl-advice-list');
+  if (list) {
+    if (!msgs.length) list.innerHTML = '<li class="advice-none">Nenhum aviso no momento</li>';
+    else list.innerHTML = msgs.map(m => '<li>' + escapeHtml(m) + '</li>').join('');
+  }
+  const tr = $('dl-trend-status');
+  if (tr) {
+    const a = s.alerts || {};
+    if (a.trendReady) tr.textContent = 'tendencia: ' + (a.trend30m || 0).toFixed(1) + ' hPa/30min | ' + (a.trend3h || 0).toFixed(1) + ' hPa/3h';
+    else tr.textContent = 'tendencia: coletando dados...';
+  }
 }
 
 async function fetchSensors() {
   try {
-    var s = await API.get('/api/sensors');
-    if (els.envTemp) els.envTemp.textContent = (s.temperature === undefined) ? '--' : s.temperature.toFixed(1) + ' \u00b0C';
-    if (els.envHum) els.envHum.textContent = (s.humidity === undefined) ? '--' : s.humidity.toFixed(0) + ' %';
-    if (els.envPres) els.envPres.textContent = (s.pressure === undefined) ? '--' : s.pressure.toFixed(0) + ' hPa';
-    if (els.envDist) els.envDist.textContent = s.distanceMm ? (s.distanceMm / 10).toFixed(1) + ' cm' : '--';
-
-    if (els.envStatus) {
-      var present = [];
-      if (s.aht) present.push('AHT20');
-      if (s.bmp) present.push('BMP280');
-      if (s.tof) present.push('VL53L0X');
-      var autoTxt = s.auto ? (' | autonomo: ' + s.autoState + ' (' + s.avoidCount + '/100)') : '';
-      els.envStatus.textContent = (present.length ? 'sensores: ' + present.join(', ') : 'sensores: nenhum') + autoTxt;
-    }
-
-    if (els.btnAuto) {
-      els.btnAuto.textContent = 'Autonomo: ' + (s.auto ? 'ON' : 'OFF');
-      els.btnAuto.classList.toggle('btn-auto-on', !!s.auto);
-    }
-
-    if (s.alerts) renderAdvice(s, s.alerts);
-
+    const s = await API.get('/api/sensors');
+    setOnline(true);
+    state.autoOn = s.auto === true;
+    syncAutoButtons();
+    const msgs = buildAdviceMessages(s);
+    renderTicker(s, msgs);
+    renderHomeSensors(s, msgs);
+    renderDlSensors(s, msgs);
     if (s.stuck && s.stuckSeq !== state.lastStuckSeq) {
       state.lastStuckSeq = s.stuckSeq;
       notifyStuck();
     }
   } catch (err) {
-    if (els.envStatus) els.envStatus.textContent = 'sensores: falha (' + (err.message || 'erro') + ')';
+    setOnline(false);
+    const el = $('ticker-text');
+    if (el) el.textContent = 'Falha ao ler sensores: ' + (err.message || 'erro');
   }
 }
 
-function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, function (c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+async function fetchStatus() {
+  try {
+    const st = await API.get('/api/motor/status');
+    setOnline(true);
+    const dirMap = { 0: 'Parado', 1: 'Frente', 2: 'Trás', 3: 'Esquerda', 4: 'Direita' };
+    const dir = dirMap[st.direction] || 'Parado';
+    const homeState = $('home-state');
+    if (homeState) homeState.textContent = st.moving ? 'Andando' : 'Parado';
+    const homeMoving = $('home-moving');
+    if (homeMoving) homeMoving.textContent = st.moving ? 'Andando (' + dir + ')' : 'Parado';
+    const dlSt = $('dl-tel-status'); if (dlSt) dlSt.textContent = dir;
+    const dlL = $('dl-tel-left'); if (dlL) dlL.textContent = st.leftSpeed;
+    const dlR = $('dl-tel-right'); if (dlR) dlR.textContent = st.rightSpeed;
+    const dlM = $('dl-tel-moving'); if (dlM) { dlM.textContent = st.moving ? 'Sim' : 'Nao'; dlM.className = 'tel-value ' + (st.moving ? 'online' : 'offline'); }
+    const dlE = $('dl-tel-api-error'); if (dlE) { dlE.textContent = 'OK'; dlE.className = 'tel-value online'; }
+  } catch (err) {
+    setOnline(false);
+    const dlE = $('dl-tel-api-error'); if (dlE) { dlE.textContent = err.message || 'erro'; dlE.className = 'tel-value offline'; }
+  }
+}
+
+// -------------------- alertas --------------------
+function notifyFire() {
+  const el = $('alert-fire'); if (el) el.hidden = false;
+  try { if (navigator.vibrate) navigator.vibrate([900, 200, 900, 200, 1500]); } catch (e) {}
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (Ctx) {
+      const ctx = new Ctx();
+      [0, 0.4, 0.8, 1.2].forEach(t => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = 1200; g.gain.value = 0.09;
+        o.connect(g); g.connect(ctx.destination);
+        o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.25);
+      });
+    }
+  } catch (e) {}
+}
+
+function notifyStuck() {
+  const el = $('alert-stuck'); if (el) el.hidden = false;
+  try { if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 800]); } catch (e) {}
+}
+
+// -------------------- config --------------------
+async function loadConfig() {
+  try {
+    const cfg = await API.get('/api/config');
+    state.config = cfg;
+    const set = (id, v) => { const el = $(id); if (el) el.value = v; };
+    set('cfg-pwm-min', cfg.pwmMin); set('cfg-pwm-max', cfg.pwmMax); set('cfg-pwm-default', cfg.pwmDefault);
+    set('dl-pwm-min', cfg.pwmMin); set('dl-pwm-max', cfg.pwmMax); set('dl-pwm-default', cfg.pwmDefault);
+    const mot = cfg.motorsEnabled === true || cfg.motorsEnabled === 1 || cfg.motorsEnabled === 'true';
+    if ($('cfg-motors-enabled')) $('cfg-motors-enabled').checked = mot;
+    if ($('dl-motors-enabled')) $('dl-motors-enabled').checked = mot;
+    setOnline(true);
+  } catch (err) { setOnline(false); }
+}
+
+async function saveConfig(prefix) {
+  const get = id => { const el = $(id); return el ? el.value : undefined; };
+  const payload = {
+    pwmMin: parseInt(get(prefix + '-pwm-min')) || 0,
+    pwmMax: parseInt(get(prefix + '-pwm-max')) || 255,
+    pwmDefault: parseInt(get(prefix + '-pwm-default')) || 150,
+    motorsEnabled: $(prefix + '-motors-enabled') ? $(prefix + '-motors-enabled').checked : true
+  };
+  try { await API.post('/api/config', payload); setOnline(true); await loadConfig(); }
+  catch (err) { setOnline(false); }
+}
+
+async function fetchSystemInfo(target) {
+  try {
+    const info = await API.get('/api/system/info');
+    const el = $(target);
+    if (el) el.textContent = JSON.stringify(info, null, 2);
+    setOnline(true);
+  } catch (err) { setOnline(false); }
+}
+
+function initWifiMode() {
+  const sel = $('cfg-wifi-mode');
+  if (!sel) return;
+  const apply = () => {
+    const isSta = sel.value === 'sta';
+    ['cfg-wifi-sta-row', 'cfg-wifi-pass-row'].forEach(id => { const el = $(id); if (el) el.style.display = isSta ? 'flex' : 'none'; });
+    ['cfg-wifi-ap-row', 'cfg-wifi-ap-pass-row'].forEach(id => { const el = $(id); if (el) el.style.display = isSta ? 'none' : 'flex'; });
+  };
+  sel.addEventListener('change', apply);
+  apply();
+}
+
+// -------------------- tela cheia / PWA --------------------
+function initFullscreen() {
+  const cb = $('fs-toggle');
+  if (!cb) return;
+  cb.addEventListener('change', async () => {
+    try {
+      if (cb.checked) {
+        const el = document.documentElement;
+        if (el.requestFullscreen) await el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+        try { await screen.orientation.lock('landscape'); } catch (e) {}
+      } else {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) await document.webkitExitFullscreen();
+      }
+    } catch (e) { cb.checked = false; }
+  });
+  document.addEventListener('fullscreenchange', () => {
+    cb.checked = !!(document.fullscreenElement || document.webkitFullscreenElement);
   });
 }
 
-function renderAdvice(s, a) {
-  var t = (s.temperature === undefined) ? null : s.temperature;
-  var h = (s.humidity === undefined) ? null : s.humidity;
-  var items = [];
-
-  if (a.fire) {
-    var rise = a.tempRise ? a.tempRise.toFixed(1) : '0.0';
-    items.push({ cls: 'advice-crit', txt: 'POSSIVEL INCENDIO: temperatura subiu ' + rise + ' \u00b0C em 1 min' + (t !== null ? ' (agora ' + t.toFixed(1) + ' \u00b0C)' : '') + '. Verifique o ambiente!' });
+function initPwa() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
-  if (a.rainSensor) {
-    items.push({ cls: 'advice-crit', txt: 'Chuva agora: o sensor de chuva esta molhado.' });
-  } else if (a.rain) {
-    var drop = Math.abs(a.trend3h || 0).toFixed(1);
-    items.push({ cls: 'advice-warn', txt: 'Pode chover: pressao caiu ' + drop + ' hPa em 3 h' + (h !== null ? ' e umidade em ' + h.toFixed(0) + '%' : '') + '. Leve guarda-chuva.' });
-  }
-  if (a.hot && t !== null) {
-    items.push({ cls: 'advice-warn', txt: 'Calor: ' + t.toFixed(1) + ' \u00b0C (acima de 26 \u00b0C). Ligue o ar-condicionado.' });
-  }
-  if (a.cold && t !== null) {
-    items.push({ cls: 'advice-info', txt: 'Frio: ' + t.toFixed(1) + ' \u00b0C (abaixo de 17 \u00b0C). Desligue o ar-condicionado.' });
-  }
-  if (a.dry && h !== null) {
-    items.push({ cls: 'advice-warn', txt: 'Ar seco: umidade em ' + h.toFixed(0) + '% (abaixo de 30%). Beba agua.' });
-  }
-
-  if (els.adviceList) {
-    if (!items.length) {
-      els.adviceList.innerHTML = '<li class="advice-none">Nenhum aviso no momento</li>';
-    } else {
-      els.adviceList.innerHTML = items.map(function (it) {
-        return '<li class="' + it.cls + '">' + escapeHtml(it.txt) + '</li>';
-      }).join('');
-    }
-  }
-
-  if (els.trendStatus) {
-    if (a.trendReady) {
-      var d3 = (a.trend3h || 0) >= 0 ? '+' : '';
-      var d30 = (a.trend30m || 0) >= 0 ? '+' : '';
-      els.trendStatus.textContent = 'tendencia: ' + d30 + (a.trend30m || 0).toFixed(1) + ' hPa/30 min | ' + d3 + (a.trend3h || 0).toFixed(1) + ' hPa/3 h';
-    } else {
-      els.trendStatus.textContent = 'tendencia: coletando dados (30 min)';
-    }
-  }
-
-  if (a.fire && !state.lastFire) notifyFire();
-  state.lastFire = !!a.fire;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    window.__deferredPrompt = e;
+  });
 }
 
-function notifyFire() {
-  if (els.alertFire) els.alertFire.hidden = false;
-
-  try {
-    if (navigator.vibrate) navigator.vibrate([900, 200, 900, 200, 1500]);
-  } catch (e) { /* ignorado */ }
-
-  try {
-    var Ctx = window.AudioContext || window.webkitAudioContext;
-    if (Ctx) {
-      var ctx = new Ctx();
-      [0, 0.4, 0.8, 1.2].forEach(function (t0) {
-        var osc = ctx.createOscillator();
-        var gain = ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.value = 1200;
-        gain.gain.value = 0.09;
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + t0);
-        osc.stop(ctx.currentTime + t0 + 0.25);
-      });
-    }
-  } catch (e) { /* som bloqueado sem gesto do usuario */ }
-
-  try {
-    if (window.Notification && Notification.permission === 'granted') {
-      new Notification('Possivel incendio', {
-        body: 'A temperatura subiu muito rapido. Verifique o ambiente.',
-        tag: 'irobot-fire'
-      });
-    }
-  } catch (e) { /* notificacao exige HTTPS */ }
-}
-
-function hideFireAlert() {
-  if (els.alertFire) els.alertFire.hidden = true;
-}
-
-function notifyStuck() {  if (els.alertStuck) els.alertStuck.hidden = false;
-
-  try {
-    if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 800]);
-  } catch (e) { /* ignorado */ }
-
-  try {
-    var Ctx = window.AudioContext || window.webkitAudioContext;
-    if (Ctx) {
-      var ctx = new Ctx();
-      [0, 0.35, 0.7].forEach(function (t) {
-        var osc = ctx.createOscillator();
-        var gain = ctx.createGain();
-        osc.type = 'square';
-        osc.frequency.value = 880;
-        gain.gain.value = 0.08;
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + t);
-        osc.stop(ctx.currentTime + t + 0.18);
-      });
-    }
-  } catch (e) { /* som bloqueado sem gesto do usuario */ }
-
-  try {
-    if (window.Notification && Notification.permission === 'granted') {
-      new Notification('iRobot enroscado', {
-        body: 'O modo autonomo foi desligado apos 100 obstaculos seguidos.',
-        tag: 'irobot-stuck'
-      });
-    }
-  } catch (e) { /* notificacao exige HTTPS */ }
-
-  if (els.envStatus) els.envStatus.textContent = 'ALERTA: robo enroscado - autonomo desligado';
-}
-
-function hideStuckAlert() {
-  if (els.alertStuck) els.alertStuck.hidden = true;
-}
-
-async function toggleAuto() {
-  var turnOn = !(state.autoOn === true);
-  try {
-    var res = await API.post('/api/auto', { enabled: turnOn });
-    state.autoOn = res.enabled === true;
-    if (els.btnAuto) {
-      els.btnAuto.textContent = 'Autonomo: ' + (state.autoOn ? 'ON' : 'OFF');
-      els.btnAuto.classList.toggle('btn-auto-on', state.autoOn);
-    }
-    if (!state.autoOn) resetKnob();
-    fetchSensors();
-  } catch (err) {
-    if (els.envStatus) els.envStatus.textContent = 'autonomo: ' + (err.message || 'falha');
-  }
-}
-
-async function loadConfig() {
-  try {
-    var cfg = await API.get('/api/config');
-    state.config = cfg;
-    els.cfgPwmMin.value = cfg.pwmMin;
-    els.cfgPwmMax.value = cfg.pwmMax;
-    els.cfgPwmDefault.value = cfg.pwmDefault;
-    els.cfgMotorsEnabled.checked = cfg.motorsEnabled === true || cfg.motorsEnabled === 1 || cfg.motorsEnabled === 'true';
-    state.online = true;
-    setBadgeOnline();
-  } catch (err) {
-    state.online = false;
-    setBadgeOffline();
-    showApiError(err.message || 'Erro desconhecido');
-  }
-}
-
-async function saveConfig() {
-  var payload = {
-    pwmMin: parseInt(els.cfgPwmMin.value) || 0,
-    pwmMax: parseInt(els.cfgPwmMax.value) || 255,
-    pwmDefault: parseInt(els.cfgPwmDefault.value) || 150,
-    motorsEnabled: els.cfgMotorsEnabled.checked
-  };
-  try {
-    await API.post('/api/config', payload);
-    state.online = true;
-    setBadgeOnline();
-  } catch (err) {
-    state.online = false;
-    setBadgeOffline();
-    showApiError(err.message || 'Erro desconhecido');
-  }
-}
-
-async function fetchSystemInfo() {
-  try {
-    var info = await API.get('/api/system/info');
-    els.sysInfo.textContent = JSON.stringify(info, null, 2);
-    state.online = true;
-    setBadgeOnline();
-  } catch (err) {
-    els.sysInfo.textContent = 'Erro ao ler sistema';
-    state.online = false;
-    setBadgeOffline();
-    showApiError(err.message || 'Erro desconhecido');
-  }
-}
-
-function setBadgeOnline() {
-  els.badge.textContent = 'Conectado';
-  els.badge.className = 'badge online';
-  els.telConn.textContent = 'Online';
-  els.telConn.className = 'tel-value online';
-}
-
-function setBadgeOffline() {
-  els.badge.textContent = 'Desconectado';
-  els.badge.className = 'badge offline';
-  els.telConn.textContent = 'Offline';
-  els.telConn.className = 'tel-value offline';
-}
-
-function showApiError(msg) {
-  if (!els.telApiError) return;
-  els.telApiError.textContent = msg;
-  els.telApiError.className = 'tel-value offline';
-  console.error('API Error:', msg);
-}
-
-function onPointerStart(e) {
-  e.stopPropagation();
-  e.preventDefault();
-  var pos = getPointerPos(e);
-  activeTouchId = e.touches && e.touches.length ? e.touches[0].identifier : null;
-  initJoystickGeometry();
-  state.active = true;
-  setKnobPosition(pos.x, pos.y);
-  els.joystickKnob.style.cursor = 'grabbing';
-}
-
-function onPointerMove(e) {
-  if (!state.active) return;
-  var pos = getPointerPos(e);
-  if (e.touches && e.touches.length) {
-    var t = e.touches[0];
-    if (activeTouchId !== null && t.identifier !== activeTouchId) return;
-  }
-  e.stopPropagation();
-  e.preventDefault();
-  setKnobPosition(pos.x, pos.y);
-}
-
-function onPointerEnd(e) {
-  if (e.touches && e.touches.length) {
-    var t = e.touches[0];
-    if (activeTouchId !== null && t.identifier !== activeTouchId) return;
-  }
-  state.active = false;
-  activeTouchId = null;
-  resetKnob();
-  els.joystickKnob.style.cursor = 'grab';
-  sendDifferential(0, 0);
-}
-
-function onSpeedChange() {
-  state.speedPct = parseInt(els.speedSlider.value) || 0;
-  els.speedValue.textContent = state.speedPct + '%';
-  updateMotorsFromJoy();
-}
-
-function onLeftChange() {
-  state.leftPct = parseInt(els.leftSlider.value) || 0;
-  els.leftValue.textContent = state.leftPct;
-}
-
-function onRightChange() {
-  state.rightPct = parseInt(els.rightSlider.value) || 0;
-  els.rightValue.textContent = state.rightPct;
-}
-
-function applyDifferential() {
-  sendDifferential(state.leftPct, state.rightPct);
-}
-
-function onPowerChange() {
-  state.powerOn = els.powerToggle.checked;
-  if (!state.powerOn) {
-    stopAll();
-  } else {
-    updateMotorsFromJoy();
-  }
-}
-
-function onStopClick() {
-  resetKnob();
-  stopAll();
-}
-
-function onDpadClick(e) {
-  var btn = e.currentTarget;
-  var dir = btn.getAttribute('data-dir');
-  resetKnob();
-  sendDir(dir, state.speedPct);
-}
-
+// -------------------- init --------------------
 function init() {
-  getEls();
+  initTabs();
+  initWifiMode();
+  initFullscreen();
+  initPwa();
 
-  if (els.joystickBase) {
-    els.joystickBase.style.touchAction = 'none';
-    els.joystickKnob.style.touchAction = 'none';
-  }
+  bindJoystick('home', 'joy-base', 'joy-knob', 'joy-dir', 'joy-int');
+  bindJoystick('dl', 'dl-joy-base', 'dl-joy-knob', 'dl-joy-dir', 'dl-joy-int');
+  requestAnimationFrame(() => { measureJoystick('home'); measureJoystick('dl'); });
 
-  els.joystickBase.addEventListener('mousedown', onPointerStart);
-  window.addEventListener('mousemove', onPointerMove);
-  window.addEventListener('mouseup', onPointerEnd);
+  document.querySelectorAll('.dpad-btn[data-dir]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      const dir = btn.getAttribute('data-dir');
+      const key = btn.id.startsWith('dl-') ? 'dl' : 'home';
+      resetJoystick(key);
+      sendDir(dir);
+      document.querySelectorAll('.dpad-btn').forEach(b => b.classList.toggle('active', b === btn));
+      setTimeout(() => btn.classList.remove('active'), 200);
+    });
+  });
 
-  els.joystickBase.addEventListener('touchstart', onPointerStart, { passive: false });
-  els.joystickBase.addEventListener('touchmove', onPointerMove, { passive: false });
-  els.joystickBase.addEventListener('touchend', onPointerEnd, { passive: false });
-  els.joystickBase.addEventListener('touchcancel', onPointerEnd, { passive: false });
-  window.addEventListener('touchmove', onPointerMove, { passive: false });
-  window.addEventListener('touchend', onPointerEnd, { passive: false });
-  window.addEventListener('touchcancel', onPointerEnd, { passive: false });
+  const stopBtns = [$('btn-stop'), $('dl-stop')];
+  stopBtns.forEach(b => { if (b) b.addEventListener('click', () => {
+    resetJoystick('home'); resetJoystick('dl'); stopAll();
+  }); });
 
-  els.speedSlider.addEventListener('input', onSpeedChange);
-  els.leftSlider.addEventListener('input', onLeftChange);
-  els.rightSlider.addEventListener('input', onRightChange);
-  els.btnApplyDiff.addEventListener('click', applyDifferential);
-  els.powerToggle.addEventListener('change', onPowerChange);
-  els.btnStop.addEventListener('click', onStopClick);
+  ['btn-home-auto', 'dl-auto', 'btn-auto'].forEach(id => {
+    const el = $(id); if (el) el.addEventListener('click', toggleAuto);
+  });
 
-  dpadBtns.forEach(function(btn) { btn.addEventListener('click', onDpadClick); });
+  const bindSpeed = (sliderId, valId) => {
+    const sl = $(sliderId), vv = $(valId);
+    if (!sl) return;
+    sl.addEventListener('input', () => {
+      state.speedPct = parseInt(sl.value) || 0;
+      document.querySelectorAll('#home-speed, #dl-speed').forEach(s => { if (s) s.value = state.speedPct; });
+      document.querySelectorAll('#home-speed-val, #dl-speed-val').forEach(s => { if (s) s.textContent = state.speedPct + '%'; });
+    });
+  };
+  bindSpeed('home-speed', 'home-speed-val');
+  bindSpeed('dl-speed', 'dl-speed-val');
 
-  if (els.btnAlertOk) els.btnAlertOk.addEventListener('click', hideStuckAlert);
-  if (els.btnFireOk) els.btnFireOk.addEventListener('click', hideFireAlert);
-  els.btnSaveConfig.addEventListener('click', saveConfig);
-  if (els.btnAuto) els.btnAuto.addEventListener('click', toggleAuto);
-  els.btnSystemInfo.addEventListener('click', fetchSystemInfo);
+  const bindDiffSlider = (id, valId, which) => {
+    const sl = $(id), vv = $(valId);
+    if (!sl) return;
+    sl.addEventListener('input', () => {
+      const v = parseInt(sl.value) || 0;
+      if (vv) vv.textContent = v;
+      state[which] = v;
+    });
+  };
+  bindDiffSlider('dl-left', 'dl-left-val', 'leftPct');
+  bindDiffSlider('dl-right', 'dl-right-val', 'rightPct');
+  const apply = $('dl-apply-diff');
+  if (apply) apply.addEventListener('click', () => sendDifferential(state.leftPct, state.rightPct));
 
-  requestAnimationFrame(initJoystickGeometry);
-  window.addEventListener('resize', initJoystickGeometry);
+  const savePwm = $('cfg-save-pwm'); if (savePwm) savePwm.addEventListener('click', () => saveConfig('cfg'));
+  const saveDl = $('dl-save-config'); if (saveDl) saveDl.addEventListener('click', () => saveConfig('dl'));
+  const sysA = $('cfg-sys-info'); if (sysA) sysA.addEventListener('click', () => fetchSystemInfo('cfg-system-info'));
+  const sysB = $('dl-sys-info'); if (sysB) sysB.addEventListener('click', () => fetchSystemInfo('dl-system-info'));
+  const restart = $('cfg-restart'); if (restart) restart.addEventListener('click', async () => {
+    try { await fetch('/api/system/restart', { method: 'POST' }); } catch (e) {}
+  });
+  const saveWifi = $('cfg-save-wifi'); if (saveWifi) saveWifi.addEventListener('click', async () => {
+    try {
+      const mode = $('cfg-wifi-mode').value;
+      const payload = mode === 'sta'
+        ? { mode, ssid: $('cfg-wifi-ssid').value, pass: $('cfg-wifi-pass').value }
+        : { mode, ssid: $('cfg-ap-ssid').value, pass: $('cfg-ap-pass').value };
+      await API.post('/api/wifi', payload);
+      setOnline(true);
+    } catch (err) { setOnline(false); }
+  });
+
+  const fa = $('btn-fire-ok'); if (fa) fa.addEventListener('click', () => { const e = $('alert-fire'); if (e) e.hidden = true; });
+  const sa = $('btn-alert-ok'); if (sa) sa.addEventListener('click', () => { const e = $('alert-stuck'); if (e) e.hidden = true; });
+  const fb = $('dl-btn-fire-ok'); if (fb) fb.addEventListener('click', () => { const e = $('dl-alert-fire'); if (e) e.hidden = true; });
+  const sb = $('dl-btn-alert-ok'); if (sb) sb.addEventListener('click', () => { const e = $('dl-alert-stuck'); if (e) e.hidden = true; });
 
   loadConfig();
   fetchStatus();
   fetchSensors();
   setInterval(fetchStatus, 1000);
-  setInterval(fetchSensors, 1000);
+  setInterval(fetchSensors, 1500);
+
+  try {
+    const saved = localStorage.getItem('irobot-tab');
+    if (saved) selectTab(saved);
+  } catch (e) {}
+  if (location.hash) {
+    const h = location.hash.replace('#', '');
+    if (['home', 'dl', 'config'].includes(h)) selectTab(h);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);
@@ -1654,6 +1352,69 @@ static const char* teste_html = R"rawliteral(
 </script>
 </body>
 </html>
+
+)rawliteral";
+static const char* manifest_json = R"rawliteral(
+{
+  "name": "iRobot - Controle",
+  "short_name": "iRobot",
+  "description": "Controle e monitoramento do robo iRobot",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0b1120",
+  "theme_color": "#0b1120",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
+)rawliteral";
+static const char* favicon_svg = R"rawliteral(
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <rect x="10" y="18" width="80" height="66" rx="16" fill="#1d2733" stroke="#2f9fd8" stroke-width="4"/>
+  <rect x="22" y="8" width="6" height="14" rx="3" fill="#2f9fd8"/>
+  <rect x="72" y="8" width="6" height="14" rx="3" fill="#2f9fd8"/>
+  <circle cx="35" cy="46" r="9" fill="#8fd7ff"/>
+  <circle cx="65" cy="46" r="9" fill="#8fd7ff"/>
+  <path d="M30 66 Q50 80 70 66" stroke="#8fd7ff" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <text x="50" y="100" font-size="1">&#129302;</text>
+</svg>
+
+)rawliteral";
+static const char* sw_js = R"rawliteral(
+const CACHE = 'irobot-v6';
+const ASSETS = [
+  '/', '/style.css', '/app.js', '/manifest.json', '/favicon.svg', '/teste'
+];
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+});
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  if (e.request.url.indexOf('/api/') !== -1) return;
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(res => {
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy));
+        }
+        return res;
+      }).catch(() => new Response('', { status: 503 }));
+    })
+  );
+});
 
 )rawliteral";
 
