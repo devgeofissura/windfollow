@@ -235,6 +235,7 @@ preview/index.html?stuck=1  → alerta de robô enroscado
 
 - [`firmware/irobot/README.md`](firmware/irobot/README.md)
 - [`docs/IROBOT_NAVEGACAO_E_SENSORES.md`](docs/IROBOT_NAVEGACAO_E_SENSORES.md)
+- [`docs/LICOES_APRENDIDAS.md`](docs/LICOES_APRENDIDAS.md) — acertos, erros e soluções consolidados
 
 ---
 

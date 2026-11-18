@@ -11,6 +11,23 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-18 08:35 - docs: consolida licoes aprendidas do iRobot e Windfollow
+
+**Area:** docs, raiz
+
+**Feito:**
+- novo documento docs/LICOES_APRENDIDAS.md com hardware navegacao UI responsiva PWA geracao de assets preview workflow e checklist
+- registro de erros e correcoes como virgula no WebAssets D-pad cortado knob fixo build versionado e limitacao PWA
+- README aponta para o novo documento
+- aprendizados tambem salvos no grafo de memoria persistente
+
+**Dificuldades e solucoes:**
+- conhecimento estava disperso entre conversas commits e DEVLOG -> consolidado em um documento unico e no grafo de memoria
+
+**Arquivos:**
+- `README.md`
+- `docs/LICOES_APRENDIDAS.md`
+
 ### 2026-11-17 22:28 - feat(irobot): layout Home responsivo em retangulo perfeito
 
 **Area:** irobot, raiz
