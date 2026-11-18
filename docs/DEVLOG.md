@@ -11,6 +11,28 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-18 14:31 - feat(msa): cria firmware de sensores ambientais
+
+**Area:** msa, raiz, tooling
+
+**Feito:**
+- novo firmware msa com AHT20 e BMP280 no I2C, leitura validada e cadencia configuravel
+- dashboard web, API REST, alertas com tendencia, NVS, Wi-Fi AP/STA e mDNS
+- perfil msa no flash.ps1 e correcao do detectOnly com stderr do esptool
+- documentacao de hardware e API e README/AGENTS atualizados
+- compilacao verificada com arduino-cli
+
+**Dificuldades e solucoes:**
+- detectOnly abortava porque o esptool escreve no stderr com ErrorActionPreference Stop -> alterei apenas o escopo da chamada
+- tres portas seriais conectadas -> identifiquei o ESP32 pelo esptool e mantive deteccao dinamica
+- WebAssets.h e gerado -> gerei apos editar web/ antes de compilar
+
+**Arquivos:**
+- `AGENTS.md`
+- `README.md`
+- `tools/flash.ps1`
+- `firmware/msa/`
+
 ### 2026-11-18 08:43 - fix(irobot): corrige ordem dos botoes do D-pad
 
 **Area:** irobot

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1120">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="MSA">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <title>MSA — Sensores Ambientais</title>
+  <link rel="stylesheet" href="/style.css?v=1">
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <div class="logo" aria-hidden="true">&#127777;</div>
+      <div class="header-center">
+        <h1 class="app-title">MSA</h1>
+        <div class="subtitle">Módulo de Sensores Ambientais</div>
+      </div>
+      <div class="header-actions">
+        <span id="badge-conn" class="badge offline">Desconectado</span>
+        <span id="badge-uptime" class="badge">--</span>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab active" role="tab" aria-selected="true" data-tab="painel">Painel</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="config">Config</button>
+    </nav>
+
+    <main class="content">
+      <section class="panel active" id="panel-painel">
+        <div class="metrics">
+          <article class="card metric">
+            <div class="card-title">Temperatura <span class="sensor-tag" id="tag-aht">AHT20</span></div>
+            <div class="metric-value"><span id="value-temp">--</span><small>°C</small></div>
+            <div class="metric-foot">BMP280: <span id="value-bmp-temp">--</span> °C</div>
+          </article>
+          <article class="card metric">
+            <div class="card-title">Umidade relativa <span class="sensor-tag" id="tag-aht-hum">AHT20</span></div>
+            <div class="metric-value"><span id="value-hum">--</span><small>%</small></div>
+            <div class="metric-foot">Conforto: 40–60%</div>
+          </article>
+          <article class="card metric">
+            <div class="card-title">Pressão <span class="sensor-tag" id="tag-bmp">BMP280</span></div>
+            <div class="metric-value"><span id="value-pressure">--</span><small>hPa</small></div>
+            <div class="metric-foot">Leitura há <span id="value-age">--</span></div>
+          </article>
+        </div>
+
+        <article class="card">
+          <div class="card-title">Avisos ambientais</div>
+          <div class="alerts" id="alerts"><span class="chip ok">Sem avisos</span></div>
+        </article>
+
+        <div class="secondary">
+          <article class="card">
+            <div class="card-title">Tendência barométrica</div>
+            <div class="trend-row"><span>30 min</span><strong id="value-trend30m">--</strong></div>
+            <div class="trend-row"><span>3 h</span><strong id="value-trend3h">--</strong></div>
+            <div class="trend-row"><span>Temp. 1 min</span><strong id="value-temprise">--</strong></div>
+            <div class="trend-note" id="trend-note">Coletando histórico de pressão...</div>
+          </article>
+          <article class="card">
+            <div class="card-title">Estado do sistema</div>
+            <div class="trend-row"><span>Amostra</span><strong id="value-interval">--</strong></div>
+            <div class="trend-row"><span>Heap livre</span><strong id="value-heap">--</strong></div>
+            <div class="trend-row"><span>Uptime</span><strong id="value-uptime">--</strong></div>
+            <div class="trend-row"><span>mDNS</span><strong>http://msa.local</strong></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-config">
+        <article class="card form-card">
+          <div class="card-title">Leitura e limites</div>
+          <form id="form-config">
+            <label>Intervalo de leitura (ms)
+              <input type="number" id="cfg-interval" min="500" max="60000" step="500" required>
+            </label>
+            <div class="form-grid">
+              <label>Alerta de calor (°C)<input type="number" id="cfg-hot" step="0.5" required></label>
+              <label>Alerta de frio (°C)<input type="number" id="cfg-cold" step="0.5" required></label>
+              <label>Ar seco (% UR)<input type="number" id="cfg-dry" step="1" required></label>
+              <label>Chuva (% UR)<input type="number" id="cfg-rain" step="1" required></label>
+            </div>
+            <button type="submit" class="btn primary">Salvar configuração</button>
+          </form>
+        </article>
+
+        <article class="card form-card">
+          <div class="card-title">Rede Wi-Fi</div>
+          <form id="form-wifi">
+            <label>Modo
+              <select id="wifi-mode">
+                <option value="ap">Access Point (MSA-Setup)</option>
+                <option value="sta">Conectar à rede (STA)</option>
+              </select>
+            </label>
+            <div class="form-grid">
+              <label>SSID<input type="text" id="wifi-ssid" autocomplete="off"></label>
+              <label>Senha<input type="password" id="wifi-pass" autocomplete="new-password"></label>
+            </div>
+            <button type="submit" class="btn primary">Salvar Wi-Fi e reiniciar</button>
+          </form>
+          <button type="button" class="btn danger" id="btn-restart">Reiniciar dispositivo</button>
+        </article>
+
+        <div class="status" id="form-status" role="status"></div>
+      </section>
+    </main>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>

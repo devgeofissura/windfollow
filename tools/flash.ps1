@@ -12,7 +12,7 @@
     portas; use -Port para escolher explicitamente.
 
 .PARAMETER Sketch
-    Qual firmware compilar/gravar: irobot, windfollow ou windfollowblind.
+    Qual firmware compilar/gravar: irobot, msa, windfollow ou windfollowblind.
     Opcional apenas com -DetectOnly (ai lista todas as portas sem checar perfil).
 
 .PARAMETER Port
@@ -39,7 +39,7 @@
 
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('irobot', 'windfollow', 'windfollowblind')]
+    [ValidateSet('irobot', 'msa', 'windfollow', 'windfollowblind')]
     [string]$Sketch = '',
 
     [string]$Port,
@@ -64,6 +64,13 @@ $Profiles = @{
     'irobot' = @{
         Dir          = 'firmware\irobot'
         BuildPath    = Join-Path $env:TEMP 'irobot-build'
+        Fqbn         = 'esp32:esp32:esp32'
+        ExpectedChip = 'ESP32'
+        BoardName    = 'ESP32 DevKit (classico, 4 MB)'
+    }
+    'msa' = @{
+        Dir          = 'firmware\msa'
+        BuildPath    = Join-Path $env:TEMP 'msa-build'
         Fqbn         = 'esp32:esp32:esp32'
         ExpectedChip = 'ESP32'
         BoardName    = 'ESP32 DevKit (classico, 4 MB)'
@@ -135,7 +142,15 @@ function Get-ChipInfo {
 
     if (-not $Esptool) { return $null }
 
-    $out = & $Esptool --port $ComPort --before default-reset --after hard-reset flash-id 2>&1 | Out-String
+    # O esptool escreve partes do diagnostic no stderr; com ErrorActionPreference
+    # = Stop o PowerShell 5.1 transforma isso em erro fatal e aborta a deteccao.
+    $previousEap = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $out = & $Esptool --port $ComPort --before default-reset --after hard-reset flash-id 2>&1 | Out-String
+    } finally {
+        $ErrorActionPreference = $previousEap
+    }
     $chip = $null
     $flash = $null
     $mac = $null
@@ -168,7 +183,7 @@ $esptool = Get-Esptool
 $profile = if ($Sketch) { $Profiles[$Sketch] } else { $null }
 
 if (-not $Sketch -and -not $DetectOnly) {
-    throw "Informe -Sketch (irobot, windfollow ou windfollowblind). Para apenas detectar portas, use -DetectOnly."
+    throw "Informe -Sketch (irobot, msa, windfollow ou windfollowblind). Para apenas detectar portas, use -DetectOnly."
 }
 
 Write-Host ''

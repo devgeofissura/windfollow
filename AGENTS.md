@@ -68,6 +68,7 @@ MAC. Para compilar e gravar, omita `-DetectOnly`:
 
 ```text
 powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch irobot
+powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch msa
 powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollowblind
 powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollow
 ```
@@ -87,6 +88,7 @@ clones CH340 — o chip é identificado pelo esptool dentro do script.
 | Firmware | Pasta | FQBN | Chip esperado | Placa |
 |---|---|---|---|---|
 | `irobot` | `firmware/irobot` | `esp32:esp32:esp32` | ESP32 (clássico) | ESP32 DevKit 4 MB, L298N, 2 motores + caster |
+| `msa` | `firmware/msa` | `esp32:esp32:esp32` | ESP32 (clássico) | ESP32 DevKit 4 MB, AHT20 + BMP280 no I2C |
 | `windfollowblind` | `firmware/windfollowblind` | `esp32:esp32:esp32` | ESP32 (clássico) | ESP32 DevKit 4 MB, L298N, 2 motores, 2 botões |
 | `windfollow` | `firmware/windfollow` | `esp32:esp32:esp32s3:CDCOnBoot=cdc,USBMode=hwcdc,UploadSpeed=921600,FlashSize=16M,PartitionScheme=huge_app,PSRAM=opi` | ESP32-S3 | LILYGO T-SIMCAM V1.3, 16 MB flash, OPI PSRAM |
 
@@ -105,6 +107,12 @@ Para o irobot (script próprio, roda a partir de `firmware/irobot`):
 
 ```text
 powershell -ExecutionPolicy Bypass -File firmware/irobot/tools/generate_web_assets.ps1
+```
+
+Para o msa (script próprio, roda a partir de `firmware/msa`):
+
+```text
+powershell -ExecutionPolicy Bypass -File firmware/msa/tools/generate_web_assets.ps1
 ```
 
 ## Artefatos

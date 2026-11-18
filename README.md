@@ -5,8 +5,9 @@
 [![Framework](https://img.shields.io/badge/Framework-Arduino-green?logo=arduino)](https://www.arduino.cc/)
 [![Language](https://img.shields.io/badge/Language-C%2B%2B%20%7C%20HTML%20%7C%20CSS%20%7C%20JS-blue)](https://github.com/devtiagoabreu/windfollow)
 
-> **Repositório de firmware e interfaces web para três projetos de robótica com ESP32:**
-> uma câmera seguidora de movimento, um controlador de cortinas e um robô móvel autônomo.
+> **Repositório de firmware e interfaces web para quatro projetos com ESP32:**
+> uma câmera seguidora de movimento, um controlador de cortinas, um robô móvel autônomo
+> e um módulo de sensores ambientais.
 
 ---
 
@@ -23,6 +24,7 @@
 | 🎥 **WindFollow** | LILYGO T-SIMCAM ESP32-S3 | Câmera seguidora por movimento (PAN com motorredutor) | `firmware/windfollow/` |
 | 🪟 **WindFollowBlind** | ESP32 DevKit (clássico) | Controle de 2 motores de cortina com 2 botões | `firmware/windfollowblind/` |
 | 🤖 **iRobot** | ESP32 DevKit (clássico) | Robô diferencial 2 rodas + caster, sensores e navegação autônoma | `firmware/irobot/` |
+| 🌡️ **MSA** | ESP32 DevKit (clássico) | Módulo de sensores ambientais AHT20 + BMP280 com dashboard e alertas | `firmware/msa/` |
 
 Cada firmware inclui:
 
@@ -48,7 +50,8 @@ windfollow/
 ├── 📁 firmware/
 │   ├── 📁 windfollow/               # 🎥 câmera seguidora (ESP32-S3)
 │   ├── 📁 windfollowblind/          # 🪟 cortinas (ESP32 clássico)
-│   └── 📁 irobot/                   # 🤖 robô autônomo (ESP32 clássico)
+│   ├── 📁 irobot/                   # 🤖 robô autônomo (ESP32 clássico)
+│   └── 📁 msa/                      # 🌡️ sensores ambientais (ESP32 clássico)
 ├── 📁 simulator/                    # 🧪 interfaces web para teste no PC
 ├── 📁 tools/                        # 🛠️ scripts de flash e commit
 └── 📁 graphify-out/                 # 📊 grafo de conhecimento do código
