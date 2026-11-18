@@ -11,6 +11,24 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-18 08:43 - fix(irobot): corrige ordem dos botoes do D-pad
+
+**Area:** irobot
+
+**Feito:**
+- Home e DL com Tras abaixo de Frente e Direita abaixo de Esquerda
+- preview sincronizado
+- WebAssets regenerado
+- compilacao validada em 85% de flash
+
+**Dificuldades e solucoes:**
+- ordem vinha do fluxo automatico do grid com display contents -> reordenado o DOM dos botoes e medido com Chrome headless
+
+**Arquivos:**
+- `firmware/irobot/WebAssets.h`
+- `firmware/irobot/preview/index.html`
+- `firmware/irobot/web/index.html`
+
 ### 2026-11-18 08:35 - docs: consolida licoes aprendidas do iRobot e Windfollow
 
 **Area:** docs, raiz
