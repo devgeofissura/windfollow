@@ -11,6 +11,31 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-18 17:38 - feat(msa): lista redes wifi no modo cliente
+
+**Area:** msa
+
+**Feito:**
+- Campo de senha deixou de vazar para tras do card de limites ao remover min-height zero do card
+- Novo endpoint GET /api/wifi/scan varre ate 24 SSIDs unicos ordenados por sinal
+- Aba Config lista redes com RSSI canal e criptografia e permite digitar outro SSID
+- WebAssets e cache do service worker atualizados
+
+**Dificuldades e solucoes:**
+- Card com min-height zero encolhia abaixo do conteudo e o input ficava atras do card vizinho -> removi o min-height mantendo min-width zero
+- Varias redes repetidas e fracas podiam poluir a lista -> dedupliquei por SSID e ordenei por RSSI
+- Cliente pode querer rede oculta ou fora da varredura -> adicionei opcao Digitar SSID
+
+**Arquivos:**
+- `firmware/msa/DashboardService.cpp`
+- `firmware/msa/DashboardService.h`
+- `firmware/msa/README.md`
+- `firmware/msa/WebAssets.h`
+- `firmware/msa/web/css/style.css`
+- `firmware/msa/web/index.html`
+- `firmware/msa/web/js/app.js`
+- `firmware/msa/web/sw.js`
+
 ### 2026-11-18 17:23 - fix(msa): ajusta interface mobile first
 
 **Area:** msa

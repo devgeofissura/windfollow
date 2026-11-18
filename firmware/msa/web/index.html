@@ -12,7 +12,7 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
   <title>MSA — Sensores Ambientais</title>
-  <link rel="stylesheet" href="/style.css?v=3">
+  <link rel="stylesheet" href="/style.css?v=4">
 </head>
 <body>
   <div class="app">
@@ -94,10 +94,22 @@
             </select>
           </div>
           <div class="config-row" id="cfg-wifi-sta-row" style="display:none;">
-            <label>SSID</label><input type="text" id="cfg-wifi-ssid" class="cfg-input" placeholder="Nome da rede" autocomplete="off">
+            <label for="cfg-wifi-ssid">SSID</label>
+            <select id="cfg-wifi-ssid" class="cfg-select">
+              <option value="">Selecione uma rede...</option>
+              <option value="__custom__">Digitar SSID...</option>
+            </select>
+          </div>
+          <div class="config-row" id="cfg-wifi-scan-row" style="display:none;">
+            <button type="button" class="btn btn-outline btn-block" id="cfg-wifi-scan">Buscar redes</button>
+            <span id="wifi-scan-status" class="cfg-status"></span>
+          </div>
+          <div class="config-row" id="cfg-wifi-custom-row" style="display:none;">
+            <label for="cfg-wifi-custom-ssid">Outro SSID</label>
+            <input type="text" id="cfg-wifi-custom-ssid" class="cfg-input" placeholder="Nome da rede" autocomplete="off">
           </div>
           <div class="config-row" id="cfg-wifi-pass-row" style="display:none;">
-            <label>Senha</label><input type="password" id="cfg-wifi-pass" class="cfg-input" placeholder="Senha Wi-Fi" autocomplete="new-password">
+            <label for="cfg-wifi-pass">Senha</label><input type="password" id="cfg-wifi-pass" class="cfg-input" placeholder="Senha Wi-Fi" autocomplete="new-password">
           </div>
           <div class="config-row" id="cfg-wifi-ap-row">
             <label>SSID AP</label><input type="text" id="cfg-ap-ssid" class="cfg-input" value="MSA-Setup">
@@ -131,6 +143,6 @@
     </section>
   </div>
 
-  <script src="/app.js?v=2"></script>
+  <script src="/app.js?v=3"></script>
 </body>
 </html>

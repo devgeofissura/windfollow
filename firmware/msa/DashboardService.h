@@ -42,6 +42,7 @@ private:
 
   void handleWifiGet();
   void handleWifiPost();
+  void handleWifiScan();
   void handleSystemRestart();
   void handleSensors();
   void handleConfigGet();

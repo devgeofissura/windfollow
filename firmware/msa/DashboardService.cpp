@@ -46,6 +46,8 @@ void DashboardService::setupRoutes() {
   _server->on("/api/wifi", HTTP_GET, std::bind(&DashboardService::handleWifiGet, this));
   _server->on("/api/wifi", HTTP_POST, std::bind(&DashboardService::handleWifiPost, this));
   _server->on("/api/wifi", HTTP_OPTIONS, std::bind(&DashboardService::handleCorsPreflight, this));
+  _server->on("/api/wifi/scan", HTTP_GET, std::bind(&DashboardService::handleWifiScan, this));
+  _server->on("/api/wifi/scan", HTTP_OPTIONS, std::bind(&DashboardService::handleCorsPreflight, this));
   _server->on("/api/system/restart", HTTP_POST, std::bind(&DashboardService::handleSystemRestart, this));
   _server->on("/api/system/restart", HTTP_OPTIONS, std::bind(&DashboardService::handleCorsPreflight, this));
 
@@ -119,6 +121,63 @@ void DashboardService::handleWifiGet() {
   doc["staSsid"] = staSsid;
   doc["apSsid"] = apSsid;
   doc["configured"] = staSsid.length() > 0 || apSsid.length() > 0;
+  String json;
+  serializeJson(doc, json);
+  sendWithCors(200, "application/json", json);
+}
+
+void DashboardService::handleWifiScan() {
+  struct ScannedNetwork {
+    String ssid;
+    int32_t rssi;
+    int32_t channel;
+    bool secure;
+  };
+
+  const int MAX_NETWORKS = 24;
+  ScannedNetwork found[MAX_NETWORKS];
+  int total = 0;
+  int count = WiFi.scanNetworks(false, false);
+
+  if (count > 0) {
+    for (int i = 0; i < count && total < MAX_NETWORKS; i++) {
+      String ssid = WiFi.SSID(i);
+      if (ssid.length() == 0) continue;
+      bool duplicate = false;
+      for (int j = 0; j < total; j++) {
+        if (found[j].ssid == ssid) { duplicate = true; break; }
+      }
+      if (duplicate) continue;
+      found[total].ssid = ssid;
+      found[total].rssi = WiFi.RSSI(i);
+      found[total].channel = WiFi.channel(i);
+      found[total].secure = WiFi.encryptionType(i) != WIFI_AUTH_OPEN;
+      total++;
+    }
+    for (int i = 1; i < total; i++) {
+      ScannedNetwork key = found[i];
+      int j = i - 1;
+      while (j >= 0 && found[j].rssi < key.rssi) {
+        found[j + 1] = found[j];
+        j--;
+      }
+      found[j + 1] = key;
+    }
+  }
+  WiFi.scanDelete();
+
+  DynamicJsonDocument doc(3072);
+  JsonArray networks = doc.createNestedArray("networks");
+  for (int i = 0; i < total; i++) {
+    JsonObject item = networks.createNestedObject();
+    item["ssid"] = found[i].ssid;
+    item["rssi"] = found[i].rssi;
+    item["channel"] = found[i].channel;
+    item["secure"] = found[i].secure;
+  }
+  doc["count"] = total;
+  doc["error"] = count < 0 ? "falha ao varrer" : "";
+
   String json;
   serializeJson(doc, json);
   sendWithCors(200, "application/json", json);

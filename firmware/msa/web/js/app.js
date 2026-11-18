@@ -101,7 +101,7 @@ function applyWifiMode() {
   const sel = $('cfg-wifi-mode');
   if (!sel) return;
   const isSta = sel.value === 'sta';
-  ['cfg-wifi-sta-row', 'cfg-wifi-pass-row'].forEach((id) => {
+  ['cfg-wifi-sta-row', 'cfg-wifi-scan-row', 'cfg-wifi-pass-row'].forEach((id) => {
     const el = $(id);
     if (el) el.style.display = isSta ? 'flex' : 'none';
   });
@@ -109,12 +109,98 @@ function applyWifiMode() {
     const el = $(id);
     if (el) el.style.display = isSta ? 'none' : 'flex';
   });
+  if (isSta) onSsidChoice();
+  else {
+    const custom = $('cfg-wifi-custom-row');
+    if (custom) custom.style.display = 'none';
+  }
+}
+
+function onSsidChoice() {
+  const sel = $('cfg-wifi-ssid');
+  const custom = $('cfg-wifi-custom-row');
+  if (!sel || !custom) return;
+  custom.style.display = sel.value === '__custom__' ? 'flex' : 'none';
+  if (sel.value === '__custom__') $('cfg-wifi-custom-ssid').focus();
+}
+
+function setSsidChoice(ssid) {
+  const sel = $('cfg-wifi-ssid');
+  if (!sel) return;
+  if (!ssid) {
+    sel.value = '';
+    onSsidChoice();
+    return;
+  }
+  let exists = false;
+  for (const option of sel.options) {
+    if (option.value === ssid) { exists = true; break; }
+  }
+  if (!exists) {
+    const option = document.createElement('option');
+    option.value = ssid;
+    option.textContent = ssid;
+    sel.appendChild(option);
+  }
+  sel.value = ssid;
+  onSsidChoice();
+}
+
+function setScanStatus(message, isError) {
+  const el = $('wifi-scan-status');
+  if (!el) return;
+  el.textContent = message || '';
+  el.classList.toggle('error', Boolean(isError));
+}
+
+async function scanNetworks() {
+  const button = $('cfg-wifi-scan');
+  const sel = $('cfg-wifi-ssid');
+  if (!button || !sel) return;
+  const previous = sel.value;
+  button.disabled = true;
+  setScanStatus('Buscando redes...', false);
+  try {
+    const data = await API.get('/api/wifi/scan');
+    while (sel.options.length > 2) sel.remove(2);
+    const seen = new Set();
+    (data.networks || []).forEach((net) => {
+      if (!net.ssid || seen.has(net.ssid)) return;
+      seen.add(net.ssid);
+      const option = document.createElement('option');
+      option.value = net.ssid;
+      const detail = net.rssi + ' dBm' + (net.channel ? ' · ch ' + net.channel : '') + (net.secure ? ', seguro' : '');
+      option.textContent = net.ssid + '  (' + detail + ')';
+      sel.appendChild(option);
+    });
+    if (previous && previous !== '__custom__' && !seen.has(previous)) {
+      const option = document.createElement('option');
+      option.value = previous;
+      option.textContent = previous;
+      sel.appendChild(option);
+    }
+    if (previous && Array.from(sel.options).some((option) => option.value === previous)) sel.value = previous;
+    else sel.value = '';
+    setScanStatus(data.error ? 'Erro: ' + data.error : (data.count || 0) + ' rede(s) encontrada(s).', Boolean(data.error));
+    onSsidChoice();
+  } catch (error) {
+    setScanStatus('Erro ao buscar: ' + error.message, true);
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function initWifiMode() {
   const sel = $('cfg-wifi-mode');
   if (!sel) return;
-  sel.addEventListener('change', applyWifiMode);
+  sel.addEventListener('change', () => {
+    applyWifiMode();
+    if (sel.value === 'sta') scanNetworks();
+  });
+  const ssid = $('cfg-wifi-ssid');
+  if (ssid) ssid.addEventListener('change', onSsidChoice);
+  const button = $('cfg-wifi-scan');
+  if (button) button.addEventListener('click', scanNetworks);
   applyWifiMode();
 }
 
@@ -194,7 +280,7 @@ async function loadWifi() {
   try {
     const wifi = await API.get('/api/wifi');
     $('cfg-wifi-mode').value = wifi.mode || 'ap';
-    $('cfg-wifi-ssid').value = wifi.staSsid || '';
+    setSsidChoice(wifi.staSsid || '');
     $('cfg-ap-ssid').value = wifi.apSsid || 'MSA-Setup';
     applyWifiMode();
     setOnline(true);
@@ -236,8 +322,14 @@ async function saveLimits() {
 async function saveWifi() {
   try {
     const mode = $('cfg-wifi-mode').value;
+    const selected = $('cfg-wifi-ssid').value;
+    const ssid = (selected === '__custom__' ? $('cfg-wifi-custom-ssid').value : selected).trim();
+    if (mode === 'sta' && !ssid) {
+      setStatus('Selecione ou digite o SSID.', true);
+      return;
+    }
     const payload = mode === 'sta'
-      ? { mode, ssid: $('cfg-wifi-ssid').value.trim(), pass: $('cfg-wifi-pass').value }
+      ? { mode, ssid, pass: $('cfg-wifi-pass').value }
       : { mode, ssid: $('cfg-ap-ssid').value.trim(), pass: $('cfg-ap-pass').value };
     await API.post('/api/wifi', payload);
     setStatus('Wi-Fi salvo. Reiniciando...', false);

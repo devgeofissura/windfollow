@@ -1,4 +1,4 @@
-const CACHE = 'msa-v3';
+const CACHE = 'msa-v4';
 const ASSETS = [
   '/', '/style.css', '/app.js', '/manifest.json',
   '/favicon.svg', '/favicon.png', '/icon-192.png', '/icon-512.png'

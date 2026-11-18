@@ -136,7 +136,7 @@ body { display: flex; flex-direction: column; overflow: hidden; }
   background: #121a2b; border: 1px solid #1f2a3d;
   border-radius: var(--radius); padding: var(--pad);
   display: flex; flex-direction: column; gap: calc(var(--u) * 0.8);
-  min-height: 0; min-width: 0;
+  min-width: 0;
 }
 .card-title {
   margin: 0; font-size: max(13px, calc(var(--u) * 1.45)); font-weight: 800;
@@ -186,6 +186,7 @@ body { display: flex; flex-direction: column; overflow: hidden; }
 .btn-outline { background: #16283a; border: 1px solid #2f7fd8; color: #9fd0ff; }
 .btn-block { width: 100%; padding: max(12px, calc(var(--u) * 1)) 0; }
 .btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
 .sys-info {
   background: #0b1120; border: 1px solid #1f2a3d; border-radius: calc(var(--u) * 1);
   padding: calc(var(--u) * 0.8); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;

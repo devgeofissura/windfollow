@@ -65,7 +65,9 @@ pressão guarda 180 amostras (1/min) e o de temperatura 12 amostras (1/5 s).
 - AP padrão: `MSA-Setup` / `msa1234` — IP `192.168.4.1`; SSID e senha do AP
   podem ser alterados na aba Config, como no firmware `irobot`.
 - STA: configure SSID/senha em `/api/wifi` ou na aba Config do dashboard;
-  se a conexão falhar, o firmware volta para AP. Após salvar, o ESP32 reinicia.
+  ao selecionar o modo cliente, a aba Config busca e lista as redes próximas em
+  ordem de sinal (até 24 SSIDs únicos), com opção para digitar outro SSID.
+  Se a conexão falhar, o firmware volta para AP. Após salvar, o ESP32 reinicia.
 - mDNS: `http://msa.local` quando o roteador suporta mDNS.
 
 ## API REST
@@ -76,6 +78,7 @@ pressão guarda 180 amostras (1/min) e o de temperatura 12 amostras (1/5 s).
 | `/api/config` | GET/POST | intervalo de leitura e limites de alerta |
 | `/api/system/info` | GET | uptime, heap, clientes Wi-Fi, modo Wi-Fi e estado do OLED |
 | `/api/wifi` | GET/POST | modo, SSID/senha STA ou SSID/senha do AP salvos |
+| `/api/wifi/scan` | GET | SSIDs próximos com RSSI, canal e criptografia |
 | `/api/system/restart` | POST | reinicia o ESP32 |
 
 Exemplo de resposta de `/api/sensors`:
