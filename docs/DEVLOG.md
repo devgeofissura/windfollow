@@ -11,6 +11,27 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-18 17:23 - fix(msa): ajusta interface mobile first
+
+**Area:** msa
+
+**Feito:**
+- Unidade base mobile first de 9 a 14px com reducao controlada em paisagem
+- Layout em uma coluna no celular e breakpoints min-width para tablet e desktop
+- Fontes minimas 16px nos campos, alvos de toque de 44px e areas seguras do iOS
+- Cache do service worker e WebAssets regenerados e regravados em COM12
+
+**Dificuldades e solucoes:**
+- O clamp antigo min(1vw,2vh) caia para 5px no retrato -> troquei por 2.6vw com piso de 9px e excecao em landscape
+- CSS usava breakpoints max-width e escondia grids no mobile -> reescrevi mobile first com min-width
+- Service worker podia servir css antigo -> bump de style.css?v=3 e cache msa-v3
+
+**Arquivos:**
+- `firmware/msa/WebAssets.h`
+- `firmware/msa/web/css/style.css`
+- `firmware/msa/web/index.html`
+- `firmware/msa/web/sw.js`
+
 ### 2026-11-18 15:28 - feat(msa): adiciona OLED e interface responsiva
 
 **Area:** msa, raiz
