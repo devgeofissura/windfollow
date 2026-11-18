@@ -11,6 +11,45 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-17 21:51 - feat(irobot): ajusta UI Home, icones PWA e preview local
+
+**Area:** irobot, raiz
+
+**Feito:**
+- avisos ambientais agora aparecem no centro do cabecalho ao lado do titulo iRobot
+- sensores e status foram movidos para baixo dos botoes de direcao na Home
+- favicon e icones PWA PNG 32/192/512 servidos pelo firmware e embutidos no WebAssets
+- manifest atualizado com display fullscreen e service worker v7
+- pasta preview com mock de API e cenarios alerts/fire/stuck para validar a tela no PC
+- artefatos de build removidos do git e build/ adicionado ao gitignore
+- README atualizado com instrucoes do preview
+
+**Dificuldades e solucoes:**
+- gerador de assets escrevia bytes PNG sem virgula entre linhas -> compile falhou -> join com virgula aplicado e compile ok 85% flash
+- PWA em AP HTTP nao oferece instalacao real no navegador -> documentado HTTPS/localhost e manifest com PNGs corretos
+
+**Arquivos:**
+- `.gitignore`
+- `README.md`
+- `firmware/irobot/DashboardService.cpp`
+- `firmware/irobot/DashboardService.h`
+- `firmware/irobot/WebAssets.h`
+- `firmware/irobot/build/esp32.esp32.esp32/build.options.json`
+- `firmware/irobot/build/esp32.esp32.esp32/flash_args`
+- `firmware/irobot/build/esp32.esp32.esp32/partitions.csv`
+- `firmware/irobot/build/esp32.esp32.esp32/sdkconfig`
+- `firmware/irobot/tools/generate_web_assets.ps1`
+- `firmware/irobot/web/css/style.css`
+- `firmware/irobot/web/index.html`
+- `firmware/irobot/web/js/app.js`
+- `firmware/irobot/web/manifest.json`
+- `firmware/irobot/web/sw.js`
+- `firmware/irobot/preview/`
+- `firmware/irobot/tools/generate_icons.ps1`
+- `firmware/irobot/web/favicon.png`
+- `firmware/irobot/web/icon-192.png`
+- `firmware/irobot/web/icon-512.png`
+
 ### 2026-11-17 21:12 - docs: README profissional com todos os projetos, hardware, API e fluxo de trabalho
 
 **Area:** raiz

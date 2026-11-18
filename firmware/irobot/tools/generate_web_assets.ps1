@@ -66,7 +66,32 @@ foreach ($f in $files) {
     $content += "`n)rawliteral`";`n"
 }
 
+# Ícones PNG são embutidos como bytes (não podem ir em raw string literal)
+$icons = @(
+    @{ name = "favicon_png";  path = Join-Path $WebDir "favicon.png" }
+    @{ name = "icon_192_png"; path = Join-Path $WebDir "icon-192.png" }
+    @{ name = "icon_512_png"; path = Join-Path $WebDir "icon-512.png" }
+)
+
+foreach ($i in $icons) {
+    if (!(Test-Path -LiteralPath $i.path)) {
+        Write-Error "Arquivo nao encontrado: $($i.path)"
+        exit 1
+    }
+    $bytes = [System.IO.File]::ReadAllBytes($i.path)
+    $lines = New-Object System.Collections.Generic.List[string]
+    for ($k = 0; $k -lt $bytes.Length; $k += 20) {
+        $end = [Math]::Min($k + 19, $bytes.Length - 1)
+        $hex = ($bytes[$k..$end] | ForEach-Object { "0x{0:X2}" -f $_ }) -join ","
+        [void]$lines.Add("  " + $hex)
+    }
+    $content += "static const unsigned char $($i.name)[] PROGMEM = {`n"
+    $content += ($lines -join ",`n")
+    $content += "`n};`n"
+    $content += "static const unsigned int $($i.name)_len = $($bytes.Length);`n`n"
+}
+
 $content += $footer
 
 Set-ContentNoBom -Path $OutFile -Value $content
-Write-Host "Gerado $OutFile com sucesso ($( $files.Length ) arquivos embutidos)"
+Write-Host "Gerado $OutFile com sucesso ($( $files.Length ) textos + $( $icons.Length ) icones embutidos)"

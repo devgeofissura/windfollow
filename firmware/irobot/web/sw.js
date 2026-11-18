@@ -1,6 +1,7 @@
-const CACHE = 'irobot-v6';
+const CACHE = 'irobot-v7';
 const ASSETS = [
-  '/', '/style.css', '/app.js', '/manifest.json', '/favicon.svg', '/teste'
+  '/', '/style.css', '/app.js', '/manifest.json', '/teste',
+  '/favicon.svg', '/favicon.png', '/icon-192.png', '/icon-512.png'
 ];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

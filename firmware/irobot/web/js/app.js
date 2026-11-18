@@ -294,14 +294,29 @@ function buildAdviceMessages(s) {
   return msgs;
 }
 
-function renderTicker(s, msgs) {
+function renderTicker(s) {
   const el = $('ticker-text');
   if (!el) return;
-  const temp = fmtTemp(s.temperature);
-  const hum = fmtHum(s.humidity);
-  const dist = fmtDist(s.distanceMm);
-  const base = 'Temp ' + temp + ' | Umid ' + hum + ' | Dist ' + dist;
-  el.textContent = msgs.length ? (msgs.join('  •  ') + '  |  ' + base) : (base + '  |  Nenhum aviso');
+  el.textContent = 'Temp ' + fmtTemp(s.temperature) + '  •  Umid ' + fmtHum(s.humidity) +
+    '  •  Press ' + fmtPres(s.pressure) + '  •  Dist ' + fmtDist(s.distanceMm) +
+    '  •  Autonomo ' + (s.auto ? (s.autoState || 'ON') : 'OFF');
+}
+
+function alertSeverity(text) {
+  if (/INCENDIO/i.test(text)) return 'crit';
+  if (/Chuva agora/i.test(text)) return 'crit';
+  if (/Pode chover|Calor|seco/i.test(text)) return 'warn';
+  return 'info';
+}
+
+function renderHeaderAlerts(msgs) {
+  const el = $('header-alerts');
+  if (!el) return;
+  if (!msgs.length) {
+    el.innerHTML = '<span class="alert-chip ok">Sem avisos</span>';
+    return;
+  }
+  el.innerHTML = msgs.map(m => '<span class="alert-chip ' + alertSeverity(m) + '">' + escapeHtml(m) + '</span>').join('');
 }
 
 function renderHomeSensors(s, msgs) {
@@ -345,7 +360,8 @@ async function fetchSensors() {
     state.autoOn = s.auto === true;
     syncAutoButtons();
     const msgs = buildAdviceMessages(s);
-    renderTicker(s, msgs);
+    renderTicker(s);
+    renderHeaderAlerts(msgs);
     renderHomeSensors(s, msgs);
     renderDlSensors(s, msgs);
     if (s.stuck && s.stuckSeq !== state.lastStuckSeq) {

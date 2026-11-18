@@ -8,23 +8,27 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="iRobot">
   <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="apple-touch-icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
   <title>iRobot</title>
-  <link rel="stylesheet" href="/style.css?v=6">
+  <link rel="stylesheet" href="/style.css?v=7">
 </head>
 <body>
   <div class="app">
     <!-- Letreiro de ambiente (topo, pequeno) -->
     <div class="ticker" id="ticker">
-      <span class="ticker-label">Ambiente:</span>
-      <span class="ticker-text" id="ticker-text">Iniciando sensores...</span>
+      <span class="ticker-label">Sensores:</span>
+      <span class="ticker-text" id="ticker-text">Iniciando leituras...</span>
     </div>
 
-    <!-- Header com abas -->
+    <!-- Header: logo, titulo + avisos no centro, conexao e tela cheia -->
     <header class="app-header">
       <div class="logo" id="app-logo">&#129302;</div>
-      <h1 class="app-title" id="app-title">iRobot</h1>
+      <div class="header-center">
+        <h1 class="app-title" id="app-title">iRobot</h1>
+        <div class="header-alerts" id="header-alerts"><span class="alert-chip ok">Sem avisos</span></div>
+      </div>
       <div class="header-actions">
         <div id="badge-conn" class="badge offline">Desconectado</div>
         <label class="switch fullscreen-switch">
@@ -61,10 +65,10 @@
           </div>
         </aside>
 
-        <!-- Coluna central: painel de botoes -->
+        <!-- Coluna central: comandos e, logo abaixo, sensores + status -->
         <section class="home-col center-col">
           <div class="card btns-card">
-            <div class="card-title">Comandos</div>
+            <div class="card-title">Botoes de Direcao</div>
             <div class="dpad">
               <button class="btn dpad-btn" id="btn-frente" data-dir="frente">&#9650;<span>Frente</span></button>
               <div class="dpad-row">
@@ -81,35 +85,26 @@
               <span id="home-speed-val" class="speed-val">70%</span>
             </div>
           </div>
-        </section>
 
-        <!-- Coluna direita: sensores + status -->
-        <aside class="home-col info-col">
-          <div class="card info-card">
-            <div class="card-title">Sensores</div>
-            <div class="env-grid">
-              <div class="env-item"><span class="env-k">Temp</span><strong id="home-temp" class="env-v">--</strong></div>
-              <div class="env-item"><span class="env-k">Umidade</span><strong id="home-hum" class="env-v">--</strong></div>
-              <div class="env-item"><span class="env-k">Pressao</span><strong id="home-pres" class="env-v">--</strong></div>
-              <div class="env-item"><span class="env-k">Distancia</span><strong id="home-dist" class="env-v">--</strong></div>
+          <!-- Dados dos sensores abaixo dos botoes de direcao -->
+          <div class="home-bottom">
+            <div class="card info-card">
+              <div class="card-title">Sensores</div>
+              <div class="env-grid">
+                <div class="env-item"><span class="env-k">Temp</span><strong id="home-temp" class="env-v">--</strong></div>
+                <div class="env-item"><span class="env-k">Umidade</span><strong id="home-hum" class="env-v">--</strong></div>
+                <div class="env-item"><span class="env-k">Pressao</span><strong id="home-pres" class="env-v">--</strong></div>
+                <div class="env-item"><span class="env-k">Distancia</span><strong id="home-dist" class="env-v">--</strong></div>
+              </div>
+            </div>
+            <div class="card status-card">
+              <div class="card-title">Status do Robo</div>
+              <div class="status-row"><span class="status-k">Estado:</span><strong id="home-state" class="status-v">Parado</strong></div>
+              <div class="status-row"><span class="status-k">Motores:</span><strong id="home-moving" class="status-v">Parado</strong></div>
+              <div class="status-row"><span class="status-k">Conexao:</span><strong id="home-conn" class="status-v offline">Desconectado</strong></div>
             </div>
           </div>
-          <div class="card status-card">
-            <div class="card-title">Status do Robo</div>
-            <div class="status-row">
-              <span class="status-k">Estado:</span>
-              <strong id="home-state" class="status-v">Parado</strong>
-            </div>
-            <div class="status-row">
-              <span class="status-k">Motores:</span>
-              <strong id="home-moving" class="status-v">Parado</strong>
-            </div>
-            <div class="status-row">
-              <span class="status-k">Conexao:</span>
-              <strong id="home-conn" class="status-v offline">Desconectado</strong>
-            </div>
-          </div>
-        </aside>
+        </section>
       </div>
     </section>
 
@@ -285,6 +280,6 @@
     <button id="btn-alert-ok" type="button">Entendi</button>
   </div>
 
-  <script src="/app.js?v=6"></script>
+  <script src="/app.js?v=7"></script>
 </body>
 </html>

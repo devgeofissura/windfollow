@@ -41,6 +41,9 @@ private:
   void handleAppJs();
   void handleManifest();
   void handleFaviconSvg();
+  void handleFaviconPng();
+  void handleIcon192();
+  void handleIcon512();
   void handleSwJs();
   void handleWifiGet();
   void handleWifiPost();

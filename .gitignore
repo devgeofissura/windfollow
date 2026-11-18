@@ -4,6 +4,7 @@
 *.hex
 *.map
 .build/
+build/
 .vscode/
 .arduinoIDE/
 .DS_Store

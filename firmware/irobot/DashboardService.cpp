@@ -34,6 +34,9 @@ void DashboardService::setupRoutes() {
   _server->on("/favicon.ico", HTTP_GET, std::bind(&DashboardService::handleFavicon, this));
   _server->on("/manifest.json", HTTP_GET, std::bind(&DashboardService::handleManifest, this));
   _server->on("/favicon.svg", HTTP_GET, std::bind(&DashboardService::handleFaviconSvg, this));
+  _server->on("/favicon.png", HTTP_GET, std::bind(&DashboardService::handleFaviconPng, this));
+  _server->on("/icon-192.png", HTTP_GET, std::bind(&DashboardService::handleIcon192, this));
+  _server->on("/icon-512.png", HTTP_GET, std::bind(&DashboardService::handleIcon512, this));
   _server->on("/sw.js", HTTP_GET, std::bind(&DashboardService::handleSwJs, this));
   _server->on("/api/motor/status", HTTP_GET, std::bind(&DashboardService::handleMotorStatus, this));
   _server->on("/api/motor/status", HTTP_OPTIONS, std::bind(&DashboardService::handleCorsPreflight, this));
@@ -89,7 +92,8 @@ void DashboardService::handleAppJs() {
 }
 
 void DashboardService::handleFavicon() {
-  sendWithCors(200, "image/svg+xml", favicon_svg);
+  _server->sendHeader("Access-Control-Allow-Origin", "*");
+  _server->send_P(200, "image/png", reinterpret_cast<const char*>(favicon_png), favicon_png_len);
 }
 
 void DashboardService::handleManifest() {
@@ -98,6 +102,21 @@ void DashboardService::handleManifest() {
 
 void DashboardService::handleFaviconSvg() {
   sendWithCors(200, "image/svg+xml", favicon_svg);
+}
+
+void DashboardService::handleFaviconPng() {
+  _server->sendHeader("Access-Control-Allow-Origin", "*");
+  _server->send_P(200, "image/png", reinterpret_cast<const char*>(favicon_png), favicon_png_len);
+}
+
+void DashboardService::handleIcon192() {
+  _server->sendHeader("Access-Control-Allow-Origin", "*");
+  _server->send_P(200, "image/png", reinterpret_cast<const char*>(icon_192_png), icon_192_png_len);
+}
+
+void DashboardService::handleIcon512() {
+  _server->sendHeader("Access-Control-Allow-Origin", "*");
+  _server->send_P(200, "image/png", reinterpret_cast<const char*>(icon_512_png), icon_512_png_len);
 }
 
 void DashboardService::handleSwJs() {

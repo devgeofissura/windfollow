@@ -206,12 +206,23 @@ O `AutoNavigator` é uma máquina de estados reativa baseada apenas no sensor To
 
 | Aba | Conteúdo |
 |---|---|
-| 🏠 **Home** | Tela inicial em paisagem: joystick à esquerda, botões Frente/Trás/Esquerda/Direita/Parar/Autônomo ao centro, badge **Conectado** superior direito, sensores e status do robô na parte inferior, letreiro de ambiente no topo e checkbox para tela cheia. |
+| 🏠 **Home** | Tela inicial em paisagem: joystick à esquerda, botões Frente/Trás/Esquerda/Direita/Parar/Autônomo ao centro, **avisos no centro do cabeçalho** (ao lado do título iRobot), **sensores e status logo abaixo dos botões de direção**, badge **Conectado** superior direito, letreiro de leituras no topo e checkbox para tela cheia. |
 | 🎮 **DL** | Detalhe de locomoção: tela antiga mantida com joystick diferencial, comandos rápidos, sliders de velocidade e motores independentes, PWM, ambiente, avisos e telemetria. |
 | ⚙️ **Config** | Wi-Fi (AP/cliente), PWM e status do sistema. |
 
-- 📲 **PWA**: manifest + service worker + logo/favicon 🤖 para instalar como app
+- 📲 **PWA**: manifest + service worker + ícones PNG 🤖 (32/192/512) para instalar como app em tela cheia
 - 📐 Layout responsivo que se molda ao tamanho da tela
+
+### 🧪 Preview local (sem hardware)
+
+Abra `firmware/irobot/preview/index.html` no navegador do computador. A UI usa dados simulados (`preview/mock.js`) e não precisa entrar no AP do robô.
+
+```text
+preview/index.html          → cenário padrão
+preview/index.html?alerts=1 → avisos de chuva/calor/ar seco no header
+preview/index.html?fire=1   → alerta de incêndio
+preview/index.html?stuck=1  → alerta de robô enroscado
+```
 
 > ⚠️ **Nota PWA**: navegadores só oferecem "Instalar app" em **HTTPS ou localhost**.
 > No AP do ESP32 (`http://192.168.4.1`) o botão instalar pode não aparecer.
