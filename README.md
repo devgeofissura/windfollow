@@ -206,7 +206,7 @@ O `AutoNavigator` é uma máquina de estados reativa baseada apenas no sensor To
 
 | Aba | Conteúdo |
 |---|---|
-| 🏠 **Home** | Tela inicial em paisagem: joystick à esquerda, botões Frente/Trás/Esquerda/Direita/Parar/Autônomo ao centro, **avisos no centro do cabeçalho** (ao lado do título iRobot), **sensores e status logo abaixo dos botões de direção**, badge **Conectado** superior direito, letreiro de leituras no topo e checkbox para tela cheia. |
+| 🏠 **Home** | Tela inicial em paisagem que **preenche um retângulo exato**: joystick à esquerda e D-pad no centro superior; **comandos restantes (Autônomo + Velocidade), sensores e status ocupam a faixa inferior**. Avisos ficam no centro do cabeçalho, badge **Conectado** à direita. Fontes, botões, cards e joystick escalam automaticamente com a resolução (ex.: 667×375, 844×390, 960×540). |
 | 🎮 **DL** | Detalhe de locomoção: tela antiga mantida com joystick diferencial, comandos rápidos, sliders de velocidade e motores independentes, PWM, ambiente, avisos e telemetria. |
 | ⚙️ **Config** | Wi-Fi (AP/cliente), PWM e status do sistema. |
 

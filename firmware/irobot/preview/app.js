@@ -104,8 +104,10 @@ function measureJoystick(key) {
   const j = joyState[key];
   if (!j.base) return;
   const r = j.base.getBoundingClientRect();
+  const k = j.knob.getBoundingClientRect();
   j.cx = r.left + r.width / 2;
   j.cy = r.top + r.height / 2;
+  j.knobRadius = k.width / 2;
   j.radius = Math.max(10, r.width / 2 - j.knobRadius - 4);
 }
 

@@ -11,6 +11,32 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-17 22:28 - feat(irobot): layout Home responsivo em retangulo perfeito
+
+**Area:** irobot, raiz
+
+**Feito:**
+- grid preenche a viewport exatamente sem scroll em 667x375 844x390 e 960x540
+- fontes botoes cards e joystick escalam por unidade de viewport
+- comandos de autonomo e velocidade foram para a faixa inferior junto de sensores e status
+- densidade compacta em paisagem baixa evita corte no D-pad
+- raio do knob do joystick agora e medido do DOM
+- preview sincronizado e README atualizado
+
+**Dificuldades e solucoes:**
+- texto do D-pad cortava em 844x390 -> medi retangulos com navegador headless -> media query compacta aplicada
+- raio fixo do knob quebrava com joystick escalado -> raio agora lido do elemento renderizado
+
+**Arquivos:**
+- `README.md`
+- `firmware/irobot/WebAssets.h`
+- `firmware/irobot/preview/app.js`
+- `firmware/irobot/preview/index.html`
+- `firmware/irobot/preview/style.css`
+- `firmware/irobot/web/css/style.css`
+- `firmware/irobot/web/index.html`
+- `firmware/irobot/web/js/app.js`
+
 ### 2026-11-17 21:51 - feat(irobot): ajusta UI Home, icones PWA e preview local
 
 **Area:** irobot, raiz

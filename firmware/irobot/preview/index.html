@@ -12,7 +12,7 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
   <title>iRobot - PREVIEW</title>
-  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="style.css?v=8">
   <style>
     body { padding-top: 18px; }
     .preview-banner {
@@ -88,16 +88,19 @@
               </div>
               <button class="btn dpad-btn" id="btn-tras" data-dir="tras">&#9660;<span>Tras</span></button>
             </div>
-            <button class="btn btn-auto btn-block" id="btn-home-auto">Modo Autonomo: OFF</button>
-            <div class="speed-row">
-              <label class="speed-label">Velocidade</label>
-              <input type="range" id="home-speed" min="0" max="100" value="70" class="hslider">
-              <span id="home-speed-val" class="speed-val">70%</span>
-            </div>
           </div>
 
-          <!-- Dados dos sensores abaixo dos botoes de direcao -->
+          <!-- Comandos restantes e leituras ocupam a faixa inferior -->
           <div class="home-bottom">
+            <div class="card cmd-card">
+              <div class="card-title">Comandos</div>
+              <button class="btn btn-auto btn-block" id="btn-home-auto">Modo Autonomo: OFF</button>
+              <div class="speed-row">
+                <label class="speed-label">Vel.</label>
+                <input type="range" id="home-speed" min="0" max="100" value="70" class="hslider">
+                <span id="home-speed-val" class="speed-val">70%</span>
+              </div>
+            </div>
             <div class="card info-card">
               <div class="card-title">Sensores</div>
               <div class="env-grid">
@@ -291,6 +294,6 @@
   </div>
 
   <script src="mock.js"></script>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>
