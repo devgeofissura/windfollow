@@ -15,6 +15,9 @@ param([string]$Pattern)
 
 $ErrorActionPreference = 'Stop'
 
+# Nao gerar __pycache__ dentro do repositorio.
+$env:PYTHONDONTWRITEBYTECODE = '1'
+
 $python = Join-Path $env:LOCALAPPDATA 'Programs\Python\Python314\python.exe'
 if (-not (Test-Path -LiteralPath $python)) {
     throw "Python LTS nao encontrado em $python"

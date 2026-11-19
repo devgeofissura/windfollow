@@ -11,6 +11,24 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-19 14:24 - chore: remove pycache versionado do parser
+
+**Area:** tooling
+
+**Feito:**
+- gitignore cobre __pycache__ e pyc
+- runner desativa bytecode
+- artifacts removidos do indice
+
+**Dificuldades e solucoes:**
+- save.ps1 commitou pyc gerado pelos testes -> git rm --cached e gitignore corrigido no mesmo bloco
+
+**Arquivos:**
+- `.gitignore`
+- `firmware/laserseg/tests/__pycache__/test_protocol.cpython-314.pyc`
+- `firmware/laserseg/tests/run.ps1`
+- `firmware/laserseg/tools/__pycache__/protocol_ref.cpython-314.pyc`
+
 ### 2026-11-19 14:23 - test(laserseg): parser udp validado e probe serial versionado
 
 **Area:** laserseg, tooling
