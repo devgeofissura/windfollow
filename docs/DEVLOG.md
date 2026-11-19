@@ -11,6 +11,42 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-19 17:03 - feat(laserseg): no DM556D serial-only com nucleo compartilhado
+
+**Area:** laserseg
+
+**Feito:**
+- spec DM556D + NEMA 23 marcada como aprovada; plano e tasks registrados
+- nucleo de protocolo nao duplicado: novo sketch inclui parser.cpp e autotest.h de controller/
+- constantes da spec em tools/motion_config.py e controller_dm556d/driver_config.h, com static_assert contra o nucleo
+- unwrapMillis() prova em compile time a fronteira do watchdog apos wrap do millis()
+- 8 testes novos de movimento -> 92 testes host verdes; vetores regerados byte a byte identicos
+- perfil laserseg_dm556d em tools/flash.ps1; compile exit=0; placa detectada e gravada; AUTOTEST 76/76 PASS
+- nenhum GPIO, motor, luz ou WiFi tocado (LASERSEG_ENABLE_GPIO=0)
+
+**Dificuldades e solucoes:**
+- risco de duplicar a tabela de decisao -> novo no inclui os arquivos de controller/ por caminho relativo, sem copiar
+- wrap do millis() poderia burlar o watchdog de 1200 ms -> tempo monotonico int64 no no + static_assert da transicao 2^32-100 -> 1101
+- reviewer apontou que so a replica Python testava o wrap -> prova movida para tempo de compilacao no propriao cabecalho C++
+- save.ps1 usa git add -A e incluiria as alteracoes do usuario em docs/example01/example02 -> commit seletivo explicito
+
+**Pendencias registradas para T5/T6:**
+- tratar AutoTestResult.failed != 0 como falha fechada antes de habilitar GPIO
+- conectar nowMs() a Session::feed()/poll() quando o UDP entrar
+- 7 respostas de hardware + hardware-auditor antes de qualquer saida fisica
+
+**Arquivos:**
+- `firmware/laserseg/spec/SPEC-dm556d-nema23.md`
+- `firmware/laserseg/tasks/plan.md`
+- `firmware/laserseg/tasks/todo.md`
+- `firmware/laserseg/tools/motion_config.py`
+- `firmware/laserseg/tests/test_motion.py`
+- `firmware/laserseg/controller_dm556d/controller_dm556d.ino`
+- `firmware/laserseg/controller_dm556d/core.cpp`
+- `firmware/laserseg/controller_dm556d/driver_config.h`
+- `tools/flash.ps1`
+- `docs/DEVLOG.md`
+
 ### 2026-11-19 15:32 - fix(laserseg): telemetria em maiusculas validada na placa
 
 **Area:** laserseg

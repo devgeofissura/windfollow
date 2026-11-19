@@ -12,7 +12,8 @@
     portas; use -Port para escolher explicitamente.
 
 .PARAMETER Sketch
-    Qual firmware compilar/gravar: irobot, msa, windfollow, windfollowblind ou laserseg.
+    Qual firmware compilar/gravar: irobot, msa, windfollow, windfollowblind,
+    laserseg ou laserseg_dm556d.
     Opcional apenas com -DetectOnly (ai lista todas as portas sem checar perfil).
 
 .PARAMETER Port
@@ -39,7 +40,7 @@
 
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('irobot', 'msa', 'windfollow', 'windfollowblind', 'laserseg')]
+    [ValidateSet('irobot', 'msa', 'windfollow', 'windfollowblind', 'laserseg', 'laserseg_dm556d')]
     [string]$Sketch = '',
 
     [string]$Port,
@@ -97,6 +98,16 @@ $Profiles = @{
         Dir          = 'firmware\laserseg\controller'
         Ino          = 'controller.ino'
         BuildPath    = Join-Path $env:TEMP 'laserseg-build'
+        Fqbn         = 'esp32:esp32:esp32s3:UploadSpeed=921600,USBMode=hwcdc,CDCOnBoot=cdc,CPUFreq=240,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi'
+        ExpectedChip = 'ESP32-S3'
+        BoardName    = 'LILYGO T-SIMCAM S3_CAM_SIM V1.3 (16 MB flash, OPI PSRAM)'
+    }
+    # No DM556D: mesma FQBN e mesmo nucleo de protocolo, ainda sem GPIO.
+    # STEP/DIR, limites e luz so entram apos auditoria de hardware (T1/T5).
+    'laserseg_dm556d' = @{
+        Dir          = 'firmware\laserseg\controller_dm556d'
+        Ino          = 'controller_dm556d.ino'
+        BuildPath    = Join-Path $env:TEMP 'laserseg-dm556d-build'
         Fqbn         = 'esp32:esp32:esp32s3:UploadSpeed=921600,USBMode=hwcdc,CDCOnBoot=cdc,CPUFreq=240,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi'
         ExpectedChip = 'ESP32-S3'
         BoardName    = 'LILYGO T-SIMCAM S3_CAM_SIM V1.3 (16 MB flash, OPI PSRAM)'
@@ -198,7 +209,7 @@ $esptool = Get-Esptool
 $profile = if ($Sketch) { $Profiles[$Sketch] } else { $null }
 
 if (-not $Sketch -and -not $DetectOnly) {
-    throw "Informe -Sketch (irobot, msa, windfollow, windfollowblind ou laserseg). Para apenas detectar portas, use -DetectOnly."
+    throw "Informe -Sketch (irobot, msa, windfollow, windfollowblind, laserseg ou laserseg_dm556d). Para apenas detectar portas, use -DetectOnly."
 }
 
 Write-Host ''
