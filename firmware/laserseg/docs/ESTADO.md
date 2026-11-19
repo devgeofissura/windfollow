@@ -18,7 +18,7 @@
 | Build/flash | Não regularizado | `arduino-cli` ausente do PATH; `laserseg` sem perfil em `tools/flash.ps1` |
 | Porta serial | Provisória | `COM3`, USB-SERIAL CH340; chip/flash/MAC não verificados |
 | MCPs | Configurados | `context7` remoto (pode exigir login via `/mcps`); `github` local desabilitado até existir token |
-| Skills/agentes | Criados e descobertos | 13 skills (4 próprios + 9 instalados), 3 agentes, checklists e personas em `.opencode/` |
+| Skills/agentes | Criados e descobertos | 14 skills locais (5 próprios + 9 instalados), 39 skills Espressif globais, 113 agentes no total, checklists e personas em `.opencode/` |
 | Config OpenCode | Validada | `opencode debug config` e `opencode debug agents` reconhecem arquivos do subprojeto |
 | Memória de sessão | Criada | `docs/history.md` resume aprendizados e commits em ~166 linhas |
 
@@ -33,6 +33,11 @@
   conectar/autenticar o `context7`.
 - Nenhum segredo foi escrito nos arquivos de configuração; o token do GitHub é lido de
   `GITHUB_PERSONAL_ACCESS_TOKEN` somente quando o servidor for habilitado.
+- Skill local `espressif-lilygo` criada com pinagem e config do repo oficial
+  `Xinyuan-LilyGO/T-SimCam` (MIT); 39 skills `esp-*` instaladas globalmente de
+  `grantwilk/espressif-skills` (MIT) e descobertas pelo OpenCode.
+- `espressif/skills` (oficial, Apache-2.0) foi verificado e está vazio; não instalado.
+- Backup dos arquivos editados salvo em `%TEMP%\opencode\backups\` antes da alteração.
 
 ## Decisões registradas
 

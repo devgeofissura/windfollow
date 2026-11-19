@@ -43,9 +43,28 @@ elas não são agentes ativos do OpenCode porque `.opencode/vendor-agents/` não
 de descoberta de agentes. Isso evita expor personas genéricas de web/segurança como opções
 de agente neste projeto de firmware.
 
+## Skills Espressif globais (grantwilk/espressif-skills)
+
+Origem: <https://github.com/grantwilk/espressif-skills> (MIT). Licença copiada para
+`~/.config/opencode/skills/embedded/espressif/LICENSE` (fora do repositório). Foram
+instaladas **39 skills atômicas** para ESP-IDF, esptool, espefuse, OpenOCD, partições,
+build, flash, monitoramento e debug. Projeto não oficial, não afiliado à Espressif.
+Nenhuma foi copiada para dentro deste repositório.
+
+## Fonte de pinagem LILYGO
+
+Origem: <https://github.com/Xinyuan-LilyGO/T-SimCam> (MIT, repositório oficial).
+README.MD, `platformio.ini` e `examples/*/config.h` foram consultados em 2026-11-19
+para embasar a skill local `espressif-lilygo`. Nenhum arquivo do upstream foi copiado
+para o repositório; apenas fatos e pinagens foram documentados com atribuição.
+
+Observação: o repositório oficial `espressif/skills` (Apache-2.0) foi verificado em
+2026-11-19 e estava vazio (somente `.gitkeep`), por isso não foi instalado.
+
 ## Skills locais (não de terceiros)
 
 - `laserseg-context`
+- `espressif-lilygo` — costura Espressif + LILYGO com fatos do repo oficial
 - `esp32-build-workflow`
 - `udp-protocol`
 - `hardware-safety`

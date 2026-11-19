@@ -11,6 +11,28 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-19 12:13 - feat(laserseg): especialistas esp32 e lilygo
+
+**Area:** laserseg
+
+**Feito:**
+- skill local espressif-lilygo com pinagem oficial T-SimCam V1.3/V1.4, core 3.3.11, particao app3M_fat9M_16MB e regras de gravacao
+- 39 skills esp-* instaladas globalmente de grantwilk/espressif-skills MIT e descobertas pelo OpenCode
+- AGENTS.md, README, ESTADO, THIRD_PARTY e history atualizados com fontes e especialistas
+
+**Dificuldades e solucoes:**
+- websearch sem resultados -> consultei a API do GitHub e encontrei espressif/skills e grantwilk/espressif-skills
+- repositorio oficial espressif/skills estava vazio -> usei skills atomicas da comunidade com licenca MIT e registrei a ressalva
+- risco de sobrescrever arquivos -> backup previo em %TEMP%/opencode/backups antes de editar
+
+**Arquivos:**
+- `firmware/laserseg/.opencode/THIRD_PARTY.md`
+- `firmware/laserseg/AGENTS.md`
+- `firmware/laserseg/README.md`
+- `firmware/laserseg/docs/ESTADO.md`
+- `firmware/laserseg/docs/history.md`
+- `firmware/laserseg/.opencode/skills/espressif-lilygo/`
+
 ### 2026-11-19 12:09 - docs(laserseg): regra de backup e migrations seguras
 
 **Area:** laserseg

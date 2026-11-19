@@ -35,7 +35,9 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
 | `a666c98` | `feat(irobot): ajusta UI Home, icones PWA e preview local` |
 | `250910c` | `docs: README profissional com todos os projetos...` |
 | `73d48a9` | `feat(irobot): nova UI web com abas Home/DL/Config, PWA...` |
-| **`docs(laserseg): fundacao com skills e agentes`** | **commit atual:** README, ESTADO, protocolo, AGENTS, 13 skills, 3 agentes, MCPs e este histórico |
+| `a1ca948` | `docs(laserseg): fundacao com skills e agentes` — README, ESTADO, protocolo, AGENTS, 13 skills, 3 agentes, MCPs e este histórico |
+| `6324067` | `docs(laserseg): regra de backup e migrations seguras` — regras 7 e 8 |
+| **commit atual** | `feat(laserseg): especialistas esp32 e lilygo` — skill local `espressif-lilygo`, 39 skills `esp-*` globais, atribuições e documentação |
 
 > Hash exato do commit atual: `git log -1 --oneline`.
 
@@ -95,6 +97,10 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
   Perfil `windfollow` da raiz usa `PartitionScheme=huge_app`. **Não misturar** sem validar
   com `arduino-cli board details`.
 - Build sempre em `$env:TEMP`; nunca criar pasta de build no repositório.
+- Fatos oficiais LILYGO (repo MIT `Xinyuan-LilyGO/T-SimCam`): Arduino-ESP32 3.3.11,
+  serial 115200, `BOARD_POWER_ON_PIN=1` HIGH obrigatório, PSRAM OPI, partição
+  `app3M_fat9M_16MB`, V1.3 = mic I2S (BCLK 41/WS 42), V1.4 = PDM (CLK 42).
+  Sensor da câmera **ainda não confirmado** pelo repo; não afirmar OV2640/OV5640.
 
 ## 6. OpenCode V2 — aprendizados
 
@@ -111,8 +117,15 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
   `../../references/...`.
 - Instalados de `addyosmani/agent-skills` (MIT): 9 skills, 4 checklists em
   `.opencode/references/`, 3 personas em `.opencode/vendor-agents/` (não são agentes ativos).
-- Skills próprios: `laserseg-context`, `esp32-build-workflow`, `udp-protocol`,
-  `hardware-safety`. Agentes: `laserseg-dev`, `laserseg-reviewer`, `hardware-auditor`.
+- Skills próprios: `laserseg-context`, `espressif-lilygo`, `esp32-build-workflow`,
+  `udp-protocol`, `hardware-safety`. Agentes locais: `laserseg-dev`,
+  `laserseg-reviewer`, `hardware-auditor`.
+- Especialistas instalados globalmente: 39 skills `esp-*` de
+  `grantwilk/espressif-skills` (MIT) em `~/.config/opencode/skills/embedded/espressif/`
+  — índice em `esp-toolchain-overview`. Kit global: 150 skills, 103 agentes.
+  `espressif/skills` oficial (Apache-2.0) estava vazio em 2026-11-19; não instalado.
+- Agentes úteis: `embedded-engineer` (firmware), `vision-engineer` (visão),
+  `robotics-engineer` (motores), `security-engineer`, `code-reviewer`.
 - MCP `context7` remoto configurado; `github` local preparado e desabilitado até existir
   `GITHUB_PERSONAL_ACCESS_TOKEN`.
 

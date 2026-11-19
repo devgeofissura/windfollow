@@ -70,6 +70,8 @@ Abra o OpenCode com `firmware/laserseg` como diretório de trabalho. O arquivo `
 Skills próprios:
 
 - `laserseg-context` — carrega escopo, decisões e pendências antes de qualquer mudança.
+- `espressif-lilygo` — toolchain Espressif, pinagem oficial T-SimCam V1.3/V1.4,
+  core/partição e regras de detecção antes de gravar.
 - `esp32-build-workflow` — compilação, FQBN, detecção de porta e regras de gravação.
 - `udp-protocol` — contrato de mensagens e comportamento da controladora.
 - `hardware-safety` — GPIOs, alimentação, motores, fins de curso e foco de luz.
@@ -81,8 +83,18 @@ Skills instalados do [addyosmani/agent-skills](https://github.com/addyosmani/age
 `constraint-driven-development`. Os checklists compartilhados foram preservados em
 `.opencode/references/`. Atribuição completa em [`.opencode/THIRD_PARTY.md`](.opencode/THIRD_PARTY.md).
 
+Especialistas Espressif instalados **globalmente** (39 skills MIT de
+[`grantwilk/espressif-skills`](https://github.com/grantwilk/espressif-skills)):
+`esp-toolchain-overview`, `esp-detect-device`, `esp-chip-info`, `esp-idf-build`,
+`esp-flash-project`, `esp-troubleshoot`, `esp-decode-crash`, `esp-efuse` e outros.
+Também estão disponíveis `esp32-development`, `arduino-development`, `rtos-basics`,
+`mqtt-protocol` e `sensor-integration` do kit global. Veja
+[`.opencode/THIRD_PARTY.md`](.opencode/THIRD_PARTY.md) para atribuição e licenças.
+
 Agentes disponíveis:
 
+- Globais: `embedded-engineer` (firmware/drivers), `vision-engineer` (visão),
+  `robotics-engineer` (motores), `security-engineer` e `code-reviewer`.
 - `laserseg-dev` — agente principal de implementação e documentação.
 - `laserseg-reviewer` — revisão somente leitura de código, protocolo e documentação.
 - `hardware-auditor` — auditoria somente leitura de hardware e segurança.

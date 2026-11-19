@@ -16,6 +16,8 @@ carregue da mais geral para a mais específica.
 | Dividir trabalho em passos pequenos | `planning-and-task-breakdown` |
 | Implementar firmware, um nó por vez | `incremental-implementation` |
 | Escrever teste de parser/comportamento | `test-driven-development` |
+| Trabalhar com ESP32/S3, Espressif ou LILYGO T-SimCam | `espressif-lilygo` |
+| Ferramenta Espressif específica (idf.py, esptool, fuses, debug) | `esp-toolchain-overview` → skill `esp-*` correspondente |
 | Compilar, detectar placa, FQBN, gravar | `esp32-build-workflow` |
 | Mexer em UDP, mensagens `TRACK/LIGHT/MANUAL/T` | `udp-protocol` |
 | Mexer em GPIO, motor, fin de curso, LED/laser, alimentação | `hardware-safety` |
@@ -58,6 +60,23 @@ disso, pare e pergunte em vez de assumir.
 
 Nenhum LED/laser deve ligar no boot, no reset, na perda de câmera ou no watchdog. Motores
 devem parar com fin de curso NF, comando inválido ou link expirado (> 1200 ms).
+
+## Especialistas disponíveis
+
+- **Skills globais Espressif (39):** iniciar com `esp-toolchain-overview`; depois
+  `esp-detect-device`, `esp-chip-info`, `esp-idf-build`, `esp-flash-project`,
+  `esp-troubleshoot`, `esp-decode-crash`. Instaladas em
+  `~/.config/opencode/skills/embedded/espressif/` (MIT).
+- **Skills globais do kit:** `esp32-development`, `arduino-development`,
+  `rtos-basics`, `mqtt-protocol`, `sensor-integration`, `robotics`.
+- **Agentes globais:** `embedded-engineer` (firmware C/C++, RTOS, drivers),
+  `vision-engineer` (visão/OpenCV), `robotics-engineer` (motores/controle),
+  `security-engineer` e `code-reviewer` (revisão).
+- **Agentes locais:** `laserseg-dev`, `laserseg-reviewer`, `hardware-auditor`.
+
+Para tarefa de firmware, carregue `espressif-lilygo` antes das skills atômicas e
+adote `embedded-engineer` como persona; para visão, `vision-engineer`; antes de
+qualquer gravação, `hardware-auditor`.
 
 ## Backup e banco de dados (regra global do usuário)
 
