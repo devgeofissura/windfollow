@@ -11,6 +11,79 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-19 12:03 - docs(laserseg): fundacao com skills e agentes
+
+**Area:** laserseg
+
+**Feito:**
+- README, ESTADO, PROTOCOLO_UDP e history.md documentados
+- 4 skills proprios e 9 skills instalados do addyosmani/agent-skills com licenca MIT
+- 3 agentes OpenCode e opencode.jsonc com context7 e github desabilitado
+- AGENTS.md com mapeamento intencao skill e regras de seguranca
+
+**Dificuldades e solucoes:**
+- npx bloqueado pela politica do PowerShell -> clone manual e copia preservando caminhos relativos
+- arduino-cli ausente e laserseg sem perfil no flash.ps1 -> build e flash registrados como bloqueio
+- mcp list do CLI nao mostra servers de projeto -> validacao com debug config e debug agents
+
+**Arquivos:**
+- `firmware/laserseg/.opencode/THIRD_PARTY.md`
+- `firmware/laserseg/.opencode/THIRD_PARTY_LICENSES/addyosmani-agent-skills-LICENSE.txt`
+- `firmware/laserseg/.opencode/agents/hardware-auditor.md`
+- `firmware/laserseg/.opencode/agents/laserseg-dev.md`
+- `firmware/laserseg/.opencode/agents/laserseg-reviewer.md`
+- `firmware/laserseg/.opencode/opencode.jsonc`
+- `firmware/laserseg/.opencode/references/definition-of-done.md`
+- `firmware/laserseg/.opencode/references/performance-checklist.md`
+- `firmware/laserseg/.opencode/references/security-checklist.md`
+- `firmware/laserseg/.opencode/references/testing-patterns.md`
+- `firmware/laserseg/.opencode/skills/code-review-and-quality/SKILL.md`
+- `firmware/laserseg/.opencode/skills/constraint-driven-development/SKILL.md`
+- `firmware/laserseg/.opencode/skills/constraint-driven-development/references/floor-guard.md`
+- `firmware/laserseg/.opencode/skills/constraint-driven-development/scripts/quality-gate.mjs`
+- `firmware/laserseg/.opencode/skills/debugging-and-error-recovery/SKILL.md`
+- `firmware/laserseg/.opencode/skills/documentation-and-adrs/SKILL.md`
+- `firmware/laserseg/.opencode/skills/esp32-build-workflow/SKILL.md`
+- `firmware/laserseg/.opencode/skills/hardware-safety/SKILL.md`
+- `firmware/laserseg/.opencode/skills/incremental-implementation/SKILL.md`
+- `firmware/laserseg/.opencode/skills/laserseg-context/SKILL.md`
+- `firmware/laserseg/.opencode/skills/planning-and-task-breakdown/SKILL.md`
+- `firmware/laserseg/.opencode/skills/security-and-hardening/SKILL.md`
+- `firmware/laserseg/.opencode/skills/security-and-hardening/references/hardening-patterns.md`
+- `firmware/laserseg/.opencode/skills/spec-driven-development/SKILL.md`
+- `firmware/laserseg/.opencode/skills/test-driven-development/SKILL.md`
+- `firmware/laserseg/.opencode/skills/udp-protocol/SKILL.md`
+- `firmware/laserseg/.opencode/vendor-agents/code-reviewer.md`
+- `firmware/laserseg/.opencode/vendor-agents/security-auditor.md`
+- `firmware/laserseg/.opencode/vendor-agents/test-engineer.md`
+- `firmware/laserseg/.skills/SKILL-001.md`
+- `firmware/laserseg/AGENTS.md`
+- `firmware/laserseg/README.md`
+- `firmware/laserseg/docs/ESTADO.md`
+- `firmware/laserseg/docs/PROTOCOLO_UDP.md`
+- `firmware/laserseg/docs/base-de-conhecimento-rastreamento-com-s3-cam-sim.md`
+- `"firmware/laserseg/docs/example/Base de conhecimento \342\200\224 rastreamento com S3_CAM_SIM.md"`
+- `"firmware/laserseg/docs/example/Liga\303\247\303\243o de hardware \342\200\224 T-SIMCam IR-CUT, pan-tilt e foco LED.md"`
+- `"firmware/laserseg/docs/example/Liga\303\247\303\243o revisada \342\200\224 S3_CAM_SIM V1.3 + pan-tilt + iluminador LED.md"`
+- `"firmware/laserseg/docs/example/Liga\303\247\303\265es e ensaio.md"`
+- `"firmware/laserseg/docs/example/Projeto de laser seguidor com LilyGO T-SIMCAM ESP32-S3.zip"`
+- `"firmware/laserseg/docs/example/Projeto inicial_ rastreador pan-tilt com LILYGO T-SIMCam IR-CUT.md"`
+- `"firmware/laserseg/docs/example/Projetos GitHub semelhantes_ c\303\242mera rastreadora pan-tilt.md"`
+- `firmware/laserseg/docs/example/REFERENCIAS.md`
+- `"firmware/laserseg/docs/example/SIMCAM Tracker \342\200\224 Arduino CLI + pan-tilt.md"`
+- `firmware/laserseg/docs/example/camera_node.ino`
+- `firmware/laserseg/docs/example/camera_pins.h`
+- `firmware/laserseg/docs/example/compile_all.sh`
+- `firmware/laserseg/docs/example/controller_drv8834.ino`
+- `firmware/laserseg/docs/example/controller_uln2003.ino`
+- `firmware/laserseg/docs/example/pan_tilt_parametrico.scad`
+- `firmware/laserseg/docs/example/pasted_file_gR9fDH_image.png`
+- `firmware/laserseg/docs/example/simcam_tracker.zip`
+- `firmware/laserseg/docs/example/simcam_tracking_context.json`
+- `firmware/laserseg/docs/foco-luz-seguidor-001`
+- `firmware/laserseg/docs/simcam_tracking_context.json`
+- `firmware/laserseg/docs/history.md`
+
 ### 2026-11-18 17:38 - feat(msa): lista redes wifi no modo cliente
 
 **Area:** msa

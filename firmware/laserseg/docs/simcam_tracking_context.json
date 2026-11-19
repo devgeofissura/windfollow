@@ -1,0 +1,465 @@
+{
+  "project": {
+    "name": "Rastreamento visual com S3_CAM_SIM V1.3",
+    "prepared_on": "2026-11-19",
+    "language": "pt-BR",
+    "status": "Arquitetura inicial; sensor, integração de câmera, componentes de movimento e protocolo ainda requerem validação.",
+    "purpose": "Manter câmera/rastreamento na T-SIMCAM e enviar posições por Wi-Fi a uma controladora ESP32-S3 separada para comandar dois motores de passo/driver e um foco LED branco difuso.",
+    "scope_limits": [
+      "Não constitui esquema elétrico nem projeto mecânico dimensionado.",
+      "Não se afirma BSP pronto para S3_CAM_SIM no ESP-WHO.",
+      "Rastreamento/localização não implica identificação biométrica.",
+      "Valores elétricos e limites não verificados foram omitidos."
+    ],
+    "changelog": [
+      {
+        "date": "2026-11-19",
+        "change": "Primeira edição: consolidada separação entre visão e controle, restrições de GPIO, pendências de sensor/BSP, riscos e plano de testes; protocolo Wi-Fi identificado como proposta."
+      }
+    ]
+  },
+  "confirmed_facts": [
+    {
+      "fact": "A fotografia da placa do usuário mostra a marcação S3_CAM_SIM V1.3.",
+      "evidence": "Contexto fornecido para o projeto.",
+      "source_ids": []
+    },
+    {
+      "fact": "No issue #33 do repositório LilyGO, o mantenedor corrige que GPIO31 está ligado à flash e indisponível. O autor do issue relata que GPIO45/46 são usados pelo modem e GPIO21 pelo LED mPCIe; confirmar esses usos no esquema e na revisão física.",
+      "evidence": "Issue #33: comentário do mantenedor confirma GPIO31 ligado à flash; atribuições GPIO45/46/21 aparecem na descrição do autor do issue.",
+      "source_ids": [
+        1
+      ]
+    },
+    {
+      "fact": "GPIO31 não deve ser tratado como GPIO de aplicação conforme correção do mantenedor; usos de GPIO45/46/21 foram relatados pelo autor do issue. Não assumir disponibilidade de pinos externos sem verificar esquema e periféricos presentes.",
+      "evidence": "Issue #33 do repositório LilyGO; confirmar pinagem na revisão física.",
+      "source_ids": [
+        1
+      ]
+    },
+    {
+      "fact": "Página de venda oferece variantes OV2640 IR-CUT e OV5640 IR-CUT; o sensor instalado na unidade do usuário permanece por confirmar.",
+      "evidence": "Página comercial oficial LILYGO lista as opções OV2640 IR-CUT e OV5640 IR-CUT.",
+      "source_ids": [
+        11
+      ]
+    },
+    {
+      "fact": "Documentação atual do ESP-WHO lista S3-EYE e Korvo-2 e não lista S3_CAM_SIM como BSP pronto.",
+      "evidence": "Contexto fornecido sobre a documentação atual; port/configuração para a placa permanece pendente.",
+      "source_ids": [
+        3
+      ]
+    },
+    {
+      "fact": "Orientação adotada: visão/rastreamento na T-SIMCAM e envio de posições por Wi-Fi a uma ESP32-S3 separada.",
+      "evidence": "Decisão de arquitetura do projeto, não resultado experimental.",
+      "source_ids": []
+    },
+    {
+      "fact": "A controladora separada deverá controlar dois motores de passo/driver e um foco LED branco difuso.",
+      "evidence": "Requisito fornecido; componentes exatos e parâmetros ainda não definidos.",
+      "source_ids": []
+    }
+  ],
+  "architecture": {
+    "vision_node": "T-SIMCAM S3_CAM_SIM V1.3; captura e localização/rastreamento após validação do sensor e do software.",
+    "communications": "Wi-Fi entre nó de visão e controladora. Transporte, codificação, frequência e segurança ainda não decididos.",
+    "controller": "ESP32-S3 separada, dedicada à recepção/validação de posição, controle de movimento, iluminação e comportamento seguro.",
+    "actuators": [
+      "Dois motores de passo com drivers selecionados após dimensionamento.",
+      "Foco LED branco difuso com estágio de acionamento apropriado."
+    ],
+    "data_flow": [
+      "Câmera captura quadros.",
+      "Software na T-SIMCAM localiza/rastreia o alvo; captura, detecção e identificação são capacidades distintas.",
+      "A posição e validade da observação são transmitidas por Wi-Fi.",
+      "Controladora verifica formato, atualidade, validade e limites locais.",
+      "Controladora gera comandos aos eixos e aplica a política de iluminação.",
+      "Telemetria/acknowledgement pode ser adicionada para diagnóstico."
+    ],
+    "text_diagram": "Cena/alvo -> câmera T-SIMCAM (OV2640 IR-CUT ou OV5640 IR-CUT; confirmar) -> captura + localização na T-SIMCAM -> posição/estado por Wi-Fi -> controladora ESP32-S3 separada -> driver eixo pan -> motor pan; driver eixo tilt -> motor tilt; estágio de acionamento -> LED branco difuso. Alimentação e proteções a dimensionar."
+  },
+  "components_to_select": {
+    "camera_sensor": [
+      "OV2640 IR-CUT",
+      "OV5640 IR-CUT"
+    ],
+    "camera_sensor_status": "Confirmar fisicamente/documentalmente qual variante está instalada.",
+    "controller_board": "ESP32-S3 separada; modelo ainda não selecionado.",
+    "stepper_motors": "Dois motores de passo; modelo e parâmetros ainda não selecionados.",
+    "motor_drivers": "Dois drivers compatíveis com os motores e a alimentação; seleção pendente.",
+    "mechanics": "Montagem pan-tilt; geometria, carga, curso, referência e limites pendentes.",
+    "endstops_or_homing": "Método de referência/limitação de curso ainda não selecionado.",
+    "power_and_protection": "Dimensionamento, topologia, proteção e cabeamento pendentes; sem valores confirmados.",
+    "led": "LED branco difuso e estágio de acionamento; modelo e parâmetros pendentes."
+  },
+  "software": {
+    "camera_capture_reference": {
+      "name": "esp32-camera",
+      "url": "https://github.com/espressif/esp32-camera",
+      "role": "Referência para driver/captura; não comprova configuração pronta para a placa concreta.",
+      "source_ids": [
+        2
+      ]
+    },
+    "vision_reference": {
+      "name": "ESP-WHO",
+      "url": "https://github.com/espressif/esp-who",
+      "role": "Referência de visão embarcada; suporte citado a S3-EYE/Korvo-2 não demonstra BSP S3_CAM_SIM.",
+      "source_ids": [
+        3
+      ]
+    },
+    "stepper_reference": {
+      "name": "FastAccelStepper",
+      "url": "https://github.com/gin66/FastAccelStepper",
+      "role": "Avaliar na controladora separada; compatibilidade final deve ser testada.",
+      "source_ids": [
+        4
+      ]
+    },
+    "driver_reference": {
+      "name": "Pololu DRV8834",
+      "url": "https://github.com/pololu/drv8834-stepper-motor-driver-carrier",
+      "role": "Referência a avaliar, não seleção definitiva; adequação depende de motor e sistema de alimentação.",
+      "source_ids": [
+        5
+      ]
+    },
+    "vision_capability_distinction": {
+      "capture": "Aquisição de quadros pelo sensor.",
+      "detection_localization": "Encontrar/localizar alvo no quadro e estimar posição.",
+      "identification": "Atribuir identidade; não é requisito confirmado e não deve ser inferido de captura/rastreamento."
+    },
+    "integration_status": "Port/configuração de câmera para S3_CAM_SIM pendente; não afirmar BSP ESP-WHO pronto."
+  },
+  "pin_constraints": [
+    {
+      "pin": "GPIO31",
+      "reported_use": "Mantenedor LilyGO afirma no issue #33 que está ligado à flash e indisponível.",
+      "design_rule": "Não usar como GPIO de aplicação.",
+      "source_ids": [
+        1
+      ]
+    },
+    {
+      "pin": "GPIO45/46",
+      "reported_use": "Autor do issue #33 relata uso pelo UART do modem; confirmar no esquema da revisão.",
+      "design_rule": "Não assumir disponibilidade para atuadores.",
+      "source_ids": [
+        1
+      ]
+    },
+    {
+      "pin": "GPIO21",
+      "reported_use": "Autor do issue #33 relata ligação ao LED mPCIe; confirmar no esquema da revisão.",
+      "design_rule": "Não tratar como saída livre sem análise do circuito.",
+      "source_ids": [
+        1
+      ]
+    },
+    {
+      "pin": "Pinos de borda",
+      "reported_use": "Não são GPIOs extras apenas por estarem expostos na borda.",
+      "design_rule": "Validar função e pinout; não inferir disponibilidade pela aparência.",
+      "source_ids": [
+        1
+      ]
+    }
+  ],
+  "tracking_protocol_proposal": {
+    "status": "Proposta, não fato, não implementação existente.",
+    "transport_options": [
+      "UDP",
+      "TCP"
+    ],
+    "selection_note": "Decidir após ensaios de latência, confiabilidade e reconexão.",
+    "candidate_encoding": "JSON pequeno",
+    "observation_fields": [
+      "version",
+      "seq",
+      "timestamp_ms",
+      "valid",
+      "x_norm",
+      "y_norm",
+      "confidence"
+    ],
+    "optional_state_field": "state",
+    "controller_validation": [
+      "Rejeitar sequência repetida.",
+      "Rejeitar observação expirada ou inválida.",
+      "Rejeitar valores fora das faixas formalmente definidas.",
+      "Aplicar timeout e limites mecânicos locais.",
+      "Não aceitar comandos arbitrários sem limites locais."
+    ],
+    "optional_response_fields": [
+      "ack_seq",
+      "state",
+      "fault"
+    ],
+    "undefined": [
+      "Autenticação",
+      "Faixas e convenção das coordenadas",
+      "Timeout",
+      "Frequência de envio",
+      "Transporte final",
+      "Codificação final"
+    ]
+  },
+  "risks": [
+    {
+      "risk": "Iluminação pode causar ofuscamento ou aquecimento.",
+      "mitigation": "Usar difusão, evitar olhar diretamente para o LED e validar temperatura e configuração óptica."
+    },
+    {
+      "risk": "Movimento pan-tilt pode causar beliscamento, colisão, sobrecurso ou cabos enroscados.",
+      "mitigation": "Definir limites, fixação estável, referência, parada segura e testes progressivos."
+    },
+    {
+      "risk": "Motores/driver podem gerar aquecimento, vibração e ruído elétrico.",
+      "mitigation": "Dimensionar fonte, driver, dissipação, cabeamento e proteção a partir de dados reais."
+    },
+    {
+      "risk": "Perda de Wi-Fi ou dados obsoletos podem manter comando inadequado.",
+      "mitigation": "Expirar comandos e entrar em estado seguro; não perpetuar indefinidamente a última posição."
+    },
+    {
+      "risk": "Reutilizar pinos ocupados pode causar conflito ou dano.",
+      "mitigation": "Confirmar pinout/esquema da revisão e validar sinais antes de conectar cargas."
+    },
+    {
+      "risk": "Uso com pessoas pode criar riscos de privacidade se houver identificação ou retenção de imagens.",
+      "mitigation": "Priorizar localização sem identificação, minimizar armazenamento e observar consentimento aplicável."
+    }
+  ],
+  "open_questions": [
+    {
+      "priority": 1,
+      "question": "Qual sensor está instalado (OV2640 IR-CUT ou OV5640 IR-CUT), e quais são lente/foco e configuração IR-CUT da unidade?"
+    },
+    {
+      "priority": 2,
+      "question": "Qual esquema/pinout corresponde exatamente à revisão S3_CAM_SIM V1.3, e quais dos pinos laterais estão ocupados pela câmera, modem, flash e LED na configuração real?"
+    },
+    {
+      "priority": 3,
+      "question": "Qual combinação de firmware, versão de ESP-IDF/Arduino core e esp32-camera inicializa o sensor real; será necessário port/BSP específico?"
+    },
+    {
+      "priority": 4,
+      "question": "Qual algoritmo atende à localização do alvo e aos requisitos de taxa/desempenho sem pressupor identificação de pessoas?"
+    },
+    {
+      "priority": 5,
+      "question": "Qual controladora ESP32-S3, motores, drivers, fonte e LED serão escolhidos após definição de carga, curso, velocidade e ambiente?"
+    },
+    {
+      "priority": 6,
+      "question": "Como serão implementados referência e limites de curso dos eixos?"
+    },
+    {
+      "priority": 7,
+      "question": "Qual transporte, autenticação, frequência, timeout, reconexão e política para comandos obsoletos serão adotados?"
+    },
+    {
+      "priority": 8,
+      "question": "Quais geometria, massa, centro de gravidade, curso e montagem mecânica precisam ser suportados?"
+    },
+    {
+      "priority": 9,
+      "question": "Quais requisitos de privacidade, retenção e condições de iluminação/cena se aplicam?"
+    }
+  ],
+  "test_plan": [
+    {
+      "step": 1,
+      "name": "Inspeção sem alimentação",
+      "actions": "Confirmar marcação, sensor, conectores e documentação da revisão; registrar evidências sem deduzir GPIO pela posição física."
+    },
+    {
+      "step": 2,
+      "name": "Inicialização e captura",
+      "actions": "Testar sensor detectado e captura estável com configuração mínima; validar a variante real."
+    },
+    {
+      "step": 3,
+      "name": "Visão isolada",
+      "actions": "Avaliar localização em cenas/iluminações controladas sem motores; separar falhas de captura de falhas do algoritmo."
+    },
+    {
+      "step": 4,
+      "name": "Wi-Fi com mensagens sintéticas",
+      "actions": "Testar conexão, sequência, atraso, inválidos, perda e reconexão antes de conectar atuadores."
+    },
+    {
+      "step": 5,
+      "name": "Controladora sem carga mecânica",
+      "actions": "Validar parser, limites, timeout/watchdog e geração de passos com instrumentação e condição segura."
+    },
+    {
+      "step": 6,
+      "name": "Eixos progressivos",
+      "actions": "Testar um eixo por vez, direção, referência, curso, aquecimento e ruído; depois validar operação conjunta."
+    },
+    {
+      "step": 7,
+      "name": "LED",
+      "actions": "Testar acionamento, difusão, temperatura e falhas sem expor pessoas a ofuscamento."
+    },
+    {
+      "step": 8,
+      "name": "Integração fechada",
+      "actions": "Habilitar movimento com limites conservadores; testar alvo perdido, Wi-Fi perdido, reinicialização e parada segura."
+    },
+    {
+      "step": 9,
+      "name": "Revisão operacional",
+      "actions": "Confirmar fixação, cabos, proteção, limites e política de privacidade antes do uso."
+    }
+  ],
+  "github_references": [
+    {
+      "name": "LilyGO camera series",
+      "url": "https://github.com/Xinyuan-LilyGO/LilyGo-Camera-Series/issues/33",
+      "caution": "Issue #33: mantenedor confirma a restrição de GPIO31; usos de 45/46/21 foram relatados pelo autor do issue e devem ser confirmados.",
+      "source_ids": [
+        1
+      ]
+    },
+    {
+      "name": "esp32-camera",
+      "url": "https://github.com/espressif/esp32-camera",
+      "caution": "Referência de driver/captura; não prova BSP pronto para S3_CAM_SIM.",
+      "source_ids": [
+        2
+      ]
+    },
+    {
+      "name": "ESP-WHO",
+      "url": "https://github.com/espressif/esp-who",
+      "caution": "Documentação citada lista S3-EYE e Korvo-2, não S3_CAM_SIM.",
+      "source_ids": [
+        3
+      ]
+    },
+    {
+      "name": "FastAccelStepper",
+      "url": "https://github.com/gin66/FastAccelStepper",
+      "caution": "Avaliar compatibilidade com a controladora e arquitetura escolhidas.",
+      "source_ids": [
+        4
+      ]
+    },
+    {
+      "name": "Pololu DRV8834",
+      "url": "https://github.com/pololu/drv8834-stepper-motor-driver-carrier",
+      "caution": "Referência; adequação depende dos motores e alimentação a selecionar.",
+      "source_ids": [
+        5
+      ]
+    },
+    {
+      "name": "face-track-demo",
+      "url": "https://github.com/pageauc/face-track-demo",
+      "caution": "Projeto legado Raspberry Pi com servos; não é exemplo ESP-WHO nem firmware S3.",
+      "source_ids": [
+        6
+      ]
+    },
+    {
+      "name": "Gill003/Pi_Servo_Tracker",
+      "url": "https://github.com/Gill003/Pi_Servo_Tracker",
+      "caution": "Referência conceitual; plataforma/atuadores podem diferir.",
+      "source_ids": [
+        7
+      ]
+    },
+    {
+      "name": "aju22/Object-Tracking-OpenCV_Arduino",
+      "url": "https://github.com/aju22/Object-Tracking-OpenCV_Arduino",
+      "caution": "Referência conceitual; não prova desempenho ou suporte ao hardware final.",
+      "source_ids": [
+        8
+      ]
+    },
+    {
+      "name": "LanaDelSlay/Arduino-Face-Tracking",
+      "url": "https://github.com/LanaDelSlay/Arduino-Face-Tracking",
+      "caution": "Referência conceitual; não implica identificação nem compatibilidade.",
+      "source_ids": [
+        9
+      ]
+    },
+    {
+      "name": "SaraEye SaraKIT MediaPipe",
+      "url": "https://github.com/SaraEye/SaraKIT-Face-Tracking-MediaPipe-Raspberry-Pi-64bit",
+      "caution": "Referência de projeto; não presumir port para S3_CAM_SIM.",
+      "source_ids": [
+        10
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": 1,
+      "title": "LilyGO LilyGo-Camera-Series issue #33 — Usable IO pins in T-SIMCAM",
+      "url": "https://github.com/Xinyuan-LILYGO/LilyGo-Camera-Series/issues/33",
+      "note": "No issue #33, o mantenedor confirma GPIO31 ligado à flash; usos de GPIO45/46 e GPIO21 são relatos do autor do issue e devem ser confirmados no esquema/revisão."
+    },
+    {
+      "id": 2,
+      "title": "Espressif esp32-camera",
+      "url": "https://github.com/espressif/esp32-camera"
+    },
+    {
+      "id": 3,
+      "title": "Espressif ESP-WHO",
+      "url": "https://github.com/espressif/esp-who"
+    },
+    {
+      "id": 4,
+      "title": "FastAccelStepper",
+      "url": "https://github.com/gin66/FastAccelStepper"
+    },
+    {
+      "id": 5,
+      "title": "Pololu DRV8834 Stepper Motor Driver Carrier",
+      "url": "https://github.com/pololu/drv8834-stepper-motor-driver-carrier"
+    },
+    {
+      "id": 6,
+      "title": "pageauc face-track-demo",
+      "url": "https://github.com/pageauc/face-track-demo",
+      "note": "Projeto legado de rastreamento em Raspberry Pi com servos; não é exemplo ESP-WHO."
+    },
+    {
+      "id": 7,
+      "title": "Gill003/Pi_Servo_Tracker",
+      "url": "https://github.com/Gill003/Pi_Servo_Tracker"
+    },
+    {
+      "id": 8,
+      "title": "aju22/Object-Tracking-OpenCV_Arduino",
+      "url": "https://github.com/aju22/Object-Tracking-OpenCV_Arduino"
+    },
+    {
+      "id": 9,
+      "title": "LanaDelSlay/Arduino-Face-Tracking",
+      "url": "https://github.com/LanaDelSlay/Arduino-Face-Tracking"
+    },
+    {
+      "id": 10,
+      "title": "SaraEye SaraKIT Face Tracking MediaPipe Raspberry Pi 64bit",
+      "url": "https://github.com/SaraEye/SaraKIT-Face-Tracking-MediaPipe-Raspberry-Pi-64bit",
+      "note": "Projeto específico de rastreamento facial Raspberry Pi/SaraKIT."
+    },
+    {
+      "id": 11,
+      "title": "LILYGO T-SIMCam product page and camera variants",
+      "url": "https://lilygo.cc/en-us/products/t-simcam",
+      "note": "A página comercial lista variantes OV2640 IR-CUT e OV5640 IR-CUT; não identifica o sensor da unidade do usuário."
+    }
+  ]
+}

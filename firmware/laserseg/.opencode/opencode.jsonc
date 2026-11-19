@@ -1,0 +1,28 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Agente principal deste subprojeto. Definições em .opencode/agents/.
+  "default_agent": "laserseg-dev",
+
+  // Estado é curto e muda com frequência; carregado automaticamente.
+  // O protocolo e a base técnica são carregados sob demanda pelas skills.
+  "instructions": ["docs/ESTADO.md"],
+
+  "mcp": {
+    "servers": {
+      "context7": {
+        "type": "remote",
+        "url": "https://mcp.context7.com/mcp"
+      },
+      // Habilitar somente se GITHUB_PERSONAL_ACCESS_TOKEN existir no ambiente.
+      "github": {
+        "type": "local",
+        "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
+        "environment": {
+          "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_PERSONAL_ACCESS_TOKEN}"
+        },
+        "disabled": true
+      }
+    }
+  }
+}
