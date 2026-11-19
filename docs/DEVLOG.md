@@ -11,6 +11,20 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-19 12:23 - docs(laserseg): path do python aponta para a versao lts
+
+**Area:** laserseg
+
+**Feito:**
+- AGENTS.md atualizado para registrar que o PATH do usuario agora resolve python 3.14.10 e nao o stub da microsoft store
+- backup do PATH original preservado em %TEMP%/opencode/backups
+
+**Dificuldades e solucoes:**
+- stub da microsoft store tinha precedencia no PATH -> reordenei o PATH do usuario com backup e validei python --version e pyyaml em processo recarregado
+
+**Arquivos:**
+- `firmware/laserseg/AGENTS.md`
+
 ### 2026-11-19 12:22 - chore(laserseg): skill global, python lts e auditoria de frontmatter
 
 **Area:** laserseg

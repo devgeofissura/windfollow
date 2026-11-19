@@ -88,8 +88,8 @@ qualquer gravação, `hardware-auditor`.
 - **Python: sempre LTS/estável, nunca a versão mais recente.** Instalada
   **Python 3.14.10 (64-bit)** em `%LOCALAPPDATA%\Programs\Python\Python314\`
   (`pip 26.2.2`). O stub da Microsoft Store e a versão 3.15.2 foram descartados.
-  Use o caminho absoluto do interpretador em scripts — o `python.exe` do PATH
-  ainda pode apontar para o stub.
+  O PATH do usuário foi ajustado para o interpretador LTS (backup do PATH original
+  em `%TEMP%\opencode\backups\`); ainda assim use o caminho absoluto em scripts críticos.
 - Pacotes: `PyYAML 6.0.3` (auditoria de frontmatter) e `pyserial 3.5` (portas).
 - Auditoria de frontmatter com parser real em `%TEMP%\opencode\yaml-check\validate.py`:
   **249 skills auditadas, 0 erros** (locais + Espressif + kit). Recriar o script
