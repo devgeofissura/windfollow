@@ -12,6 +12,12 @@
 4. Motores param com fin de curso NF, comando inválido ou link > 1200 ms.
 5. Sensor, pinout, chip, flash e MAC não confirmados não viram fato. Diga "não confirmado".
 6. Porta COM nunca fixa; detectar sempre antes de gravar.
+7. **Nunca sobrescrever nem apagar código sem backup prévio.** Antes de qualquer
+   substituição/remoção: ler o arquivo, guardar cópia (`*.bak` fora do repo ou
+   commit anterior), mostrar o diff e só então aplicar. Nada de `write` cego.
+8. **Migration de banco com cuidado.** Antes de aplicar: inspecionar dados atuais,
+   fazer backup verificável e definir rollback. `DROP`, `TRUNCATE`, `DELETE` e
+   mudanças destrutivas só com confirmação explícita do usuário e backup testado.
 
 ## 1. Commits e marcos
 

@@ -59,6 +59,16 @@ disso, pare e pergunte em vez de assumir.
 Nenhum LED/laser deve ligar no boot, no reset, na perda de câmera ou no watchdog. Motores
 devem parar com fin de curso NF, comando inválido ou link expirado (> 1200 ms).
 
+## Backup e banco de dados (regra global do usuário)
+
+- **Nunca sobrescreva nem apague código sem backup.** Antes de substituir ou remover
+  qualquer arquivo/trecho: leia o conteúdo atual, preserve cópia (fora do repositório
+  ou em commit identificado), revise o diff e só então aplique a mudança.
+- **Cuidado com migrations.** Antes de qualquer mudança de schema: inspecione os dados
+  atuais, faça backup verificável e tenha rollback pronto. `DROP`, `TRUNCATE`,
+  `DELETE` e alterações destrutivas exigem confirmação explícita do usuário e backup
+  testado. Em dúvida, pare e pergunte.
+
 ## Antes de gravar
 
 1. Rodar detecção da raiz: `powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -DetectOnly`.

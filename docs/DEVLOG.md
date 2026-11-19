@@ -11,6 +11,21 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-19 12:09 - docs(laserseg): regra de backup e migrations seguras
+
+**Area:** laserseg
+
+**Feito:**
+- history.md: regras 7 e 8 sobre backup obrigatorio antes de sobrescrever/apagar codigo e cuidado com migrations destrutivas
+- AGENTS.md: secao Backup e banco de dados com backup previo, diff, rollback e confirmacao explicita para DROP/TRUNCATE/DELETE
+
+**Dificuldades e solucoes:**
+- nenhuma -> apenas documentacao das diretrizes recebidas
+
+**Arquivos:**
+- `firmware/laserseg/AGENTS.md`
+- `firmware/laserseg/docs/history.md`
+
 ### 2026-11-19 12:03 - docs(laserseg): fundacao com skills e agentes
 
 **Area:** laserseg
