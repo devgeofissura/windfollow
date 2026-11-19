@@ -63,6 +63,11 @@ devem parar com fin de curso NF, comando inválido ou link expirado (> 1200 ms).
 
 ## Especialistas disponíveis
 
+- **Skill Espressif + LILYGO (local e global):** `espressif-lilygo` — carregue
+  antes de qualquer tarefa ESP32/S3 ou T-SimCam. Cópia local em
+  `.opencode/skills/espressif-lilygo/`; cópia global em
+  `~/.config/opencode/skills/embedded/espressif-lilygo/` (mesmo SHA-256). Se
+  atualizar uma, atualize a outra.
 - **Skills globais Espressif (39):** iniciar com `esp-toolchain-overview`; depois
   `esp-detect-device`, `esp-chip-info`, `esp-idf-build`, `esp-flash-project`,
   `esp-troubleshoot`, `esp-decode-crash`. Instaladas em
@@ -77,6 +82,18 @@ devem parar com fin de curso NF, comando inválido ou link expirado (> 1200 ms).
 Para tarefa de firmware, carregue `espressif-lilygo` antes das skills atômicas e
 adote `embedded-engineer` como persona; para visão, `vision-engineer`; antes de
 qualquer gravação, `hardware-auditor`.
+
+## Ferramentas de apoio (regra do usuário)
+
+- **Python: sempre LTS/estável, nunca a versão mais recente.** Instalada
+  **Python 3.14.10 (64-bit)** em `%LOCALAPPDATA%\Programs\Python\Python314\`
+  (`pip 26.2.2`). O stub da Microsoft Store e a versão 3.15.2 foram descartados.
+  Use o caminho absoluto do interpretador em scripts — o `python.exe` do PATH
+  ainda pode apontar para o stub.
+- Pacotes: `PyYAML 6.0.3` (auditoria de frontmatter) e `pyserial 3.5` (portas).
+- Auditoria de frontmatter com parser real em `%TEMP%\opencode\yaml-check\validate.py`:
+  **249 skills auditadas, 0 erros** (locais + Espressif + kit). Recriar o script
+  se a pasta temporária for limpa; nunca aceitar "procurei por `---`" como prova.
 
 ## Backup e banco de dados (regra global do usuário)
 

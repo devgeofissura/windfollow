@@ -61,6 +61,13 @@ para o repositório; apenas fatos e pinagens foram documentados com atribuição
 Observação: o repositório oficial `espressif/skills` (Apache-2.0) foi verificado em
 2026-11-19 e estava vazio (somente `.gitkeep`), por isso não foi instalado.
 
+## Promoção para escopo global
+
+A skill de autoria local `espressif-lilygo` também foi instalada globalmente em
+`~/.config/opencode/skills/embedded/espressif-lilygo/`, com o mesmo SHA-256 da
+cópia deste repositório. Ela continua sendo de autoria do projeto — a cópia
+global é apenas conveniência para sessões fora de `firmware/laserseg`.
+
 ## Skills locais (não de terceiros)
 
 - `laserseg-context`

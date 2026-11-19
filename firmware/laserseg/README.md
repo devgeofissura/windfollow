@@ -83,6 +83,10 @@ Skills instalados do [addyosmani/agent-skills](https://github.com/addyosmani/age
 `constraint-driven-development`. Os checklists compartilhados foram preservados em
 `.opencode/references/`. Atribuição completa em [`.opencode/THIRD_PARTY.md`](.opencode/THIRD_PARTY.md).
 
+A skill `espressif-lilygo` existe **local e globalmente** (mesmo conteúdo): local em
+`.opencode/skills/espressif-lilygo/` e global em
+`~/.config/opencode/skills/embedded/espressif-lilygo/`. Ao atualizar uma, atualize a outra.
+
 Especialistas Espressif instalados **globalmente** (39 skills MIT de
 [`grantwilk/espressif-skills`](https://github.com/grantwilk/espressif-skills)):
 `esp-toolchain-overview`, `esp-detect-device`, `esp-chip-info`, `esp-idf-build`,
@@ -90,6 +94,10 @@ Especialistas Espressif instalados **globalmente** (39 skills MIT de
 Também estão disponíveis `esp32-development`, `arduino-development`, `rtos-basics`,
 `mqtt-protocol` e `sensor-integration` do kit global. Veja
 [`.opencode/THIRD_PARTY.md`](.opencode/THIRD_PARTY.md) para atribuição e licenças.
+
+Python de apoio: **3.14.10 LTS** em `%LOCALAPPDATA%\Programs\Python\Python314\`,
+com `PyYAML 6.0.3` e `pyserial 3.5`. Use sempre LTS, nunca a versão mais recente.
+Todas as 249 `SKILL.md` passaram na auditoria de frontmatter com parser YAML real.
 
 Agentes disponíveis:
 

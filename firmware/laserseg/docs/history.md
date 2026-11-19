@@ -18,6 +18,8 @@
 8. **Migration de banco com cuidado.** Antes de aplicar: inspecionar dados atuais,
    fazer backup verificável e definir rollback. `DROP`, `TRUNCATE`, `DELETE` e
    mudanças destrutivas só com confirmação explícita do usuário e backup testado.
+9. **Python sempre LTS/estável**, nunca a versão mais recente. Interpretador atual:
+   3.14.10 em `%LOCALAPPDATA%\Programs\Python\Python314\`.
 
 ## 1. Commits e marcos
 
@@ -37,7 +39,8 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
 | `73d48a9` | `feat(irobot): nova UI web com abas Home/DL/Config, PWA...` |
 | `a1ca948` | `docs(laserseg): fundacao com skills e agentes` — README, ESTADO, protocolo, AGENTS, 13 skills, 3 agentes, MCPs e este histórico |
 | `6324067` | `docs(laserseg): regra de backup e migrations seguras` — regras 7 e 8 |
-| **commit atual** | `feat(laserseg): especialistas esp32 e lilygo` — skill local `espressif-lilygo`, 39 skills `esp-*` globais, atribuições e documentação |
+| `e832bd5` | `feat(laserseg): especialistas esp32 e lilygo` — skill local `espressif-lilygo`, 39 skills `esp-*` globais, atribuições e documentação |
+| **commit atual** | `chore(laserseg): skill global, python lts e auditoria de frontmatter` — skill promovida a global, Python 3.14.10, 249 skills validadas com PyYAML |
 
 > Hash exato do commit atual: `git log -1 --oneline`.
 
@@ -128,6 +131,10 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
   `robotics-engineer` (motores), `security-engineer`, `code-reviewer`.
 - MCP `context7` remoto configurado; `github` local preparado e desabilitado até existir
   `GITHUB_PERSONAL_ACCESS_TOKEN`.
+- `espressif-lilygo` agora é **local e global** (mesmo SHA-256); ao editar, sincronize as duas.
+- Python 3.14.10 LTS + `PyYAML 6.0.3` + `pyserial 3.5`; 3.15.2 e o stub da Store descartados.
+- Frontmatter auditado com parser YAML real: **249 skills, 0 erros**. "Procurar `---`"
+  não é validação (CRLF/BOM geravam falso positivo no validador Node).
 
 ## 7. Decisões fixadas
 
@@ -157,6 +164,10 @@ powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -DetectOnly
 # validação OpenCode (dentro de firmware/laserseg)
 & "$env:APPDATA\npm\opencode.cmd" debug config
 & "$env:APPDATA\npm\opencode.cmd" debug agents
+
+# auditoria real de frontmatter (Python LTS + PyYAML)
+& "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe" `
+  "$env:TEMP\opencode\yaml-check\validate.py"
 
 # fechar tarefa (raiz) — gera DEVLOG, commit e push
 powershell -ExecutionPolicy Bypass -File tools/save.ps1 `

@@ -33,10 +33,13 @@
   conectar/autenticar o `context7`.
 - Nenhum segredo foi escrito nos arquivos de configuração; o token do GitHub é lido de
   `GITHUB_PERSONAL_ACCESS_TOKEN` somente quando o servidor for habilitado.
-- Skill local `espressif-lilygo` criada com pinagem e config do repo oficial
-  `Xinyuan-LilyGO/T-SimCam` (MIT); 39 skills `esp-*` instaladas globalmente de
-  `grantwilk/espressif-skills` (MIT) e descobertas pelo OpenCode.
+- Skill `espressif-lilygo` criada com pinagem e config do repo oficial
+  `Xinyuan-LilyGO/T-SimCam` (MIT) e instalada **local e globalmente** (mesmo SHA-256);
+  39 skills `esp-*` instaladas globalmente de `grantwilk/espressif-skills` (MIT).
 - `espressif/skills` (oficial, Apache-2.0) foi verificado e está vazio; não instalado.
+- Python 3.14.10 LTS instalado (3.15.2 e o stub da Microsoft Store descartados),
+  com `PyYAML 6.0.3` e `pyserial 3.5`. Auditoria real de frontmatter com PyYAML:
+  **249 skills, 0 erros**. Nova regra do usuário: usar sempre versão LTS/estável.
 - Backup dos arquivos editados salvo em `%TEMP%\opencode\backups\` antes da alteração.
 
 ## Decisões registradas

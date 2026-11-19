@@ -11,6 +11,28 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-19 12:22 - chore(laserseg): skill global, python lts e auditoria de frontmatter
+
+**Area:** laserseg
+
+**Feito:**
+- skill espressif-lilygo promovida a global com mesmo SHA-256 e regra de sincronizacao entre as duas copias
+- python 3.14.10 LTS instalado no lugar da 3.15.2 e do stub da microsoft store com pyyaml 6.0.3 e pyserial 3.5
+- auditoria real de frontmatter com pyyaml em 249 skills com zero erros e regra de LTS registrada em AGENTS e history
+- README ESTADO THIRD_PARTY e history atualizados
+
+**Dificuldades e solucoes:**
+- validador node dava falso positivo em arquivos CRLF -> normalizei BOM e CRLF e depois troquei por parser pyyaml real com python lts
+- winget indisponivel e python.exe era stub da store -> baixei instalador oficial 3.14.10 e desinstalei 3.15.2 pelo uninstaller em cache
+- risco de sobrescrever skill global -> destino verificado vazio e backup dos arquivos editados em %TEMP%/opencode/backups
+
+**Arquivos:**
+- `firmware/laserseg/.opencode/THIRD_PARTY.md`
+- `firmware/laserseg/AGENTS.md`
+- `firmware/laserseg/README.md`
+- `firmware/laserseg/docs/ESTADO.md`
+- `firmware/laserseg/docs/history.md`
+
 ### 2026-11-19 12:13 - feat(laserseg): especialistas esp32 e lilygo
 
 **Area:** laserseg
