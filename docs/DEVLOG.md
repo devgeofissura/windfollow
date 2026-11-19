@@ -11,6 +11,31 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-19 15:28 - feat(laserseg): parser UDP C++ com autoteste e telemetria
+
+**Area:** laserseg
+
+**Feito:**
+- controller/ com parser e state machine espelhando protocol_ref.py
+- autoteste com 55 vetores gerados da referencia Python
+- telemetria ACK seq state fault light documentada
+- perfil laserseg repontado para controller e docs atualizadas
+
+**Dificuldades e solucoes:**
+- bit valid retornava format em vez de range -> motivo passou a vir de reason como na referencia
+- autoteste de reinicio de sequencia era falso positivo -> T,1 / TRACK,1 / T,1 com controle negativo
+- revisor apontou perfil desatualizado -> repontado e recompilado com exit=0
+
+**Arquivos:**
+- `AGENTS.md`
+- `firmware/laserseg/AGENTS.md`
+- `firmware/laserseg/docs/ESTADO.md`
+- `firmware/laserseg/docs/PROTOCOLO_UDP.md`
+- `firmware/laserseg/docs/history.md`
+- `tools/flash.ps1`
+- `firmware/laserseg/controller/`
+- `firmware/laserseg/tools/gen_autotest_vectors.py`
+
 ### 2026-11-19 14:24 - chore: remove pycache versionado do parser
 
 **Area:** tooling

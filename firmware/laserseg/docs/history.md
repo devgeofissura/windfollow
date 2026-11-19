@@ -42,7 +42,9 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
 | `e832bd5` | `feat(laserseg): especialistas esp32 e lilygo` — skill local `espressif-lilygo`, 39 skills `esp-*` globais, atribuições e documentação |
 | `26f0547` | `docs(laserseg): path do python aponta para a versao lts` |
 | `—` | `feat(infra): mqtt local, websocket e quick tunnel` — Mosquitto 2.1.4 portable, scripts `tools/mqtt/`, `MQTT.md`, perfil `laserseg` e `arduino-cli` 1.6.0/core 3.3.11 |
-| **commit atual** | `test(laserseg): contrato do parser udp coberto por 84 testes` — `tools/protocol_ref.py`, `tests/`, contrato v0.1, probe serial versionado e revisão independente aplicada |
+| `ffff575` | `test(laserseg): parser udp validado e probe serial versionado` — `tools/protocol_ref.py`, 84 testes, contrato v0.1 e revisão independente aplicada |
+| `7f54c65` | `chore: remove pycache versionado do parser` |
+| **commit atual** | `feat(laserseg): parser UDP em C++ com autoteste e telemetria` — `controller/`, vetores gerados da referência Python, perfil `laserseg` repontado, telemetria `ACK` e 6 condições de integração de hardware |
 
 > Hash exato do commit atual: `git log -1 --oneline`.
 
@@ -76,8 +78,12 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
 - `DEAD_BAND = 55`; `MAX_TRAVEL = STEPS_PER_REV / 6` (≈ ±60°); `LINK_TIMEOUT_MS = 1200`.
 - `TRACK_GAIN`: 0.75 no protótipo DRV8834, 0.55 no ULN2003. Não copiar às cegas.
 - Sentido de `x/y` ainda não confirmado em ensaio: não inverter "por intuição".
-- Evolução necessária: validar faixa/sequência/idade, rejeitar repetidos, e prever
-  `ack_seq`, `state` e `fault` na volta.
+- Contrato v0.1 fechado: faixa/sequência/idade em **todo** comando, rejeição de
+  repetidos e telemetria `ACK,<seq>,<state>,<fault>,<light>` (envio de rede pendente).
+- Parser C++ em `controller/` com vetores **gerados** de `protocol_ref.py`; nunca
+  manter tabela duplicada à mão. Antes de GPIO: `fault()` ⇒ parada+luz OFF,
+  `poll()` antes dos motores, sem `now_ms=-1` em campo, corrigir rollover do
+  `millis()`. Ver `PROTOCOLO_UDP.md`.
 
 ## 4. Hardware e segurança
 
@@ -97,7 +103,8 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
 - `arduino-cli` 1.6.0 fora do PATH; `tools/flash.ps1` tem fallback para o caminho absoluto.
 - Porta detectada em 2026-11-19: `COM4` (`303A:1001`, USB nativo), ESP32-S3 16 MB,
   MAC `dc:da:0c:28:25:30`. Nunca fixar a porta; detectar de novo antes de gravar.
-- `tools/flash.ps1` aceita `-Sketch laserseg` com FQBN própria e build em `%TEMP%`.
+- `tools/flash.ps1` aceita `-Sketch laserseg` com FQBN própria e build em `%TEMP%`;
+  perfil aponta para `controller/controller.ino` (probe `serial_probe/` é fallback).
 - FQBN dos protótipos: `esp32:esp32:esp32s3:FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi,USBMode=hwcdc,CDCOnBoot=cdc,CPUFreq=240`.
   Perfil `windfollow` da raiz usa `PartitionScheme=huge_app`. **Não misturar** sem validar
   com `arduino-cli board details`.

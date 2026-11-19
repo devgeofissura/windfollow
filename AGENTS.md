@@ -74,8 +74,9 @@ powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollow
 powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch laserseg
 ```
 
-`laserseg` aponta para `firmware/laserseg/serial_probe/serial_probe.ino` enquanto não
-existe firmware de produção; o probe só usa a serial e não toca GPIO.
+`laserseg` aponta para `firmware/laserseg/controller/controller.ino` (parser, estado,
+autoteste e telemetria; somente serial, sem GPIO/motor/luz). O probe
+`firmware/laserseg/serial_probe/serial_probe.ino` permanece como fallback.
 
 O script:
 
@@ -95,7 +96,7 @@ clones CH340 — o chip é identificado pelo esptool dentro do script.
 | `msa` | `firmware/msa` | `esp32:esp32:esp32` | ESP32 (clássico) | ESP32 DevKit 4 MB, AHT20 + BMP280 no I2C; OLED SSD1306 onboard em LILYGO G511 (SDA 21/D1, SCL 22/D0) |
 | `windfollowblind` | `firmware/windfollowblind` | `esp32:esp32:esp32` | ESP32 (clássico) | ESP32 DevKit 4 MB, L298N, 2 motores, 2 botões |
 | `windfollow` | `firmware/windfollow` | `esp32:esp32:esp32s3:CDCOnBoot=cdc,USBMode=hwcdc,UploadSpeed=921600,FlashSize=16M,PartitionScheme=huge_app,PSRAM=opi` | ESP32-S3 | LILYGO T-SIMCAM V1.3, 16 MB flash, OPI PSRAM |
-| `laserseg` | `firmware/laserseg/serial_probe` | `esp32:esp32:esp32s3:UploadSpeed=921600,USBMode=hwcdc,CDCOnBoot=cdc,CPUFreq=240,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi` | ESP32-S3 | LILYGO T-SIMCAM S3_CAM_SIM V1.3, 16 MB, OPI PSRAM; hoje apenas o probe serial (sem GPIO) |
+| `laserseg` | `firmware/laserseg/controller` | `esp32:esp32:esp32s3:UploadSpeed=921600,USBMode=hwcdc,CDCOnBoot=cdc,CPUFreq=240,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi` | ESP32-S3 | LILYGO T-SIMCAM S3_CAM_SIM V1.3, 16 MB, OPI PSRAM; parser/estado/autoteste/telemetria, ainda sem GPIO |
 
 Nunca grave `windfollow` (S3) em um DevKit clássico nem o contrário: os pinos e o
 layout de flash não são compatíveis.

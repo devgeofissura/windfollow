@@ -89,12 +89,13 @@ $Profiles = @{
         ExpectedChip = 'ESP32-S3'
         BoardName    = 'LILYGO T-SIMCAM ESP32-S3 (16 MB flash, OPI PSRAM)'
     }
-    # Enquanto nao existe firmware de producao, o unico sketch laserseg
-    # reproduzivel e o probe de serial (sem GPIO). Repontar para camera_node/
-    # quando o no de visao de producao for criado.
+    # Estagio atual: no controladora com parser/estado/autoteste/telemetria,
+    # ainda sem GPIO, motores, fins de curso, luz ou WiFi. O probe de serial
+    # (firmware\laserseg\serial_probe) continua versionado como fallback.
+    # Repontar para camera_node/ quando o no de visao de producao existir.
     'laserseg' = @{
-        Dir          = 'firmware\laserseg\serial_probe'
-        Ino          = 'serial_probe.ino'
+        Dir          = 'firmware\laserseg\controller'
+        Ino          = 'controller.ino'
         BuildPath    = Join-Path $env:TEMP 'laserseg-build'
         Fqbn         = 'esp32:esp32:esp32s3:UploadSpeed=921600,USBMode=hwcdc,CDCOnBoot=cdc,CPUFreq=240,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi'
         ExpectedChip = 'ESP32-S3'

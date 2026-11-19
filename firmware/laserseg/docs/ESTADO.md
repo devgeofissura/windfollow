@@ -1,7 +1,7 @@
 # Estado do projeto laserseg
 
 **Atualizado em:** 2026-11-19  
-**Fase:** fundação (documentação + automação OpenCode). Nenhum firmware de produção ainda.
+**Fase:** bancada — nó controladora com parser/estado/autoteste/telemetria implementado e compilado; sem GPIO, motores ou luz.
 
 ## Situação atual
 
@@ -9,13 +9,13 @@
 |---|---|---|
 | Escopo e arquitetura | Definidos | `base-de-conhecimento-rastreamento-com-s3-cam-sim.md`, `foco-luz-seguidor-001` |
 | Protótipos de firmware | Existentes em `docs/example/` | `camera_node.ino`, `controller_drv8834.ino`, `controller_uln2003.ino` |
-| Firmware de produção | Não criado | Pastas `camera_node/`, `controller_*` ainda não existem |
-| Protocolo UDP | Validado em host | `PROTOCOLO_UDP.md` + contrato v0.1; 84 testes em `tests/test_protocol.py`, referência em `tools/protocol_ref.py` |
+| Firmware de produção | Parcial | `controller/` existe com parser/estado/autoteste/telemetria (somente serial); `camera_node/` ainda não existe |
+| Protocolo UDP | Validado em host e C++ | `PROTOCOLO_UDP.md` + contrato v0.1; 84 testes em `tests/test_protocol.py`, referência em `tools/protocol_ref.py`, vetores C++ gerados por `tools/gen_autotest_vectors.py` |
 | Pinout da câmera | Não confirmado | Protótipo usa `CAMERA_MODEL_TTGO_T_CAM_SIM`; sensor pode ser OV2640 ou OV5640 |
 | Controladora escolhida | Parcial | ESP32-S3 separada definida; placa exata e GPIOs ainda a validar |
 | Motores/driver | Não definidos | Duas alternativas em estudo: bipolar + DRV8834 ou 28BYJ-48 + ULN2003 |
 | Foco de luz | Definido como LED difuso | Laser apenas após revisão de segurança |
-| Build/flash | Regularizado no host | `arduino-cli` 1.6.0 fora do repo; core `esp32:esp32@3.3.11`; perfil `laserseg` em `tools/flash.ps1` com fallback de caminho |
+| Build/flash | Regularizado no host | `arduino-cli` 1.6.0 fora do repo; core `esp32:esp32@3.3.11`; perfil `laserseg` em `tools/flash.ps1` aponta para `controller/controller.ino`; probe de serial segue como fallback |
 | Porta serial | Detectada | `COM4`, USB nativo `303A:1001`, ESP32-S3 / 16 MB / MAC `dc:da:0c:28:25:30`; detectar de novo antes de cada gravação |
 | MQTT | Operacional | Mosquitto 2.1.4 local + WebSocket + Quick Tunnel; ver `MQTT.md` |
 | MCPs | Configurados | `context7` remoto (pode exigir login via `/mcps`); `github` local desabilitado até existir token |
@@ -48,11 +48,21 @@
   foi acionado. O perfil `tools/flash.ps1 -Sketch laserseg` aponta para esse probe.
 - Parser UDP implementado como referência executável e coberto por **84 testes**
   (formato, faixa, sequência, idade em qualquer comando, watchdog com parada
-  explícita dos eixos e limites de movimento). A implementação C++ de produção
-  ainda não existe.
+  explícita dos eixos e limites de movimento).
 - Revisão independente (`laserseg-reviewer`) encontrou duas falhas de segurança na
   especificação: idade só era checada em `T` e o watchdog não parava os eixos.
   Ambas foram corrigidas antes do commit, com testes de regressão.
+- Implementação C++ em `controller/parser.{h,cpp}` espelha a referência. Os
+  vetores do autoteste são **gerados** a partir de `protocol_ref.py`, não copiados
+  à mão. Compilação com a FQBN `laserseg`: `exit=0`, 314816 bytes de flash (10%)
+  e 22856 bytes de RAM (6%). Telemetria pura `ACK,<seq>,<state>,<fault>,<light>`
+  documentada em `PROTOCOLO_UDP.md`.
+- Auditoria de hardware aprovou a gravação deste bloco **somente serial** e listou
+  seis condições obrigatórias antes de acionar GPIO (`PROTOCOLO_UDP.md`,
+  "Condições obrigatórias antes de acionar hardware"): tratar `fault()` como
+  parada+luz OFF, chamar `poll()` antes dos motores, nunca usar `now_ms=-1` em
+  campo, corrigir wrap-around do `millis()`, fechar o checklist elétrico e
+  restringir o UDP sem autenticação à bancada.
 
 ## Decisões registradas
 
@@ -75,8 +85,9 @@
 
 ## Próximos passos sugeridos
 
-1. Implementar o parser C++ da controladora reproduzindo `tools/protocol_ref.py`.
-2. Rodar os mesmos casos como autoteste na placa e comparar com a referência.
+1. Gravar `controller/` na porta detectada e capturar o `AUTOTEST PASS` pela serial.
+2. Fechar as seis condições de integração listadas em `PROTOCOLO_UDP.md` antes de
+   adicionar GPIO, motores ou LED.
 3. Transformar os protótipos em sketches de produção, um nó por pasta.
 4. Fazer ensaio de bancada sem carga mecânica, seguindo `docs/example/Ligações e ensaio.md`.
 5. Só então integrar câmera + controladora + foco com limites conservadores.

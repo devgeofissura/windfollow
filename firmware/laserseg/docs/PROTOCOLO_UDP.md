@@ -11,7 +11,7 @@ Documento de referência para o enlace entre o nó de visão (T-SIMCAM) e a cont
 | Endereço no modo AP | Controladora em `192.168.4.2`, câmera em `192.168.4.1` |
 | Autenticação | Nenhuma no protótipo |
 | Rede | Somente rede local confiável; não expor o UDP |
-| Direção | Câmera → controladora; telemetria de volta ainda não definida |
+| Direção | Câmera → controladora (`4210`); telemetria de volta definida abaixo (envio ainda não implementado) |
 
 > O protocolo não autentica mensagens. Um dispositivo na mesma rede pode comandar motores e luz. Não usar fora de bancada sem autenticação, filtragem de origem e limites locais na controladora.
 
@@ -106,9 +106,70 @@ powershell -ExecutionPolicy Bypass -File firmware\laserseg\tests\run.ps1
 
 O módulo Python é a referência de comportamento; o firmware C++ de produção
 deve reproduzir a mesma tabela, incluindo os limites exatos (`DEAD_BAND = 55`
-inclusive, truncamento para zero em `x * MAX_TRAVEL * GAIN / 1000`). A
-implementação C++ será validada no dispositivo com os mesmos casos antes de
-qualquer movimento de motor.
+inclusive, truncamento para zero em `x * MAX_TRAVEL * GAIN / 1000`).
+
+### Implementação C++ e autoteste embarcado
+
+O nó `controller/` espelha a referência em `parser.h`/`parser.cpp`. Os vetores
+de teste **não são uma cópia manual**: `tools/gen_autotest_vectors.py` calcula
+cada resultado esperado chamando `protocol_ref.py` e gera
+`controller/autotest_vectors.h`. Assim, divergência entre host e placa aparece
+como falha no autoteste.
+
+```powershell
+# regera os vetores apos qualquer mudanca no contrato
+& "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe" `
+    tools\gen_autotest_vectors.py controller\autotest_vectors.h
+# na placa, pela serial a 115200: digite "run" + Enter para repetir
+```
+
+O autoteste imprime `AUTOTEST PASS`/`AUTOTEST FAIL` com total, acertos e
+falhas, cobrindo os 55 vetores de decisão mais asserções de sessão, watchdog,
+telemetria e limites de movimento. O sketch não configura GPIO, motores, luz
+nem Wi-Fi: ele apenas inicializa a serial e imprime o resultado.
+
+### Telemetria de retorno (contrato v0.1)
+
+Formato serial/emissor (ainda sem transporte de rede):
+
+```
+ACK,<seq>,<state>,<fault>,<light>
+```
+
+| Campo | Valores | Significado |
+|---|---|---|
+| `seq` | `-1` ou último `seq` aceito | `-1` antes da primeira amostra aceita |
+| `state` | `SAFE`, `TRACK`, `MANUAL` | `SAFE` quando `axes_stopped` é verdadeiro |
+| `fault` | `NONE`, `LENGTH`, `ENCODING`, `FORMAT`, `RANGE`, `SEQUENCE`, `AGE`, `LINK` | `LINK` = watchdog de link disparou; `AGE` = comando expirado |
+| `light` | `0`/`1` | espelho do estado lógico da luz |
+
+A função pura `formatTelemetry()` vive em `parser.cpp`; quando o envio UDP for
+implementado, ele deve transmitir exatamente esta linha (sem CRLF no payload).
+
+### Condições obrigatórias antes de acionar hardware
+
+A auditoria de hardware aprovou a gravação deste bloco somente serial. Para a
+integração com motores/LED, **todas** as condições abaixo devem ser fechadas e
+revisadas novamente:
+
+1. **Rejeição não pode deixar a máquina ativa.** Hoje um datagrama inválido,
+   `seq` repetido ou expirado apenas registra `fault()`. A camada de
+   acionamento deve tratar `fault() != NONE` como parada imediata de **ambos**
+   os eixos e luz OFF, com precedência sobre `axesStopped()`/`light()` — ou a
+   spec/testes/C++ devem mudar para forçar esse estado na rejeição.
+2. **Chamar `session.poll(millis())` antes de qualquer `run()` de motor**, no
+   mesmo ciclo, aplicando as três ações (parar pan, parar tilt, luz OFF).
+3. **Nunca usar o `now_ms` default (-1) em campo:** chamar sempre
+   `feed(buf, len, rx_ms, millis())`; o default existe apenas para os testes.
+4. **Wrap-around do `millis()` (~49,7 dias):** a subtração atual em `int64_t`
+   fica negativa após o rollover e o watchdog não dispara. Antes da integração,
+   trocar por delta modular de 32 bits e adicionar teste de fronteira.
+5. Checklist elétrico/mecânico completo em
+   `.opencode/skills/hardware-safety/SKILL.md`: sensor e pinout confirmados,
+   fins de curso NF, fonte separada com GND comum, driver dimensionado, LED
+   difuso antes de qualquer laser e chave de emergência.
+6. UDP sem autenticação: restringir à bancada e prever filtro de origem ou
+   intertravamento físico antes de qualquer saída física.
 
 ## Regras para evolução
 
@@ -117,4 +178,4 @@ qualquer movimento de motor.
 3. Nunca aceitar posição absoluta sem limites locais na controladora.
 4. Manter LED/laser desligado no boot, no reset, na perda de câmera e no watchdog.
 5. Se o formato mudar, atualizar `camera_node.ino`, as duas controladoras, este documento e `docs/ESTADO.md` no mesmo commit.
-6. Prever acknowledgement/telemetria (`ack_seq`, `state`, `fault`) antes de operação supervisionada.
+6. Telemetria `ACK` definida acima; ainda falta transporte de rede para a câmera.

@@ -110,9 +110,11 @@ qualquer gravação, `hardware-auditor`.
 1. Rodar detecção da raiz: `powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -DetectOnly`.
 2. Confirmar chip, flash e MAC; nunca usar COM fixo.
 3. O perfil `laserseg` em `tools/flash.ps1` aponta para
-   `serial_probe/serial_probe.ino` (somente serial). O `.ino` principal precisa ter
-   o mesmo nome da pasta, exigência do `arduino-cli`. Não troque para `camera_node/`
-   antes de o nó de produção existir.
+   `controller/controller.ino` (parser/estado/autoteste/telemetria; somente serial).
+   O `.ino` principal precisa ter o mesmo nome da pasta, exigência do `arduino-cli`.
+   `serial_probe/` segue como fallback; não troque para `camera_node/` antes de o nó
+   de visão de produção existir. Antes de acionar GPIO, fechar P1–P6 da auditoria de
+   hardware registrada em `docs/PROTOCOLO_UDP.md`.
 4. Só então compilar e gravar, com o foco desligado e os eixos centralizados manualmente.
 
 ## Ao concluir
