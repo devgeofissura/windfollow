@@ -1,5 +1,11 @@
 # Ligação revisada — S3_CAM_SIM V1.3 + pan-tilt + iluminador LED
 
+> **Decisões de hardware (T1):** antes de usar a pinagem abaixo, leia
+> `docs/HARDWARE-DECISIONS.md`. Os valores de STEP/DIR, corrente, DIP e rede
+> registrados aqui vêm do protótipo DRV8834 e **não** são confirmação do
+> DM556D/NEMA 23. T5/T6 permanecem bloqueados até a auditoria de hardware.
+> A controladora física é uma ESP32-S3 separada — não a S3_CAM_SIM da foto.
+
 ## Correção importante a partir da foto
 
 A placa da foto está marcada **S3_CAM_SIM V1.3**. Os contatos laterais visíveis incluem IO31, IO46, IO45, IO21, GND e 3V3. Não use os quatro contatos IO para STEP/DIR: a própria LilyGO informa no issue do repositório que **GPIO31 está ligado à flash e indisponível; GPIO45 e GPIO46 são usados pelo UART do modem; GPIO21 está relacionado ao LED do mPCIe**. Ou seja, a sua placa não oferece GPIO extra confiável para ligar diretamente os dois drivers, o iluminador e os fins de curso. [1]

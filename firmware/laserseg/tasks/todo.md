@@ -6,7 +6,13 @@ Plano de origem: `tasks/plan.md`. Spec aprovada:
 ## Fase 1 — Fundação
 
 - [ ] **T1** — decisões de hardware (7 pontos da spec)
-  - **BLOQUEADO:** aguardando o usuário/auditor. Nenhum GPIO foi tocado.
+  - Documento criado; aceite completo depende do `hardware-auditor`.
+  - Nota de verificação registrada em `docs/HARDWARE-DECISIONS.md` e
+    referenciada por `docs/foco-luz-seguidor-001`.
+  - Itens 1 e 6 parciais; itens 2, 3, 4, 5 e 7 **bloqueados** (etiqueta,
+    DIP, manual do Azanelli, placa/pinos reais, chave de emergência).
+  - Nenhum GPIO foi tocado; `laserseg-reviewer` e `hardware-auditor` ainda
+    precisam aprovar pinagem/fonte/luz antes de T5.
 - [x] **T2** — preservar e isolar o núcleo de protocolo
   - Vetores regenerados byte-idênticos (SHA256 `F70985...`).
   - `controller/` intacto; é a fonte única do núcleo C++.

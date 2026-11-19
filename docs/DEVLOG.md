@@ -11,6 +11,28 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-19 17:19 - docs(laserseg): nota de verificacao de hardware T1
+
+**Area:** laserseg
+
+**Feito:**
+- criado docs/HARDWARE-DECISIONS.md com as 7 respostas da spec e o grau de confirmacao de cada uma
+- dados de variantes HANPOSE/Leadshine/StepperOnline registrados como contexto, nao como especificacao do Azanelli
+- credencial Wi-Fi de bancada nao transcrita no repositorio; apenas registrada como pendencia de remocao
+- foco-luz-seguidor-001 passa a referenciar o novo documento e avisa que T5/T6 continuam bloqueados
+- tasks/todo.md atualizado com os itens parciais e bloqueados
+
+**Dificuldades e solucoes:**
+- fontes publicas divergem sobre semantica de SW4 e tabela de micropasso -> cada divergencia foi registrada com a variante de origem, sem generalizar
+- risco de transformar "2,8 A" de variante comercial em dado da etiqueta -> status marcado como parcial e foto da etiqueta ficou como acao pendente
+- nota do usuario continha SSID/senha de bancada -> valores omitidos do documento para nao introduzir segredo no repo
+
+**Arquivos:**
+- `firmware/laserseg/docs/HARDWARE-DECISIONS.md`
+- `firmware/laserseg/docs/foco-luz-seguidor-001`
+- `firmware/laserseg/tasks/todo.md`
+- `docs/DEVLOG.md`
+
 ### 2026-11-19 17:03 - feat(laserseg): no DM556D serial-only com nucleo compartilhado
 
 **Area:** laserseg
