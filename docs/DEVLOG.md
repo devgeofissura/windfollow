@@ -11,6 +11,36 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-19 14:23 - test(laserseg): parser udp validado e probe serial versionado
+
+**Area:** laserseg, tooling
+
+**Feito:**
+- contrato v0.1 do parser com 84 testes no host
+- idade aplicada a todos os comandos e watchdog com parada explicita dos eixos
+- probe serial versionado e perfil laserseg compilado com exit 0
+- mqtt local websocket quick tunnel e documentacao operacional
+
+**Dificuldades e solucoes:**
+- revisao independente achou idade so em T e watchdog sem parada de eixos -> corrigido com axes_stopped e testes de regressao
+- perfil laserseg apontava para sketch inexistente -> probe versionado
+- arduino-cli exige ino com nome da pasta -> renomeado e compile confirmado
+- firewall e servico elevado bloqueados por UAC -> pendencia registrada para o usuario
+
+**Arquivos:**
+- `AGENTS.md`
+- `firmware/laserseg/AGENTS.md`
+- `firmware/laserseg/README.md`
+- `firmware/laserseg/docs/ESTADO.md`
+- `firmware/laserseg/docs/PROTOCOLO_UDP.md`
+- `firmware/laserseg/docs/history.md`
+- `tools/flash.ps1`
+- `firmware/laserseg/docs/MQTT.md`
+- `firmware/laserseg/serial_probe/`
+- `firmware/laserseg/tests/`
+- `firmware/laserseg/tools/`
+- `tools/mqtt/`
+
 ### 2026-11-19 12:23 - docs(laserseg): path do python aponta para a versao lts
 
 **Area:** laserseg

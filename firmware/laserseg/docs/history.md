@@ -40,7 +40,9 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
 | `a1ca948` | `docs(laserseg): fundacao com skills e agentes` — README, ESTADO, protocolo, AGENTS, 13 skills, 3 agentes, MCPs e este histórico |
 | `6324067` | `docs(laserseg): regra de backup e migrations seguras` — regras 7 e 8 |
 | `e832bd5` | `feat(laserseg): especialistas esp32 e lilygo` — skill local `espressif-lilygo`, 39 skills `esp-*` globais, atribuições e documentação |
-| **commit atual** | `chore(laserseg): skill global, python lts e auditoria de frontmatter` — skill promovida a global, Python 3.14.10, 249 skills validadas com PyYAML |
+| `26f0547` | `docs(laserseg): path do python aponta para a versao lts` |
+| `—` | `feat(infra): mqtt local, websocket e quick tunnel` — Mosquitto 2.1.4 portable, scripts `tools/mqtt/`, `MQTT.md`, perfil `laserseg` e `arduino-cli` 1.6.0/core 3.3.11 |
+| **commit atual** | `test(laserseg): contrato do parser udp coberto por 84 testes` — `tools/protocol_ref.py`, `tests/`, contrato v0.1, probe serial versionado e revisão independente aplicada |
 
 > Hash exato do commit atual: `git log -1 --oneline`.
 
@@ -92,10 +94,10 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
 
 ## 5. Build/flash — bloqueios atuais
 
-- `arduino-cli` ausente do PATH nesta máquina. `tools/flash.ps1 -DetectOnly` falhou.
-- `COM3` aparece como USB-SERIAL CH340, mas chip/flash/MAC não foram confirmados.
-- `tools/flash.ps1` não aceita `-Sketch laserseg`; o ValidateSet tem irobot, msa, windfollow,
-  windfollowblind. Sem perfil de build/flash para este subprojeto.
+- `arduino-cli` 1.6.0 fora do PATH; `tools/flash.ps1` tem fallback para o caminho absoluto.
+- Porta detectada em 2026-11-19: `COM4` (`303A:1001`, USB nativo), ESP32-S3 16 MB,
+  MAC `dc:da:0c:28:25:30`. Nunca fixar a porta; detectar de novo antes de gravar.
+- `tools/flash.ps1` aceita `-Sketch laserseg` com FQBN própria e build em `%TEMP%`.
 - FQBN dos protótipos: `esp32:esp32:esp32s3:FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi,USBMode=hwcdc,CDCOnBoot=cdc,CPUFreq=240`.
   Perfil `windfollow` da raiz usa `PartitionScheme=huge_app`. **Não misturar** sem validar
   com `arduino-cli board details`.
@@ -136,6 +138,42 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
 - Frontmatter auditado com parser YAML real: **249 skills, 0 erros**. "Procurar `---`"
   não é validação (CRLF/BOM geravam falso positivo no validador Node).
 
+## 6.1 Infra da estação (fora do firmware)
+
+- `arduino-cli` 1.6.0 em `%LOCALAPPDATA%\Programs\arduino-cli`; core
+  `esp32:esp32@3.3.11` (versão validada pela LILYGO, não a 3.3.12).
+- Perfil `laserseg` em `tools/flash.ps1` (FQBN S3, `app3M_fat9M_16MB`, OPI
+  PSRAM, build em `%TEMP%\laserseg-build`); `Get-ArduinoCli` tem fallback
+  para o caminho absoluto.
+- MQTT: Mosquitto 2.1.4 portable em `%LOCALAPPDATA%\Programs\mosquitto`,
+  TCP `127.0.0.1:1883` e WebSocket `127.0.0.1:9001`, auth obrigatória
+  (`laserseg`). Operação em `tools/mqtt/`; detalhes em `MQTT.md`.
+- Túnel: `cloudflared` 2026.11.1, Quick Tunnel `wss://<subdominio>.trycloudflare.com/mqtt`.
+  Validado com `paho-mqtt` (TCP e WSS). Quick Tunnel só cobre HTTP/HTTPS;
+  TCP puro (Postgres 5432) exige Named Tunnel + WARP.
+- Credenciais MQTT em `%USERPROFILE%\.config\opencode\secrets\mqtt-local.txt`
+  (ACL restrita). Nunca no repositório.
+- Postgres: `pg_hba.conf` liberado para faixas RFC1918 (LAN), sem acesso
+  externo; firewall ainda pendente de execução elevada.
+- Probe de serial (sem GPIO) versionado em `serial_probe/serial_probe.ino`, compilado e
+  gravado com a FQBN `laserseg`; a placa respondeu `laserseg probe: alive`.
+  O perfil `tools/flash.ps1 -Sketch laserseg` aponta para ele até existir produção.
+- Parser UDP: referência em `tools/protocol_ref.py` e **84 testes** em
+  `tests/test_protocol.py` (`tests/run.ps1` usa o Python LTS absoluto). Contrato
+  v0.1 em `PROTOCOLO_UDP.md`: tamanho/codificação → formato → faixa →
+  sequência → idade; a idade vale para QUALQUER comando; somente datagrama
+  aceito atualiza `lastPacket`; `TRACK,1` reinicia a janela de sequência.
+  `axes_stopped` explícito no boot, no `TRACK,0`, em amostra inválida e no
+  watchdog — o firmware deve parar AMBOS os eixos e desligar a luz.
+  Protótipos em `docs/example/` não cumprem isso (`toInt()` aceita lixo).
+- Revisão `laserseg-reviewer` (somente leitura) apontou: idade só em `T`,
+  watchdog sem parada de eixos, perfil apontando para sketch inexistente e
+  três documentos defasados. Tudo corrigido no mesmo bloco; `Stop-Process`
+  global em `tools/mqtt/` ficou como pendência de baixa prioridade.
+- `arduino-cli` exige que o `.ino` principal tenha o mesmo nome da pasta: o probe
+  precisou ser renomeado de `probe/serial_probe.ino` para
+  `serial_probe/serial_probe.ino` (o perfil `Ino` sozinho não basta).
+
 ## 7. Decisões fixadas
 
 1. T-SIMCAM como nó de visão; não acionar motores/iluminador diretamente por ela.
@@ -147,13 +185,14 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
 
 ## 8. Pendências em ordem
 
-1. Instalar/localizar `arduino-cli` e confirmar core ESP32.
+1. Re-detectar a placa antes de cada gravação (a porta pode mudar).
 2. Confirmar sensor e esquema/pinout da S3_CAM_SIM V1.3.
 3. Escolher controladora, driver e motores por torque/corrente reais.
-4. Fechar FQBN e criar perfil `laserseg` no `tools/flash.ps1`.
-5. Implementar validação de parser (faixa, sequência, idade) e telemetria.
-6. Testes sintéticos de UDP **antes** de ligar motores.
-7. Ensaio de bancada sem carga, foco desligado, limites conservadores.
+4. Implementar o parser C++ espelhando `protocol_ref.py` e rodar os mesmos casos na placa.
+5. Prever telemetria `ack_seq`, `state` e `fault` antes de operação supervisionada.
+6. Ensaio de bancada sem carga, foco desligado, limites conservadores.
+7. Migrar o Quick Tunnel para Named Tunnel antes de sair da bancada.
+8. Firewall (1883/5432) depende de execução elevada: `tools/mqtt/firewall.ps1`.
 
 ## 9. Comandos úteis
 

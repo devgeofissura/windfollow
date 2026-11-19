@@ -109,8 +109,10 @@ qualquer gravação, `hardware-auditor`.
 
 1. Rodar detecção da raiz: `powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -DetectOnly`.
 2. Confirmar chip, flash e MAC; nunca usar COM fixo.
-3. `laserseg` ainda não tem perfil em `tools/flash.ps1` — adicionar perfil ou usar
-   `arduino-cli` com FQBN explícito e build path em `$env:TEMP` (ver `esp32-build-workflow`).
+3. O perfil `laserseg` em `tools/flash.ps1` aponta para
+   `serial_probe/serial_probe.ino` (somente serial). O `.ino` principal precisa ter
+   o mesmo nome da pasta, exigência do `arduino-cli`. Não troque para `camera_node/`
+   antes de o nó de produção existir.
 4. Só então compilar e gravar, com o foco desligado e os eixos centralizados manualmente.
 
 ## Ao concluir

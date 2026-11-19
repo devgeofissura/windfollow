@@ -122,7 +122,7 @@ Detectar placa/porta antes de qualquer gravação (raiz do repositório):
 powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -DetectOnly
 ```
 
-> A detecção atual falha porque `arduino-cli` não está no PATH nesta máquina. A porta serial visível é `COM3` (USB-SERIAL CH340), mas chip/flash/MAC não foram confirmados. Não gravar até regularizar.
+> O `arduino-cli` 1.6.0 está fora do PATH, mas `tools/flash.ps1` usa o caminho absoluto. A detecção de 2026-11-19 encontrou uma placa ESP32-S3 nativa (`303A:1001`), 16 MB, MAC `dc:da:0c:28:25:30`. Isso é um resultado daquele momento, não uma porta fixa: rode `-DetectOnly` de novo antes de gravar.
 
 Registrar e publicar qualquer mudança concluída:
 

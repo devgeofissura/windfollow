@@ -65,6 +65,51 @@ A câmera envia `T,...` apenas quando `trackingEnabled` é verdadeiro. A detecç
 - Fins de curso NF com `INPUT_PULLUP`: entrada HIGH bloqueia o movimento naquele sentido. Fio rompido também bloqueia.
 - A controladora **não** faz homing automático; os eixos devem começar centralizados manualmente.
 
+## Validação obrigatória (contrato v0.1)
+
+O formato no fio **não mudou**. O que mudou foi o conjunto de regras que a
+controladora de produção deve aplicar antes de agir. Os protótipos em
+`docs/example/` usam `String.toInt()` e atualizam `lastPacket` antes do parse;
+eles **não** satisfazem este contrato e não devem ser copiados como produção.
+
+### Ordem das verificações
+
+1. **Tamanho/codificação** — 1 a 96 bytes, ASCII puro, sem NUL.
+2. **Formato** — comando exato, número exato de campos, decimais sem espaços,
+   sem `+`, sem ponto decimal. Zeros à esquerda são aceitos (`007` → `7`).
+3. **Faixa** — `seq` de `0` a `2147483647`; `x`/`y` de `-1000` a `1000`;
+   flags `0`/`1`; `MANUAL` com eixo `pan`/`tilt` e direção `-1`/`1`.
+4. **Sequência** — em amostras `T`, `seq` deve ser maior que o último aceito.
+   Repetido ou regressivo é descartado. `TRACK,1` reinicia a janela, para
+   que a câmera possa reiniciar seu contador sem reboot da controladora.
+5. **Idade** — aplicada a **todo** comando, não só a amostras: se
+   `now - rx > 1200 ms`, descartar. Exatamente `1200 ms` é aceito; o limite é
+   o mesmo `LINK_TIMEOUT_MS` do watchdog.
+
+Motivos de rejeição: `length`, `encoding`, `format`, `range`, `sequence`,
+`age`. Somente datagramas **aceitos** atualizam `lastPacket` e o estado da
+sessão. Um datagrama rejeitado não move eixos, não muda a luz e não altera
+`last_seq`.
+
+No boot e em qualquer watchdog é obrigatório **parar ambos os eixos** na
+posição atual e desligar a luz — não basta limpar a flag de rastreamento. O
+estado `axes_stopped` em `Session` torna essa ação explícita e testável.
+
+### Especificação executável
+
+A tabela de decisões está em `tools/protocol_ref.py` e é verificada por
+**84 testes** em `tests/test_protocol.py`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File firmware\laserseg\tests\run.ps1
+```
+
+O módulo Python é a referência de comportamento; o firmware C++ de produção
+deve reproduzir a mesma tabela, incluindo os limites exatos (`DEAD_BAND = 55`
+inclusive, truncamento para zero em `x * MAX_TRAVEL * GAIN / 1000`). A
+implementação C++ será validada no dispositivo com os mesmos casos antes de
+qualquer movimento de motor.
+
 ## Regras para evolução
 
 1. Validar formato, faixa numérica, sequência e idade da amostra antes de aceitar comando.
@@ -72,4 +117,4 @@ A câmera envia `T,...` apenas quando `trackingEnabled` é verdadeiro. A detecç
 3. Nunca aceitar posição absoluta sem limites locais na controladora.
 4. Manter LED/laser desligado no boot, no reset, na perda de câmera e no watchdog.
 5. Se o formato mudar, atualizar `camera_node.ino`, as duas controladoras, este documento e `docs/ESTADO.md` no mesmo commit.
-6. Preveracknowledgement/telemetria (`ack_seq`, `state`, `fault`) antes de operação supervisionada.
+6. Prever acknowledgement/telemetria (`ack_seq`, `state`, `fault`) antes de operação supervisionada.

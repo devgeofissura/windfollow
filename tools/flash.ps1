@@ -12,7 +12,7 @@
     portas; use -Port para escolher explicitamente.
 
 .PARAMETER Sketch
-    Qual firmware compilar/gravar: irobot, msa, windfollow ou windfollowblind.
+    Qual firmware compilar/gravar: irobot, msa, windfollow, windfollowblind ou laserseg.
     Opcional apenas com -DetectOnly (ai lista todas as portas sem checar perfil).
 
 .PARAMETER Port
@@ -39,7 +39,7 @@
 
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('irobot', 'msa', 'windfollow', 'windfollowblind')]
+    [ValidateSet('irobot', 'msa', 'windfollow', 'windfollowblind', 'laserseg')]
     [string]$Sketch = '',
 
     [string]$Port,
@@ -89,14 +89,28 @@ $Profiles = @{
         ExpectedChip = 'ESP32-S3'
         BoardName    = 'LILYGO T-SIMCAM ESP32-S3 (16 MB flash, OPI PSRAM)'
     }
+    # Enquanto nao existe firmware de producao, o unico sketch laserseg
+    # reproduzivel e o probe de serial (sem GPIO). Repontar para camera_node/
+    # quando o no de visao de producao for criado.
+    'laserseg' = @{
+        Dir          = 'firmware\laserseg\serial_probe'
+        Ino          = 'serial_probe.ino'
+        BuildPath    = Join-Path $env:TEMP 'laserseg-build'
+        Fqbn         = 'esp32:esp32:esp32s3:UploadSpeed=921600,USBMode=hwcdc,CDCOnBoot=cdc,CPUFreq=240,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi'
+        ExpectedChip = 'ESP32-S3'
+        BoardName    = 'LILYGO T-SIMCAM S3_CAM_SIM V1.3 (16 MB flash, OPI PSRAM)'
+    }
 }
 
 function Get-ArduinoCli {
     $cmd = Get-Command arduino-cli -ErrorAction SilentlyContinue
-    if (-not $cmd) {
-        throw 'arduino-cli nao encontrado no PATH. Instale/abra um novo terminal e tente de novo.'
-    }
-    return $cmd.Source
+    if ($cmd) { return $cmd.Source }
+
+    # Instalacao estavel fora do repositorio (nao depende de recarregar o PATH).
+    $known = Join-Path $env:LOCALAPPDATA 'Programs\arduino-cli\arduino-cli.exe'
+    if (Test-Path -LiteralPath $known) { return $known }
+
+    throw 'arduino-cli nao encontrado no PATH nem em %LOCALAPPDATA%\Programs\arduino-cli. Instale a versao estavel e tente de novo.'
 }
 
 function Get-Esptool {
@@ -183,7 +197,7 @@ $esptool = Get-Esptool
 $profile = if ($Sketch) { $Profiles[$Sketch] } else { $null }
 
 if (-not $Sketch -and -not $DetectOnly) {
-    throw "Informe -Sketch (irobot, msa, windfollow ou windfollowblind). Para apenas detectar portas, use -DetectOnly."
+    throw "Informe -Sketch (irobot, msa, windfollow, windfollowblind ou laserseg). Para apenas detectar portas, use -DetectOnly."
 }
 
 Write-Host ''
@@ -251,8 +265,9 @@ if (-not $SkipVerify) {
 }
 
 $sketchDir = Join-Path $RepoRoot $profile.Dir
-if (-not (Test-Path -LiteralPath (Join-Path $sketchDir ($Sketch + '.ino')))) {
-    throw "Sketch nao encontrado em $sketchDir"
+$inoName = if ($profile.Ino) { $profile.Ino } else { $Sketch + '.ino' }
+if (-not (Test-Path -LiteralPath (Join-Path $sketchDir $inoName))) {
+    throw "Sketch $inoName nao encontrado em $sketchDir"
 }
 
 Write-Host ''
