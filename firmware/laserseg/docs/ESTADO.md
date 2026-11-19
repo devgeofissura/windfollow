@@ -57,6 +57,12 @@
   à mão. Compilação com a FQBN `laserseg`: `exit=0`, 314816 bytes de flash (10%)
   e 22856 bytes de RAM (6%). Telemetria pura `ACK,<seq>,<state>,<fault>,<light>`
   documentada em `PROTOCOLO_UDP.md`.
+- Firmware gravado em `COM4` (detectada na hora) e validado **na placa**:
+  `AUTOTEST total=76 passed=76 failed=0` / `AUTOTEST PASS`, com heartbeats
+  `laserseg controller parser: alive`. O teste em dispositivo encontrou um bug
+  que o host não via: a telemetria emitia `none`/`range`/`link` em minúsculas,
+  contrariando o contrato `NONE`/`RANGE`/`LINK`. Corrigido com mapa exclusivo
+  para telemetria e o autoteste agora mostra `expected`/`got` em caso de falha.
 - Auditoria de hardware aprovou a gravação deste bloco **somente serial** e listou
   seis condições obrigatórias antes de acionar GPIO (`PROTOCOLO_UDP.md`,
   "Condições obrigatórias antes de acionar hardware"): tratar `fault()` como
@@ -85,12 +91,11 @@
 
 ## Próximos passos sugeridos
 
-1. Gravar `controller/` na porta detectada e capturar o `AUTOTEST PASS` pela serial.
-2. Fechar as seis condições de integração listadas em `PROTOCOLO_UDP.md` antes de
+1. Fechar as seis condições de integração listadas em `PROTOCOLO_UDP.md` antes de
    adicionar GPIO, motores ou LED.
-3. Transformar os protótipos em sketches de produção, um nó por pasta.
-4. Fazer ensaio de bancada sem carga mecânica, seguindo `docs/example/Ligações e ensaio.md`.
-5. Só então integrar câmera + controladora + foco com limites conservadores.
+2. Transformar os protótipos em sketches de produção, um nó por pasta.
+3. Fazer ensaio de bancada sem carga mecânica, seguindo `docs/example/Ligações e ensaio.md`.
+4. Só então integrar câmera + controladora + foco com limites conservadores.
 
 ## Referência de sessão atual
 

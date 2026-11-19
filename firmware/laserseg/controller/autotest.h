@@ -43,6 +43,24 @@ inline void check(bool condition, const char* name, Print& out,
   }
 }
 
+inline void checkTelemetry(const char* expected, const Session& session,
+                           const char* name, Print& out,
+                           AutoTestResult* tally) {
+  char telemetry[64];
+  formatTelemetry(telemetry, sizeof(telemetry), session);
+  if (strcmp(telemetry, expected) == 0) {
+    ++tally->passed;
+    return;
+  }
+  ++tally->failed;
+  out.print("FAIL: ");
+  out.print(name);
+  out.print(" expected=");
+  out.print(expected);
+  out.print(" got=");
+  out.println(telemetry);
+}
+
 }  // namespace autotest_detail
 
 inline AutoTestResult runAutotest(Print& out) {
@@ -64,10 +82,7 @@ inline AutoTestResult runAutotest(Print& out) {
   check(!s.tracking() && !s.light() && s.axesStopped() &&
             !s.hasLastPacket(),
         "session_boot_safe", out, &tally);
-  char telemetry[64];
-  formatTelemetry(telemetry, sizeof(telemetry), s);
-  check(strcmp(telemetry, "ACK,-1,SAFE,NONE,0") == 0,
-        "telemetry_boot", out, &tally);
+  checkTelemetry("ACK,-1,SAFE,NONE,0", s, "telemetry_boot", out, &tally);
 
   // Amostra valida libera eixos; amostra invalida volta a parar.
   feedText(s, "TRACK,1", 100);
@@ -76,9 +91,7 @@ inline AutoTestResult runAutotest(Print& out) {
   feedText(s, "T,1,100,0,1", 101);
   check(!s.axesStopped() && s.lastSeq() == 1 && s.lastPacketMs() == 101,
         "valid_sample_moves_axes", out, &tally);
-  formatTelemetry(telemetry, sizeof(telemetry), s);
-  check(strcmp(telemetry, "ACK,1,TRACK,NONE,0") == 0,
-        "telemetry_track", out, &tally);
+  checkTelemetry("ACK,1,TRACK,NONE,0", s, "telemetry_track", out, &tally);
 
   // Amostra com faixa invalida nao muda sequencia, lastPacket nem o movimento.
   const Result bad_range = feedText(s, "T,2,1001,0,1", 102);
@@ -109,17 +122,14 @@ inline AutoTestResult runAutotest(Print& out) {
   check(!bad.accepted && bad.reason == Reason::kRange && s.light() &&
             s.lastPacketMs() == 104,
         "rejected_command_keeps_state", out, &tally);
-  formatTelemetry(telemetry, sizeof(telemetry), s);
-  check(strcmp(telemetry, "ACK,2,SAFE,RANGE,1") == 0,
-        "telemetry_fault", out, &tally);
+  checkTelemetry("ACK,2,SAFE,RANGE,1", s, "telemetry_fault", out, &tally);
 
   // Watchdog: parar eixos, luz OFF, fault LINK nos limites 1200/1201 ms.
   check(!s.poll(1304) && s.light(), "watchdog_inside_window", out, &tally);
   check(s.poll(1305) && !s.light() && !s.tracking() && s.axesStopped(),
         "watchdog_forces_safe", out, &tally);
-  formatTelemetry(telemetry, sizeof(telemetry), s);
-  check(strcmp(telemetry, "ACK,2,SAFE,LINK,0") == 0,
-        "telemetry_link_fault", out, &tally);
+  checkTelemetry("ACK,2,SAFE,LINK,0", s, "telemetry_link_fault", out,
+                 &tally);
 
   // Comando expirado nunca atualiza o estado.
   Session expired;

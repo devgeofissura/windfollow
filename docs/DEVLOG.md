@@ -11,6 +11,26 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-19 15:32 - fix(laserseg): telemetria em maiusculas validada na placa
+
+**Area:** laserseg
+
+**Feito:**
+- telemetria usa mapa proprio NONE RANGE LINK em maiusculas
+- autoteste mostra expected e got em caso de falha
+- validacao na placa AUTOTEST PASS 76/76
+- docs atualizadas
+
+**Dificuldades e solucoes:**
+- bug so apareceu no dispositivo -> reasonName retornava minusculas e foi separado de telemetryFaultName
+- falha do autoteste era opaca -> checkTelemetry imprime esperado e obtido
+
+**Arquivos:**
+- `firmware/laserseg/controller/autotest.h`
+- `firmware/laserseg/controller/parser.cpp`
+- `firmware/laserseg/docs/ESTADO.md`
+- `firmware/laserseg/docs/history.md`
+
 ### 2026-11-19 15:28 - feat(laserseg): parser UDP C++ com autoteste e telemetria
 
 **Area:** laserseg

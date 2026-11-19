@@ -44,7 +44,8 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
 | `—` | `feat(infra): mqtt local, websocket e quick tunnel` — Mosquitto 2.1.4 portable, scripts `tools/mqtt/`, `MQTT.md`, perfil `laserseg` e `arduino-cli` 1.6.0/core 3.3.11 |
 | `ffff575` | `test(laserseg): parser udp validado e probe serial versionado` — `tools/protocol_ref.py`, 84 testes, contrato v0.1 e revisão independente aplicada |
 | `7f54c65` | `chore: remove pycache versionado do parser` |
-| **commit atual** | `feat(laserseg): parser UDP em C++ com autoteste e telemetria` — `controller/`, vetores gerados da referência Python, perfil `laserseg` repontado, telemetria `ACK` e 6 condições de integração de hardware |
+| `44cf96d` | `feat(laserseg): parser UDP C++ com autoteste e telemetria` — `controller/`, 55 vetores gerados da referência Python, perfil repontado e 6 condições de integração |
+| **commit atual** | `fix(laserseg): telemetria em maiusculas validada na placa` — `AUTOTEST PASS` 76/76; bug de `none`/`range`/`link` minusculos só apareceu no dispositivo |
 
 > Hash exato do commit atual: `git log -1 --oneline`.
 
@@ -81,7 +82,9 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
 - Contrato v0.1 fechado: faixa/sequência/idade em **todo** comando, rejeição de
   repetidos e telemetria `ACK,<seq>,<state>,<fault>,<light>` (envio de rede pendente).
 - Parser C++ em `controller/` com vetores **gerados** de `protocol_ref.py`; nunca
-  manter tabela duplicada à mão. Antes de GPIO: `fault()` ⇒ parada+luz OFF,
+  manter tabela duplicada à mão. Telemetria usa `NONE/RANGE/LINK` em **maiúsculas**
+  (mapa próprio; `reasonName()` é minúsculo). Autoteste na placa: 76/76 PASS.
+  Antes de GPIO: `fault()` ⇒ parada+luz OFF,
   `poll()` antes dos motores, sem `now_ms=-1` em campo, corrigir rollover do
   `millis()`. Ver `PROTOCOLO_UDP.md`.
 

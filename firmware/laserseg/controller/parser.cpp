@@ -292,14 +292,33 @@ bool Session::poll(int64_t now_ms) {
   return true;
 }
 
+namespace {
+
+// reasonName() e minusculo (motivos de rejeicao do protocolo); a telemetria
+// usa maiusculo, conforme docs/PROTOCOLO_UDP.md. Nao compartilhar o mapa.
+const char* telemetryFaultName(Reason reason) {
+  switch (reason) {
+    case Reason::kNone: return "NONE";
+    case Reason::kLength: return "LENGTH";
+    case Reason::kEncoding: return "ENCODING";
+    case Reason::kFormat: return "FORMAT";
+    case Reason::kRange: return "RANGE";
+    case Reason::kSequence: return "SEQUENCE";
+    case Reason::kAge: return "AGE";
+    case Reason::kLink: return "LINK";
+  }
+  return "NONE";
+}
+
+}  // namespace
+
 void formatTelemetry(char* out, size_t out_size, const Session& session) {
   if (out_size == 0) return;
   const char* state = "SAFE";
   if (!session.axesStopped()) {
     state = session.tracking() ? "TRACK" : "MANUAL";
   }
-  const Reason fault = session.fault();
-  const char* fault_name = reasonName(fault);
+  const char* fault_name = telemetryFaultName(session.fault());
   const int seq = session.hasLastSeq() ? session.lastSeq() : -1;
   snprintf(out, out_size, "ACK,%d,%s,%s,%d", seq, state, fault_name,
            session.light() ? 1 : 0);
