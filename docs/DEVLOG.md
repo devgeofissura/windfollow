@@ -11,6 +11,22 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-20 13:40 - docs(laserseg): spec do simulador web V1
+
+**Area:** laserseg
+
+**Feito:**
+- propoe pagina local sem hardware com abas Painel Wi-Fi e Protocolo
+- espelha constantes de parser.h e driver_config.h com teste host
+- define premissas limites e criterios de aceite antes de qualquer codigo
+
+**Dificuldades e solucoes:**
+- skill local spec-driven-development nao carrega pela ferramenta skill -> li o SKILL.md diretamente e segui o gate spec aprovacao impl
+- risco de ambiguidade sobre webcam e aba Protocolo -> decisoes padrao registradas na spec para aprovacao explicita
+
+**Arquivos:**
+- `firmware/laserseg/spec/SPEC-simulador-web.md`
+
 ### 2026-11-20 13:13 - docs(laserseg): versiona prototipos e spec wifi provisioning
 
 **Area:** laserseg
