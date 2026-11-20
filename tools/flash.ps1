@@ -13,7 +13,7 @@
 
 .PARAMETER Sketch
     Qual firmware compilar/gravar: irobot, msa, windfollow, windfollowblind,
-    laserseg ou laserseg_dm556d.
+    laserseg, laserseg_dm556d ou ventiseg.
     Opcional apenas com -DetectOnly (ai lista todas as portas sem checar perfil).
 
 .PARAMETER Port
@@ -40,7 +40,7 @@
 
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('irobot', 'msa', 'windfollow', 'windfollowblind', 'laserseg', 'laserseg_dm556d')]
+    [ValidateSet('irobot', 'msa', 'windfollow', 'windfollowblind', 'laserseg', 'laserseg_dm556d', 'ventiseg')]
     [string]$Sketch = '',
 
     [string]$Port,
@@ -111,6 +111,16 @@ $Profiles = @{
         Fqbn         = 'esp32:esp32:esp32s3:UploadSpeed=921600,USBMode=hwcdc,CDCOnBoot=cdc,CPUFreq=240,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi'
         ExpectedChip = 'ESP32-S3'
         BoardName    = 'LILYGO T-SIMCAM S3_CAM_SIM V1.3 (16 MB flash, OPI PSRAM)'
+    }
+    # ventiseg: uma unica SIMCAM faz a visao e comanda o DM556D (24 VDC, 1 motor).
+    # Serial-only enquanto VENTISEG_ENABLE_GPIO=0; sem laser, rele ou fim de curso.
+    'ventiseg' = @{
+        Dir          = 'firmware\ventiseg\controller'
+        Ino          = 'controller.ino'
+        BuildPath    = Join-Path $env:TEMP 'ventiseg-build'
+        Fqbn         = 'esp32:esp32:esp32s3:UploadSpeed=921600,USBMode=hwcdc,CDCOnBoot=cdc,CPUFreq=240,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi'
+        ExpectedChip = 'ESP32-S3'
+        BoardName    = 'LILYGO T-SIMCAM S3_CAM_SIM / ventiseg (16MB, OPI PSRAM)'
     }
 }
 
@@ -209,7 +219,7 @@ $esptool = Get-Esptool
 $profile = if ($Sketch) { $Profiles[$Sketch] } else { $null }
 
 if (-not $Sketch -and -not $DetectOnly) {
-    throw "Informe -Sketch (irobot, msa, windfollow, windfollowblind, laserseg ou laserseg_dm556d). Para apenas detectar portas, use -DetectOnly."
+    throw "Informe -Sketch (irobot, msa, windfollow, windfollowblind, laserseg, laserseg_dm556d ou ventiseg). Para apenas detectar portas, use -DetectOnly."
 }
 
 Write-Host ''

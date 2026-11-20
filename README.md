@@ -5,9 +5,9 @@
 [![Framework](https://img.shields.io/badge/Framework-Arduino-green?logo=arduino)](https://www.arduino.cc/)
 [![Language](https://img.shields.io/badge/Language-C%2B%2B%20%7C%20HTML%20%7C%20CSS%20%7C%20JS-blue)](https://github.com/devtiagoabreu/windfollow)
 
-> **Repositório de firmware e interfaces web para quatro projetos com ESP32:**
-> uma câmera seguidora de movimento, um controlador de cortinas, um robô móvel autônomo
-> e um módulo de sensores ambientais.
+> **Repositório de firmware e interfaces web para cinco projetos com ESP32:**
+> uma câmera seguidora de movimento, um controlador de cortinas, um robô móvel autônomo,
+> um módulo de sensores ambientais e um controlador de pan de fluxo de ar.
 
 ---
 
@@ -25,6 +25,10 @@
 | 🪟 **WindFollowBlind** | ESP32 DevKit (clássico) | Controle de 2 motores de cortina com 2 botões | `firmware/windfollowblind/` |
 | 🤖 **iRobot** | ESP32 DevKit (clássico) | Robô diferencial 2 rodas + caster, sensores e navegação autônoma | `firmware/irobot/` |
 | 🌡️ **MSA** | ESP32 DevKit (clássico) | Módulo de sensores ambientais AHT20 + BMP280 com OLED, dashboard responsivo e alertas | `firmware/msa/` |
+| 🌬️ **ventiseg** | LILYGO T-SIMCAM ESP32-S3 | Pan do fluxo de ar: 1 motor de passo via driver DM556D 24 VDC, sem laser/relé/fim de curso | `firmware/ventiseg/` |
+
+> O `ventiseg` é a entrega enxuta: uma placa, um motor, um driver. Nesta fase o
+> firmware é serial-only (`VENTISEG_ENABLE_GPIO=0`), sem Wi-Fi nem interface web.
 
 Cada firmware inclui:
 
@@ -51,7 +55,8 @@ windfollow/
 │   ├── 📁 windfollow/               # 🎥 câmera seguidora (ESP32-S3)
 │   ├── 📁 windfollowblind/          # 🪟 cortinas (ESP32 clássico)
 │   ├── 📁 irobot/                   # 🤖 robô autônomo (ESP32 clássico)
-│   └── 📁 msa/                      # 🌡️ sensores ambientais (ESP32 clássico)
+│   ├── 📁 msa/                      # 🌡️ sensores ambientais (ESP32 clássico)
+│   └── 📁 ventiseg/                 # 🌬️ pan do fluxo de ar (ESP32-S3 + DM556D)
 ├── 📁 simulator/                    # 🧪 interfaces web para teste no PC
 ├── 📁 tools/                        # 🛠️ scripts de flash e commit
 └── 📁 graphify-out/                 # 📊 grafo de conhecimento do código
@@ -253,6 +258,7 @@ A porta COM **muda a cada replug do cabo**. O script detecta a porta, o chip e a
 powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch irobot -DetectOnly
 powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollowblind -DetectOnly
 powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollow -DetectOnly
+powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch ventiseg -DetectOnly
 ```
 
 ## ⬆️ Compilar e gravar
@@ -261,6 +267,7 @@ powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollow -Det
 powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch irobot
 powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollowblind
 powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollow
+powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch ventiseg
 ```
 
 ## 🔄 Regenerar assets web

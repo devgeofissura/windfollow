@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ventiseg — simulador local</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="simulator-badge" role="note">
+        SIMULADOR — nenhum GPIO, motor ou iluminador real é acionado. Comandos ficam neste navegador.
+    </div>
+
+    <div class="app">
+        <header class="app-header">
+            <div>
+                <h1>ventiseg <span class="muted">· simulador</span></h1>
+                <p class="subtitle">Contrato v0.1 · eixo único de pan do fluxo de ar · serial-only.</p>
+            </div>
+            <div class="header-actions">
+                <span class="status-chip" id="header-status" aria-live="polite">Simulação ativa</span>
+                <button type="button" id="theme-toggle" class="btn btn-ghost"
+                        aria-label="Alternar tema claro e escuro">Alternar tema</button>
+            </div>
+        </header>
+
+        <nav class="tabs" role="tablist" aria-label="Áreas do simulador">
+            <button type="button" class="tab active" role="tab" id="tabbtn-painel"
+                    aria-controls="tab-painel" aria-selected="true" data-tab="painel">Painel</button>
+            <button type="button" class="tab" role="tab" id="tabbtn-protocolo"
+                    aria-controls="tab-protocolo" aria-selected="false" data-tab="protocolo">Protocolo</button>
+            <button type="button" class="tab" role="tab" id="tabbtn-pinagem"
+                    aria-controls="tab-pinagem" aria-selected="false" data-tab="pinagem">Pinagem</button>
+        </nav>
+
+        <main>
+            <!-- PAINEL -->
+            <section id="tab-painel" class="tab-panel active" role="tabpanel" aria-labelledby="tabbtn-painel">
+                <p class="safety-note" role="note">
+                    Segurança: isto é uma simulação. O firmware de bancada mantém
+                    <code>VENTISEG_ENABLE_GPIO = 0</code> — nenhuma saída física é ativada.
+                </p>
+
+                <div class="grid-2">
+                    <article class="card">
+                        <h2>Eixo único — pan do fluxo de ar</h2>
+                        <div class="axis-stage" role="img" aria-label="Posição comandada do eixo único">
+                            <div class="axis-center" aria-hidden="true"></div>
+                            <div class="axis-marker" id="axis-marker" aria-hidden="true"></div>
+                        </div>
+                        <p class="hint" id="axis-caption">Posição comandada: 0 passos · alvo x: 0 · zona morta ±55.</p>
+                    </article>
+
+                    <article class="card">
+                        <h2>Estado da controladora</h2>
+                        <div class="status-grid" aria-live="polite">
+                            <div class="status-item"><span class="label">Estado</span><strong id="st-state">SAFE</strong></div>
+                            <div class="status-item"><span class="label">Movimento</span><strong id="st-motion">parado</strong></div>
+                            <div class="status-item"><span class="label">Eixo (passos)</span><strong id="st-axis">0</strong></div>
+                            <div class="status-item"><span class="label">Alvo x</span><strong id="st-target">0</strong></div>
+                            <div class="status-item"><span class="label">Sequência</span><strong id="st-seq">-1</strong></div>
+                            <div class="status-item"><span class="label">Link</span><strong id="st-link">ativo</strong></div>
+                            <div class="status-item"><span class="label">Falha</span><strong id="st-fault">None</strong></div>
+                            <div class="status-item"><span class="label">ACK</span><strong id="st-ack">ACK,-1,SAFE,None</strong></div>
+                        </div>
+                        <p class="hint">Dead band 55 · ganho 0,75 · limite 533 passos · watchdog 1200 ms.</p>
+                    </article>
+                </div>
+
+                <article class="card">
+                    <h2>Controles</h2>
+                    <div class="control-group">
+                        <button type="button" class="btn btn-primary" id="btn-track" aria-pressed="false">Rastreamento: OFF</button>
+                        <button type="button" class="btn" data-manual="-1">MANUAL −</button>
+                        <button type="button" class="btn" data-manual="0">Parar</button>
+                        <button type="button" class="btn" data-manual="1">MANUAL +</button>
+                    </div>
+                    <div class="control-group">
+                        <button type="button" class="btn btn-warn" id="btn-link" aria-pressed="false">Simular perda de link</button>
+                        <button type="button" class="btn btn-warn" id="btn-range" aria-pressed="false">Falha Range: OFF</button>
+                        <button type="button" class="btn btn-ghost" id="btn-reset">Reiniciar simulação</button>
+                    </div>
+                    <form class="inject-form" id="inject-form">
+                        <label for="cmd-line">Injetar linha do protocolo</label>
+                        <div class="row">
+                            <input type="text" id="cmd-line" placeholder="T,0,300,1"
+                                   autocomplete="off" spellcheck="false">
+                            <button type="submit" class="btn">Enviar</button>
+                        </div>
+                    </form>
+                </article>
+
+                <article class="card">
+                    <h2>Log do protocolo</h2>
+                    <ol id="log" class="log" aria-live="polite" aria-label="Mensagens simuladas"></ol>
+                </article>
+            </section>
+
+            <!-- PROTOCOLO -->
+            <section id="tab-protocolo" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-protocolo" hidden>
+                <article class="card">
+                    <h2>Contrato v0.1 — somente leitura</h2>
+                    <p class="hint">
+                        Fonte da verdade: <code>docs/PROTOCOLO.md</code>. O simulador replica as
+                        constantes para validar a experiência, não para substituir o firmware.
+                    </p>
+                    <table class="data-table">
+                        <thead><tr><th>Constante</th><th>Valor</th></tr></thead>
+                        <tbody id="proto-constants"></tbody>
+                    </table>
+                    <table class="data-table">
+                        <thead><tr><th>Mensagem</th><th>Formato</th></tr></thead>
+                        <tbody>
+                            <tr><td>Seguir alvo</td><td><code>TRACK,&lt;0|1&gt;</code></td></tr>
+                            <tr><td>Manual</td><td><code>MANUAL,&lt;-1|0|1&gt;</code></td></tr>
+                            <tr><td>Alvo</td><td><code>T,&lt;seq&gt;,&lt;x&gt;,&lt;valid&gt;</code></td></tr>
+                            <tr><td>Telemetria</td><td><code>ACK,&lt;seq&gt;,&lt;state&gt;,&lt;fault&gt;</code></td></tr>
+                        </tbody>
+                    </table>
+                    <p class="hint">
+                        Validação: tamanho (≤ 96 bytes) → formato → faixa (<code>x</code> em
+                        [−1000, 1000]) → sequência (só aceita se maior). Comando inválido não
+                        altera estado. Estado <code>SAFE | TRACK | MANUAL</code>; falha
+                        <code>None | Lnk | Range</code>. <code>seq = -1</code> antes da primeira
+                        amostra aceita. Watchdog de 1200 ms força SAFE, eixo parado e
+                        <code>fault=Lnk</code>.
+                    </p>
+                </article>
+            </section>
+
+            <!-- PINAGEM (somente leitura) -->
+            <section id="tab-pinagem" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-pinagem" hidden>
+                <article class="card">
+                    <h2>Pinagem da SIMCAM — aba somente leitura</h2>
+                    <p class="safety-note" role="note">
+                        Fonte primária: serigrafia do conector preto <code>J_GPIO_LIVRES</code>
+                        transcrita pelo usuário em 20/11/2026, registrada em
+                        <code>docs/HARDWARE-DECISIONS.md</code>. Esta aba apenas replica a
+                        pinagem para consulta: não altera estado, comandos, GPIO, motor ou
+                        iluminador. Nenhum pino é acionado por este simulador.
+                    </p>
+                </article>
+
+                <article class="card">
+                    <h2>J_GPIO_LIVRES — conector preto (6 pinos)</h2>
+                    <table class="data-table">
+                        <thead><tr><th>Contato</th><th>Sinal</th><th>Uso no ventiseg</th><th>Ressalva</th></tr></thead>
+                        <tbody>
+                            <tr><td>1</td><td>IO3 / GPIO3</td><td><strong>STEP (PUL)</strong></td><td>ADC de bateria não usado</td></tr>
+                            <tr><td>2</td><td>IO46 / GPIO46</td><td>reservado</td><td><strong>strapping</strong>: não puxar HIGH no boot</td></tr>
+                            <tr><td>3</td><td>IO45 / GPIO45</td><td>reservado</td><td><strong>strapping</strong>: define tensão da Flash no boot</td></tr>
+                            <tr><td>4</td><td>IO21 / GPIO21</td><td><strong>DIR</strong></td><td>digital/PWM/I2C</td></tr>
+                            <tr><td>5</td><td>GND</td><td>referência</td><td>comum com o driver</td></tr>
+                            <tr><td>6</td><td>3V3</td><td>referência</td><td>lógica 3,3 V; nunca aplicar 5 V nos sinais</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="hint">
+                        Driver <strong>DM556D (Azaneli)</strong> alimentado com <strong>24 VDC</strong>.
+                        Nível lógico da placa: <strong>3,3 V</strong>. Um único motor gira o
+                        conjunto <strong>câmera + duto</strong>: a SIMCAM detecta a pessoa e
+                        comanda o pan. Como a câmera gira junto, a visão é <strong>malha
+                        fechada</strong> — o erro detectado precisa compensar o próprio
+                        movimento para manter a pessoa centralizada e o fluxo apontado a ela.
+                    </p>
+                </article>
+
+                <article class="card">
+                    <h2>Ressalvas — NAO CONFIRMADO</h2>
+                    <ul>
+                        <li>Tipo de entrada PUL/DIR/ENA do DM556D (comum e corrente dos optos) e necessidade de conversor de nível.</li>
+                        <li>Modelo/corrente do motor, curso útil em passos e batentes mecânicos.</li>
+                        <li>Não existem fim de curso, relé, iluminador, laser ou eixo de tilt neste projeto.</li>
+                        <li>Enquanto <code>VENTISEG_ENABLE_GPIO = 0</code>, nenhuma escrita em GPIO é feita.</li>
+                    </ul>
+                </article>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

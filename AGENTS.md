@@ -72,6 +72,7 @@ powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch msa
 powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollowblind
 powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch windfollow
 powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch laserseg
+powershell -ExecutionPolicy Bypass -File tools/flash.ps1 -Sketch ventiseg
 ```
 
 `laserseg` aponta para `firmware/laserseg/controller/controller.ino` (parser, estado,
@@ -97,6 +98,12 @@ clones CH340 — o chip é identificado pelo esptool dentro do script.
 | `windfollowblind` | `firmware/windfollowblind` | `esp32:esp32:esp32` | ESP32 (clássico) | ESP32 DevKit 4 MB, L298N, 2 motores, 2 botões |
 | `windfollow` | `firmware/windfollow` | `esp32:esp32:esp32s3:CDCOnBoot=cdc,USBMode=hwcdc,UploadSpeed=921600,FlashSize=16M,PartitionScheme=huge_app,PSRAM=opi` | ESP32-S3 | LILYGO T-SIMCAM V1.3, 16 MB flash, OPI PSRAM |
 | `laserseg` | `firmware/laserseg/controller` | `esp32:esp32:esp32s3:UploadSpeed=921600,USBMode=hwcdc,CDCOnBoot=cdc,CPUFreq=240,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi` | ESP32-S3 | LILYGO T-SIMCAM S3_CAM_SIM V1.3, 16 MB, OPI PSRAM; parser/estado/autoteste/telemetria, ainda sem GPIO |
+| `ventiseg` | `firmware/ventiseg/controller` | `esp32:esp32:esp32s3:UploadSpeed=921600,USBMode=hwcdc,CDCOnBoot=cdc,CPUFreq=240,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi` | ESP32-S3 | LILYGO T-SIMCAM S3_CAM_SIM / ventiseg, 16 MB, OPI PSRAM; 1 motor de passo via DM556D 24 VDC (pan do fluxo de ar), serial-only até auditoria elétrica |
+
+`ventiseg` aponta para `firmware/ventiseg/controller/controller.ino`. Diferente do
+`laserseg`, a própria SIMCAM comanda o driver por decisão registrada em
+`firmware/ventiseg/docs/HARDWARE-DECISIONS.md`; STEP=IO3, DIR=IO21, IO45/IO46
+reservados por strapping. Sem laser, relé, fim de curso ou tilt.
 
 Nunca grave `windfollow` (S3) em um DevKit clássico nem o contrário: os pinos e o
 layout de flash não são compatíveis.

@@ -11,6 +11,28 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-20 15:40 - feat(ventiseg): base serial-only, simulador e ligacoes DM556D 24V
+
+**Area:** ventiseg, raiz
+
+**Feito:**
+- novo subprojeto ventiseg com perfil S3 no flash.ps1 e tabelas da raiz
+- nucleo TDD com protocol_ref, parser C++, 52 vetores e 135 testes host verdes
+- simulador local file:// com FSM deterministica e watchdog alinhado ao contrato
+- esquema WireViz em nivel de terminal e guia LIGACOES com interface 3,3V, fases A/B e 24V
+- visao na SIMCAM e camera acoplada ao duto registradas como decisoes confirmadas
+
+**Dificuldades e solucoes:**
+- perfil ventiseg rejeitado pelo ValidateSet -> adicionado ao ValidateSet e a tabela de perfis com FQBN S3
+- simulador renovava watchdog com TRACK/MANUAL -> corrigido para so T aceito e testes reforcados
+- topologia do opto DM556D nao confirmada -> variante comum-anodo desenhada e alternativa documentada sem assumir como fato
+
+**Arquivos:**
+- `AGENTS.md`
+- `README.md`
+- `tools/flash.ps1`
+- `firmware/ventiseg/`
+
 ### 2026-11-20 14:46 - feat(laserseg): aba Pinout e hardware WireViz do laser
 
 **Area:** laserseg, raiz
