@@ -47,8 +47,11 @@ para pan e tilt.
 5. Alimentação dos motores é externa (etiqueta do driver: 24–50 Vdc), com GND
    comum conforme a interface definida; nada de alimentar motor pelo regulador
    ou USB da ESP32.
-6. LED branco difuso primeiro, com MOSFET/driver e resistor de gate apropriado.
-   Laser **fora de escopo**.
+6. **SUPERADO em 2026-11-20:** LED branco difuso primeiro, com MOSFET/driver e
+   resistor de gate apropriado; laser fora de escopo. A decisão vigente é laser
+   acionado por módulo relé serial RoboCore (conversor 3,3→5 V, bobinas 12 V em
+   fonte separada, contato NA + emergência + watchdog). Registro mantido;
+   detalhes em `docs/wireviz/00-LEIA-ME.md`. Demais itens permanecem.
 7. Rede do exemplo: AP `SIMCAM-SETUP`, controladora em `192.168.4.2`, UDP 4210.
    SSID/senha reais e modo AP/STA ainda precisam ser confirmados antes de
    habilitar Wi-Fi.

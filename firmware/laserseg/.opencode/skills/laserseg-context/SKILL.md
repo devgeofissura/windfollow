@@ -32,7 +32,11 @@ tomadas e não tratar protótipo como produto.
 - `docs/example01/` e `docs/example02/` contêm protótipos compiláveis, não firmware de produção validado.
 - A T-SIMCAM faz visão; a controladora ESP32-S3 faz motores e luz. Não inverter essa
   separação sem nova decisão registrada.
-- LED difuso primeiro; laser só após revisão de segurança explícita.
+- Iluminador = **laser** via módulo relé serial RoboCore (decisão de 2026-11-20,
+  registrada em `docs/wireviz/00-LEIA-ME.md`): Clock/Data 5 V exige conversor
+  3,3→5 V, bobinas 12 V em fonte separada, contato NA + emergência + watchdog.
+  Laser bloqueado na bancada até fechar P1–P6 e a auditoria elétrica; antigo
+  `LED_EN`/GPIO12 está SUPERADO.
 - Nenhuma mudança de protocolo sem atualizar os dois nós, `PROTOCOLO_UDP.md` e `ESTADO.md`.
 
 ## Critério de saída

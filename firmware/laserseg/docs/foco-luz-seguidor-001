@@ -1,14 +1,26 @@
-# Ligação revisada — S3_CAM_SIM V1.3 + pan-tilt + iluminador LED
+# Ligação revisada — S3_CAM_SIM V1.3 + pan-tilt (iluminador LED histórico)
 
 > **Decisões de hardware (T1):** antes de usar a pinagem abaixo, leia
 > `docs/HARDWARE-DECISIONS.md`. Os valores de STEP/DIR, corrente, DIP e rede
 > registrados aqui vêm do protótipo DRV8834 e **não** são confirmação do
 > DM556D/NEMA 23. T5/T6 permanecem bloqueados até a auditoria de hardware.
 > A controladora física é uma ESP32-S3 separada — não a S3_CAM_SIM da foto.
+> **SUPERADO em 2026-11-20:** o iluminador passou a ser **laser** acionado por
+> módulo relé serial RoboCore. O diagrama `GPIO_LED → MOSFET → LED` e a seção
+> "Iluminador LED" abaixo são registro histórico: **não montar**. Fonte vigente:
+> `docs/wireviz/00-LEIA-ME.md`.
 
 ## Correção importante a partir da foto
 
-A placa da foto está marcada **S3_CAM_SIM V1.3**. Os contatos laterais visíveis incluem IO31, IO46, IO45, IO21, GND e 3V3. Não use os quatro contatos IO para STEP/DIR: a própria LilyGO informa no issue do repositório que **GPIO31 está ligado à flash e indisponível; GPIO45 e GPIO46 são usados pelo UART do modem; GPIO21 está relacionado ao LED do mPCIe**. Ou seja, a sua placa não oferece GPIO extra confiável para ligar diretamente os dois drivers, o iluminador e os fins de curso. [1]
+A placa da foto está marcada **S3_CAM_SIM V1.3**. Os contatos laterais visíveis incluem IO31, IO46, IO45, IO21, GND e 3V3. Não use os quatro contatos IO para STEP/DIR: no issue #33 da LilyGO, o **maintainer confirmou apenas que GPIO31 está ligado à flash e indisponível**; a afirmação de que GPIO45/46 seriam UART do modem e GPIO21 seria LED do mPCIe é **relato do autor do issue, não confirmação do fabricante**. [1]
+
+O pinout detalhado enviado pelo usuário em 2026-11-20 (serigrafia + mapeamento
+interno, fonte primária deste subprojeto) diverge: IO3, IO21, IO45 e IO46 são
+apresentados como livres — com ressalvas de strapping em IO45/IO46 e IO21 como
+o mais seguro para I2C/sensor. A revisão física da placa **não foi confirmada**.
+Portanto, a conclusão prática permanece a mesma (não usar a SIMCAM para motores
+ou iluminador), mas o motivo documentado é a **divergência não resolvida**, não
+uma atribuição definitiva do issue #33. Ver `docs/wireviz/no-visao-s3-camsim.yaml`.
 
 A solução robusta é manter a T-SIMCam como câmera/rastreador e acrescentar uma placa controladora com GPIOs suficientes — por exemplo, uma **ESP32-S3-DevKitC-1**. A T-SIMCam envia comandos de posição por Wi‑Fi à controladora; a placa adicional gera STEP/DIR, lê fins de curso e aciona o LED. Assim, não precisamos tocar nos sinais do modem nem nos pinos da câmera.
 
@@ -45,19 +57,29 @@ Como câmera e controladora se comunicam por Wi‑Fi, não é necessário ligar 
 
 A tabela abaixo é para **ESP32-S3-DevKitC-1**, não para a S3_CAM_SIM. Confirme a serigrafia/revisão da DevKitC-1 que comprar. Os pinos abaixo são uma proposta inicial e devem ser verificados contra as funções já habilitadas no firmware e o modelo exato da placa. A documentação oficial informa que a DevKitC-1 expõe os GPIOs utilizáveis em seus headers, exceto os reservados à flash/PSRAM. [2]
 
-| Sinal | GPIO sugerido na ESP32-S3-DevKitC-1 |
-|---|---:|
-| STEP PAN | GPIO4 |
-| DIR PAN | GPIO5 |
-| STEP TILT | GPIO6 |
-| DIR TILT | GPIO7 |
-| ENABLE/SLEEP dos dois drivers (compartilhado) | GPIO15 |
-| Acionamento do iluminador (`LED_EN`) | GPIO16 |
-| Fim de curso PAN — referência | GPIO17 |
-| Fim de curso TILT — referência | GPIO18 |
-| Parada/intertravamento (opcional, além de corte físico) | GPIO21 |
+> **Mapa histórico — SUPERADO.** A referência V0 adotada em 2026-11-20 é a do
+> protótipo `docs/example02/` (STEP/DIR 4/5 e 6/7, limites 13/14 e 15/16,
+> LED_EN 12, ENA indefinido), registrada em
+> `docs/wireviz/controladora-dm556d-nema23.yaml`. Os valores abaixo ficam apenas
+> como registro do que foi proposto no DRV8834; não usar em PCB ou firmware.
 
-Não conecte motor ou LED diretamente a esses GPIOs: eles fornecem apenas sinal lógico de 3,3 V.
+| Sinal | GPIO sugerido na ESP32-S3-DevKitC-1 | Situação |
+|---|---:|---|
+| STEP PAN | GPIO4 | mantido na V0 |
+| DIR PAN | GPIO5 | mantido na V0 |
+| STEP TILT | GPIO6 | mantido na V0 |
+| DIR TILT | GPIO7 | mantido na V0 |
+| ENABLE/SLEEP dos dois drivers (compartilhado) | GPIO15 | **SUPERADO** — ENA indefinido na V0 |
+| Acionamento do iluminador (`LED_EN`) | GPIO16 | **SUPERADO** — V0 usava GPIO12; hoje laser via relé serial, GPIOs a definir |
+| Fim de curso PAN — referência | GPIO17 | **SUPERADO** — V0 usa 13/14 |
+| Fim de curso TILT — referência | GPIO18 | **SUPERADO** — V0 usa 15/16 |
+| Parada/intertravamento (opcional, além de corte físico) | GPIO21 | revisar — na SIMCAM, IO21 é I2C/sensor |
+
+Não conecte motor ou laser diretamente a esses GPIOs: eles fornecem apenas
+sinal lógico de 3,3 V. O iluminador agora é um **laser** acionado por módulo
+rele serial RoboCore: Clock/Data em 5 VDC exige **conversor de nível 3,3→5 V**
+e as bobinas usam fonte 12 V separada. Intertravamento: contato NA, chave de
+emergência e watchdog. Ver `docs/wireviz/00-LEIA-ME.md`.
 
 ## Ligações dos drivers (dois motores bipolares)
 
@@ -75,7 +97,7 @@ Para cada carrier DRV8834:
 
 Coloque capacitor eletrolítico de pelo menos 47 µF entre VMOT e GND perto do driver/fonte, com polaridade e tensão corretas. Ajuste o limite de corrente do driver antes de conectar carga. Desligue a fonte antes de conectar/desconectar o motor. A Pololu alerta que picos de tensão podem danificar o carrier. [3]
 
-## Iluminador LED
+## Iluminador LED — SUPERADO (não montar)
 
 Use um foco LED difuso de baixa tensão com **driver ou limitação de corrente próprios**. Não ligue um LED de potência nu diretamente à fonte. Para um módulo DC que permita chaveamento de baixa lateral, conecte: positivo da fonte LED ao positivo do módulo; negativo do módulo ao DRAIN de MOSFET N logic-level; SOURCE ao negativo da fonte; GPIO16 ao GATE através de resistor de 100–220 Ω; resistor de 10 kΩ entre GATE e GND para manter apagado durante reset. Una o GND da fonte LED ao GND da controladora.
 
@@ -83,7 +105,7 @@ Se o foco tiver entrada `DIM/EN`, prefira comandar essa entrada conforme o datas
 
 ## Fins de curso e alimentação
 
-Instale fins de curso nos extremos do curso mecânico; dois por eixo permitem limitar ambos os sentidos. Para referência de homing, pode-se começar com um por eixo. Ligue contatos normalmente fechados entre as entradas sugeridas e GND, habilitando pull-up interno ou instalando pull-up apropriado. O corte de emergência do LED e a desabilitação dos drivers devem ter estado padrão seguro durante reset.
+Instale fins de curso nos extremos do curso mecânico; dois por eixo permitem limitar ambos os sentidos. Para referência de homing, pode-se começar com um por eixo. Ligue contatos normalmente fechados entre as entradas sugeridas e GND, habilitando pull-up interno ou instalando pull-up apropriado. O corte de emergência do **laser** (contato NA do relé + chave física + watchdog) e a desabilitação dos drivers devem ter estado padrão seguro durante reset.
 
 - Alimente a S3_CAM_SIM V1.3 pela USB-C ou método indicado pela documentação da revisão.
 - Alimente a DevKitC-1 por USB-C ou fonte 5 V regulada no pino permitido pela documentação da placa; não injete 5 V no pino 3V3.

@@ -8,7 +8,10 @@
 
 #include "../controller/parser.h"
 
-// DM556D com DIP SW5-SW8 = OFF OFF ON ON -> 3200 pulsos/volta.
+// 3200 pulsos/volta e VALOR PROVISORIO do prototipo (equivalente a DIP
+// SW5-SW8 = OFF OFF ON ON em algumas variantes). A posicao real do DIP do
+// DM556D entregue NAO FOI CONFIRMADA: ver manual da unidade antes de qualquer
+// ensaio com motor. Nao alterar sem atualizar tools/motion_config.py e testes.
 #define LASERSEG_STEPS_PER_REV 3200
 #define LASERSEG_MAX_TRAVEL 533
 #define LASERSEG_DEAD_BAND 55

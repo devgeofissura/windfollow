@@ -141,5 +141,91 @@ class Acessibilidade(unittest.TestCase):
         self.assertIn("aria-pressed", html, "toggles devem expor estado")
 
 
+class PinoutSomenteLeitura(unittest.TestCase):
+    """A aba Pinout espelha o mapa primario de 2026-11-20 sem virar controle."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.html = HTML.read_text(encoding="utf-8") if HTML.is_file() else ""
+        inicio = cls.html.find('<section id="tab-pinout"')
+        fim = cls.html.find("</section>", inicio) if inicio >= 0 else -1
+        cls.painel = cls.html[inicio:fim] if fim > inicio else ""
+        cls.yaml_path = ROOT / "docs" / "wireviz" / "no-visao-s3-camsim.yaml"
+        cls.yaml = (cls.yaml_path.read_text(encoding="utf-8")
+                    if cls.yaml_path.is_file() else "")
+
+    def test_aba_pinout_existe(self) -> None:
+        self.assertIn('data-tab="pinout"', self.html)
+        self.assertIn('<section id="tab-pinout"', self.html)
+        self.assertIn('aria-labelledby="tabbtn-pinout"', self.html)
+        self.assertTrue(self.painel, "painel de pinout ausente ou vazio")
+
+    def test_todas_as_abas_tem_painel_correspondente(self) -> None:
+        for nome in re.findall(r'data-tab="([^"]+)"', self.html):
+            with self.subTest(aba=nome):
+                self.assertIn(f'id="tab-{nome}"', self.html)
+
+    def test_gpio_livres_e_uart_do_conector_jst(self) -> None:
+        for pino in ("GPIO 3", "GPIO 21", "GPIO 45", "GPIO 46",
+                     "GPIO 43", "GPIO 44"):
+            with self.subTest(pino=pino):
+                self.assertIn(pino, self.painel)
+
+    def test_perifericos_internos_presentes(self) -> None:
+        # Camera, microfone, microSD e mPCIe: todos os GPIOs ocupados.
+        for token in ("GPIO 4", "GPIO 5", "GPIO 6", "GPIO 7", "GPIO 13",
+                      "GPIO 14", "GPIO 11", "GPIO 9", "GPIO 8", "GPIO 10",
+                      "GPIO 12", "GPIO 17", "GPIO 16", "GPIO 15", "GPIO 18",
+                      "GPIO 41", "GPIO 42", "GPIO 2", "GPIO 47", "GPIO 38",
+                      "GPIO 39", "GPIO 40", "GPIO 48", "GPIO 35"):
+            with self.subTest(token=token):
+                self.assertIn(token, self.painel)
+
+    def test_divergencias_nao_sao_escondidas(self) -> None:
+        for token in ("NAO CONFIRMADO", "strapping", "3,3 V",
+                      "OV2640", "OV5640", "IR-CUT"):
+            with self.subTest(token=token):
+                self.assertIn(token, self.painel)
+
+    def test_painel_e_somente_leitura(self) -> None:
+        for proibido in ("<button", "<input", "<select", "<textarea",
+                         "onclick", "innerHTML", "pinMode", "digitalWrite"):
+            with self.subTest(proibido=proibido):
+                self.assertNotIn(proibido, self.painel)
+        self.assertIn("somente leitura", self.painel)
+
+    def test_pares_sinal_gpio_do_yaml_aparecem_no_painel(self) -> None:
+        # Compara pares sinal->GPIO, nao apenas numeros: trocar SIOD/SDA de 4
+        # para 5 deve falhar. J_DIVERGENCIAS fica fora (texto, nao pinos).
+        pinos = self.yaml.split("J_DIVERGENCIAS:", 1)[0]
+        esperados: list[tuple[str, int]] = []
+        for rotulo in re.findall(r'^\s*-\s+"([^"]+)"', pinos, flags=re.M):
+            match = re.search(r"GPIO\s*(\d+)", rotulo)
+            if not match:
+                continue
+            sinal = re.sub(r"\s+", " ", rotulo[:match.start()])
+            sinal = sinal.strip().rstrip("/").strip().lower()
+            esperados.append((sinal, int(match.group(1))))
+        self.assertTrue(esperados, "pinout YAML sem pares sinal/GPIO")
+
+        linhas: list[tuple[str, set[int]]] = []
+        for bruto in re.findall(r"<tr[^>]*>(.*?)</tr>", self.painel, flags=re.S):
+            celulas = [re.sub(r"<[^>]+>", "", c).strip()
+                       for c in re.findall(r"<td[^>]*>(.*?)</td>", bruto, flags=re.S)]
+            texto = " ".join(re.sub(r"GPIO\s*\d+", "", c) for c in celulas)
+            gpios = {int(n) for c in celulas for n in re.findall(r"GPIO\s*(\d+)", c)}
+            linhas.append((re.sub(r"\s+", " ", texto).strip().lower(), gpios))
+
+        for sinal, gpio in esperados:
+            with self.subTest(sinal=sinal, gpio=gpio):
+                self.assertTrue(
+                    any(gpio in gpios and sinal in texto for texto, gpios in linhas),
+                    f"par {sinal} -> GPIO {gpio} do YAML ausente no painel")
+
+    def test_painel_aponta_para_a_fonte_wireviz(self) -> None:
+        self.assertIn("docs/wireviz/no-visao-s3-camsim.yaml", self.painel)
+        self.assertTrue(self.yaml_path.is_file(), "YAML WireViz ausente")
+
+
 if __name__ == "__main__":
     unittest.main()

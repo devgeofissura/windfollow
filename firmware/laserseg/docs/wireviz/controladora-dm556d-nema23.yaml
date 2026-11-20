@@ -1,0 +1,482 @@
+# laserseg — no controladora: ESP32-S3 + 2x DM556D + 2x NEMA 23
+#
+# ESTE ARQUIVO E UMA PROPOSTA DE DOCUMENTACAO, NAO UM ESQUEMA DE PRODUCAO.
+# Renderiza o schematic e o wiring diagram no WireViz:
+#   wireviz controladora-dm556d-nema23.yaml
+#
+# LEGENDA dos comentarios:
+#   PROTOTIPO  = valor lido de docs/example02, NAO validado em bancada;
+#   NAO CONFIRMADO = depende de manual, etiqueta ou revisao fisica;
+#   PENDENTE   = item de seguranca ainda inexistente ou sem dimensionamento;
+#   SUPERADO   = esquema anterior mantido so como registro historico.
+#
+# MUDANCA 2026-11-20: o iluminador passou de LED difuso + MOSFET para
+# LASER acionado por modulo rele serial RoboCore (Clock/Data 5 VDC, 12 VDC
+# nas bobinas, contato NA). O antigo GPIO12/LED_EN e MOSFET estao SUPERADOS.
+# Fonte: github.com/RoboCore/SerialRelay (dados confirmados pelo usuario).
+#
+# REGRA DE OURO (docs/history.md): a S3_CAM_SIM V1.3 JA tem a camera ligada
+# na placa e faz apenas a VISAO. Ela NAO e a controladora deste esquema.
+# Nao ligar STEP/DIR, fins de curso ou LED nos contatos IO31/IO45/IO46/IO21.
+# A controladora aqui e uma ESP32-S3 SEPARADA (modelo exato NAO CONFIRMADO).
+
+connectors:
+  # ---------------------------------------------------------------- controladora
+  J_CTRL:
+    type: "Controladora ESP32-S3 separada (modelo/revisao NAO CONFIRMADO)"
+    subtype: "GPIOs do prototipo example02 — PROTOTIPO, nao validado em bancada"
+    notes: |-
+      Pinos: STEP/DIR pan GPIO4/5, tilt GPIO6/7; fins de curso NF 13/14 e 15/16
+      (Fonte: docs/example02/simcam_tracker/docs/LIGACAO_E_TESTES.md).
+      O antigo LED_EN GPIO12 (MOSFET/LED difuso) esta SUPERADO: a saida de luz
+      agora sao 2 pinos para o modulo rele serial, AINDA NAO CONFIRMADOS.
+      ENA_NC nao foi definido no prototipo: nao conectar sem o manual do driver.
+    pinlabels:
+      - STEP_PAN       # GPIO4  (PROTOTIPO)
+      - DIR_PAN        # GPIO5  (PROTOTIPO)
+      - STEP_TILT      # GPIO6  (PROTOTIPO)
+      - DIR_TILT       # GPIO7  (PROTOTIPO)
+      - LIM_PAN_MIN    # GPIO13 (PROTOTIPO)
+      - LIM_PAN_MAX    # GPIO14 (PROTOTIPO)
+      - LIM_TILT_MIN   # GPIO15 (PROTOTIPO)
+      - LIM_TILT_MAX   # GPIO16 (PROTOTIPO)
+      - RELAY_CLK      # NAO CONFIRMADO — Clock do modulo rele serial
+      - RELAY_DATA     # NAO CONFIRMADO — Data do modulo rele serial
+      - GND_LOGIC
+      - ENA_NC         # NAO CONFIRMADO — sem definicao no prototipo
+
+  # ------------------------------------------- interface de sinal (obrigatoria)
+  # Regra docs/HARDWARE-DECISIONS.md item 3: NAO ligar GPIO 3,3 V direto em
+  # PUL/DIR/ENA. Variantes do DM556 documentam 7-16 mA e pulso >= 2,5 us,
+  # mas nada prova o Azanelli DM556D. Topologia comum-anodo/catodo PENDENTE.
+  J_IF_PAN_IN:
+    type: "Interface de sinal 3,3 V -> opto — PAN (topologia NAO CONFIRMADA)"
+    pinlabels: [STEP, DIR, GND_CTRL]
+  J_IF_PAN_OUT:
+    type: "Saida isolada da interface — PAN"
+    pinlabels: [PUL_P, PUL_N, DIR_P, DIR_N]
+  J_IF_TILT_IN:
+    type: "Interface de sinal 3,3 V -> opto — TILT (topologia NAO CONFIRMADA)"
+    pinlabels: [STEP, DIR, GND_CTRL]
+  J_IF_TILT_OUT:
+    type: "Saida isolada da interface — TILT"
+    pinlabels: [PUL_P, PUL_N, DIR_P, DIR_N]
+
+  # ------------------------------------------------------------------- drivers
+  J_DRV_PAN_SIG:
+    type: "Azanelli DM556D — PAN, entrada de sinal"
+    notes: |-
+      Terminais PUL+/PUL-, DIR+/DIR-, ENA+/ENA- segundo a foto do prototipo.
+      Niveis, corrente do opto e comum-anodo/catodo NAO CONFIRMADOS.
+      ENA poder ficar sem uso apenas se o manual indicar; NAO ligar por suposicao.
+    pinlabels: [PUL_P, PUL_N, DIR_P, DIR_N, ENA_P, ENA_N]
+  J_DRV_TILT_SIG:
+    type: "Azanelli DM556D — TILT, entrada de sinal"
+    notes: "Mesmas ressalvas do driver PAN. Segundo exemplar NAO conferido fisicamente."
+    pinlabels: [PUL_P, PUL_N, DIR_P, DIR_N, ENA_P, ENA_N]
+  J_DRV_PAN_PWR:
+    type: "Azanelli DM556D — PAN, potencia e fases"
+    notes: |-
+      Etiqueta do prototipo indica 24-50 Vdc (PROTOTIPO). A/A- e B/B- sao as
+      duas fases do motor; identificar os pares por datasheet ou ohmimetro.
+    pinlabels: [VDC_P, GND_PWR, A_P, A_N, B_P, B_N]
+  J_DRV_TILT_PWR:
+    type: "Azanelli DM556D — TILT, potencia e fases"
+    notes: "Mesmas ressalvas do driver PAN."
+    pinlabels: [VDC_P, GND_PWR, A_P, A_N, B_P, B_N]
+
+  # -------------------------------------------------------------------- motores
+  J_M_PAN:
+    type: "NEMA 23 23HS7628-TB6600 — PAN (etiqueta NAO transcrita)"
+    notes: |-
+      1,8 graus / 2,8 A confirmados apenas para uma variante da familia
+      (HANPOSE 23HS7628-SFU1204). Base RMS/pico e sufixo do exemplar
+      NAO CONFIRMADOS. Nao escolher pares de fase pela cor dos fios.
+    pinlabels: [A_P, A_N, B_P, B_N]
+  J_M_TILT:
+    type: "NEMA 23 23HS7628-TB6600 — TILT (2o motor NAO conferido)"
+    notes: "Mesmas ressalvas do motor PAN."
+    pinlabels: [A_P, A_N, B_P, B_N]
+
+  # ------------------------------------------------------------- fins de curso
+  J_LS_PAN_MIN:
+    type: "Fim de curso NF — PAN minimo"
+    notes: "Contato NF entre NC e COM; fio rompido/Open = HIGH com pull-up = bloqueio."
+    pinlabels: [NC, COM]
+  J_LS_PAN_MAX:
+    type: "Fim de curso NF — PAN maximo"
+    pinlabels: [NC, COM]
+  J_LS_TILT_MIN:
+    type: "Fim de curso NF — TILT minimo"
+    pinlabels: [NC, COM]
+  J_LS_TILT_MAX:
+    type: "Fim de curso NF — TILT maximo"
+    pinlabels: [NC, COM]
+
+  # ------------------------------------------------------- alimentacao e fusiveis
+  J_PSU_MOT:
+    type: "Fonte externa dos motores (tensao exata NAO CONFIRMADA)"
+    notes: |-
+      Etiqueta do DM556D do prototipo indica 24-50 Vdc. Escolher tensao
+      compativel com motor e manual. NUNCA alimentar motores pelo 3V3/USB.
+    pinlabels: [VDC_P, GND_PWR]
+  J_FUSE_MOT:
+    type: "Fusivel do ramo motores — dimensionamento PENDENTE"
+    pinlabels: [IN, OUT]
+  J_PSU_RELAY:
+    type: "Fonte 12 VDC exclusiva das bobinas do modulo rele serial"
+    notes: |-
+      Especificacao RoboCore: alimentacao 12 VDC, bobina 12 VDC / 30 mA por
+      rele. Fonte SEPARADA do laser; GNDs interligados em ponto unico.
+    pinlabels: [VDC_P, GND_PWR]
+  J_FUSE_RELAY:
+    type: "Fusivel do ramo rele 12 V — dimensionamento PENDENTE"
+    pinlabels: [IN, OUT]
+  J_PSU_LASER:
+    type: "Fonte/driver proprio do laser (tensao/corrente NAO CONFIRMADOS)"
+    notes: "Fonte separada das bobinas do rele; nao compartilhar ramo."
+    pinlabels: [VDC_P, GND_PWR]
+  J_FUSE_LASER:
+    type: "Fusivel do ramo laser — dimensionamento PENDENTE"
+    pinlabels: [IN, OUT]
+  J_PSU_5V:
+    type: "Fonte 5 V REGULADA para o lado HV do conversor (origem NAO CONFIRMADA)"
+    notes: |-
+      NUNCA alimentar Clock/Data ou o lado HV do conversor com os 12 V das
+      bobinas. Corrente, regulacao e origem deste rail ainda NAO CONFIRMADOS.
+    pinlabels: [VDC_P, GND]
+  J_STAR_GND:
+    type: "Ponto unico de referência (star ground)"
+    notes: |-
+      Une eletricamente, em um unico ponto, o GND logico da controladora
+      (LOGICO), os lados LV e HV do conversor (LV/HV), o GND da fonte 5 V
+      regulada (FONTE_5V), o negativo da fonte 12 V das bobinas (RELAY), o
+      negativo da fonte do laser (LASER) e o negativo da fonte dos motores
+      (MOTORES). Os `loops` curto-circuitam os 7 pinos: sem eles o WireViz
+      desenha pinos isolados e a referencia comum nao fica representada.
+    pinlabels: [LOGICO, LV, HV, RELAY, LASER, MOTORES, FONTE_5V]
+    loops: [[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7]]
+
+  # ------------------------------------------------------- estagio de luz LASER
+  # SUPERADO: MOSFET N + resistor + LED difuso (GPIO12/LED_EN).
+  J_LEVEL:
+    type: "Conversor de nivel 3,3 V -> 5 V (Clock/Data, 2 canais)"
+    notes: |-
+      O modulo RoboCore especifica Clock/Data em 5 VDC (TTL level), mas a
+      controladora e 3,3 V. Conversor OBRIGATORIO nos 2 pinos de controle:
+      nao ligar GPIO direto. Lado HV alimentado por 5 V REGULADO proprio
+      (origem/corrente NAO CONFIRMADOS) — NUNCA pelos 12 V das bobinas.
+      GNDs LV e HV comuns em ponto unico. Pinos da controladora NAO CONFIRMADOS.
+    pinlabels: [CLK_IN, DAT_IN, GND_LV, CLK_OUT, DAT_OUT, VCC_5V, GND_HV]
+  J_RELAY:
+    type: "Modulo Rele Serial RoboCore — 2 pinos de controle, cascata"
+    notes: |-
+      Clock/Data 5 VDC (TTL), alimentacao 12 VDC, bobina 12 VDC / 30 mA por
+      rele, carga nominal 7 A 30 VDC / 10 A 125 VAC / 7 A 220 VAC, modulo
+      10 A, acionamento 10 ms, ate 10 modulos enfileirados.
+      Fonte: github.com/RoboCore/SerialRelay (dados enviados pelo usuario).
+      Contato NA do canal do laser: desenergizado = laser OFF.
+    pinlabels: [CLK, DAT, V12, GND, COM_LASER, NO_LASER]
+  J_LASER:
+    type: "Laser com driver proprio (classe/potencia NAO CONFIRMADOS)"
+    notes: |-
+      Nao alimentar o laser direto da fonte das bobinas. Intertravamento:
+      contato NA do rele + chave de emergencia + watchdog de link. Laser
+      desligado no boot, reset, perda de link e watchdog.
+    pinlabels: [LASER_P, LASER_N]
+
+  # ------------------------------------------------- intertravamento (ausente)
+  J_ESTOP:
+    type: "Chave de emergencia / corte fisico do LASER — AUSENTE (PENDENTE)"
+    notes: |-
+      Decisao 2026-11-20: intertravamento = contato NA do rele (desenergizado =
+      laser OFF) + chave fisica de emergencia + watchdog de link. Ate existir,
+      ensaio so com fonte limitada, sem carga e operador pronto.
+    pinlabels: [CONTACT]
+
+cables:
+  W_CTRL_PAN:
+    type: "Sinal logico STEP/DIR/GND — PAN"
+    gauge: 0.25 mm2
+    colors: [YE, BN, BK]
+    wirelabels: [STEP, DIR, GND]
+    notes: "GPIOs PROTOTIPO example02; nao e pinagem de producao."
+  W_CTRL_TILT:
+    type: "Sinal logico STEP/DIR/GND — TILT"
+    gauge: 0.25 mm2
+    colors: [YE, BN, BK]
+    wirelabels: [STEP, DIR, GND]
+    notes: "GPIOs PROTOTIPO example02; nao e pinagem de producao."
+  W_SIG_PAN:
+    type: "Saida da interface de sinal -> DM556D PAN"
+    gauge: 0.25 mm2
+    colors: [RD, BK, OG, BU]
+    wirelabels: [PUL_P, PUL_N, DIR_P, DIR_N]
+    notes: "Comum-anodo ou comum-catodo NAO CONFIRMADO — nao montar sem manual."
+  W_SIG_TILT:
+    type: "Saida da interface de sinal -> DM556D TILT"
+    gauge: 0.25 mm2
+    colors: [RD, BK, OG, BU]
+    wirelabels: [PUL_P, PUL_N, DIR_P, DIR_N]
+    notes: "Comum-anodo ou comum-catodo NAO CONFIRMADO — nao montar sem manual."
+
+  W_LS_PAN_MIN:
+    type: "Fim de curso PAN minimo -> GPIO13" # PROTOTIPO
+    colors: [GN, BK]
+    wirelabels: [NC, COM]
+  W_LS_PAN_MAX:
+    type: "Fim de curso PAN maximo -> GPIO14" # PROTOTIPO
+    colors: [GN, BK]
+    wirelabels: [NC, COM]
+  W_LS_TILT_MIN:
+    type: "Fim de curso TILT minimo -> GPIO15" # PROTOTIPO
+    colors: [GN, BK]
+    wirelabels: [NC, COM]
+  W_LS_TILT_MAX:
+    type: "Fim de curso TILT maximo -> GPIO16" # PROTOTIPO
+    colors: [GN, BK]
+    wirelabels: [NC, COM]
+
+  W_MOT_P_IN:
+    type: "Positivo da fonte -> fusivel motores"
+    gauge: 1.5 mm2
+    colors: [RD]
+    notes: "Bitola PROVISORIA — dimensionar apos confirmar corrente de fase."
+  W_MOT_P_PAN:
+    type: "Fusivel -> DM556D PAN +Vdc"
+    gauge: 1.5 mm2
+    colors: [RD]
+    notes: "Bitola PROVISORIA."
+  W_MOT_P_TILT:
+    type: "Fusivel -> DM556D TILT +Vdc"
+    gauge: 1.5 mm2
+    colors: [RD]
+    notes: "Bitola PROVISORIA."
+  W_MOT_N_PAN:
+    type: "Negativo da fonte -> DM556D PAN GND"
+    gauge: 1.5 mm2
+    colors: [BK]
+    notes: "Bitola PROVISORIA."
+  W_MOT_N_TILT:
+    type: "Negativo da fonte -> DM556D TILT GND"
+    gauge: 1.5 mm2
+    colors: [BK]
+    notes: "Bitola PROVISORIA."
+
+  W_MOT_PAN_A:
+    type: "Bobina A do motor PAN"
+    gauge: 1.5 mm2
+    colors: [BU, BUWH]
+    notes: "Par de fase identificar por ohmimetro/datasheet — NAO pela cor."
+  W_MOT_PAN_B:
+    type: "Bobina B do motor PAN"
+    gauge: 1.5 mm2
+    colors: [OG, OGWH]
+  W_MOT_TILT_A:
+    type: "Bobina A do motor TILT"
+    gauge: 1.5 mm2
+    colors: [GN, GNWH]
+  W_MOT_TILT_B:
+    type: "Bobina B do motor TILT"
+    gauge: 1.5 mm2
+    colors: [VT, VTWH]
+
+  W_CTRL_RELAY:
+    type: "Controladora -> conversor de nivel (Clock/Data, 3,3 V)"
+    gauge: 0.25 mm2
+    colors: [YE, BN]
+    wirelabels: [CLK, DAT]
+    notes: "GPIOs NAO CONFIRMADOS; conversor 3,3 V -> 5 V obrigatorio."
+  W_LEVEL_RELAY:
+    type: "Conversor -> modulo rele (Clock/Data, 5 V)"
+    gauge: 0.25 mm2
+    colors: [YE, BN]
+    wirelabels: [CLK, DAT]
+    notes: "Clock/Data 5 VDC conforme especificacao RoboCore; GND vai ao star point."
+  W_LEVEL_V5:
+    type: "Fonte 5 V regulada -> lado HV do conversor"
+    gauge: 0.25 mm2
+    colors: [RD]
+    notes: "Origem/corrente NAO CONFIRMADOS; nunca usar os 12 V das bobinas."
+  W_REF_CTRL:
+    type: "GND logico -> star ground"
+    colors: [BK]
+  W_REF_LV:
+    type: "GND LV do conversor -> star ground"
+    colors: [BK]
+  W_REF_HV:
+    type: "GND HV do conversor -> star ground"
+    colors: [BK]
+  W_REF_RELAY:
+    type: "Negativo da fonte 12 V -> star ground"
+    colors: [BK]
+  W_REF_LASER:
+    type: "Negativo da fonte do laser -> star ground"
+    colors: [BK]
+  W_REF_MOT:
+    type: "Negativo da fonte dos motores -> star ground"
+    colors: [BK]
+  W_REF_5V:
+    type: "GND da fonte 5 V -> star ground"
+    colors: [BK]
+  W_RLY_P_IN:
+    type: "Fonte 12 V -> fusivel do ramo rele"
+    colors: [RD]
+    notes: "Bobina 12 VDC / 30 mA por rele (RoboCore)."
+  W_RLY_P_MOD:
+    type: "Fusivel -> modulo rele V12"
+    colors: [RD]
+  W_RLY_N_PSU:
+    type: "Modulo rele GND -> negativo da fonte 12 V"
+    colors: [BK]
+  W_LASER_P_IN:
+    type: "Fonte do laser -> fusivel do ramo laser"
+    colors: [RD]
+    notes: "Fonte separada das bobinas; dimensionamento PENDENTE."
+  W_LASER_FUSE_RELAY:
+    type: "Fusivel laser -> contato COM do rele"
+    colors: [RD]
+  W_LASER_RELAY_OUT:
+    type: "Contato NA do rele -> laser + (desenergizado = OFF)"
+    colors: [OG]
+  W_LASER_N:
+    type: "Laser - -> negativo da fonte do laser"
+    colors: [BK]
+
+connections:
+  # --- PAN: logica -> interface -> driver
+  - - J_CTRL: [STEP_PAN, DIR_PAN, GND_LOGIC]
+    - W_CTRL_PAN: [1-3]
+    - J_IF_PAN_IN: [STEP, DIR, GND_CTRL]
+  - - J_IF_PAN_OUT: [PUL_P, PUL_N, DIR_P, DIR_N]
+    - W_SIG_PAN: [1-4]
+    - J_DRV_PAN_SIG: [PUL_P, PUL_N, DIR_P, DIR_N]
+
+  # --- TILT: logica -> interface -> driver
+  - - J_CTRL: [STEP_TILT, DIR_TILT, GND_LOGIC]
+    - W_CTRL_TILT: [1-3]
+    - J_IF_TILT_IN: [STEP, DIR, GND_CTRL]
+  - - J_IF_TILT_OUT: [PUL_P, PUL_N, DIR_P, DIR_N]
+    - W_SIG_TILT: [1-4]
+    - J_DRV_TILT_SIG: [PUL_P, PUL_N, DIR_P, DIR_N]
+
+  # --- fins de curso NF (um cabo de 2 vias por chave)
+  - - J_CTRL: [LIM_PAN_MIN, GND_LOGIC]
+    - W_LS_PAN_MIN: [1-2]
+    - J_LS_PAN_MIN: [NC, COM]
+  - - J_CTRL: [LIM_PAN_MAX, GND_LOGIC]
+    - W_LS_PAN_MAX: [1-2]
+    - J_LS_PAN_MAX: [NC, COM]
+  - - J_CTRL: [LIM_TILT_MIN, GND_LOGIC]
+    - W_LS_TILT_MIN: [1-2]
+    - J_LS_TILT_MIN: [NC, COM]
+  - - J_CTRL: [LIM_TILT_MAX, GND_LOGIC]
+    - W_LS_TILT_MAX: [1-2]
+    - J_LS_TILT_MAX: [NC, COM]
+
+  # --- potencia dos motores
+  - - J_PSU_MOT: [VDC_P]
+    - W_MOT_P_IN: [1]
+    - J_FUSE_MOT: [IN]
+  - - J_FUSE_MOT: [OUT]
+    - W_MOT_P_PAN: [1]
+    - J_DRV_PAN_PWR: [VDC_P]
+  - - J_FUSE_MOT: [OUT]
+    - W_MOT_P_TILT: [1]
+    - J_DRV_TILT_PWR: [VDC_P]
+  - - J_PSU_MOT: [GND_PWR]
+    - W_MOT_N_PAN: [1]
+    - J_DRV_PAN_PWR: [GND_PWR]
+  - - J_PSU_MOT: [GND_PWR]
+    - W_MOT_N_TILT: [1]
+    - J_DRV_TILT_PWR: [GND_PWR]
+
+  # --- fases dos motores
+  - - J_DRV_PAN_PWR: [A_P, A_N]
+    - W_MOT_PAN_A: [1-2]
+    - J_M_PAN: [A_P, A_N]
+  - - J_DRV_PAN_PWR: [B_P, B_N]
+    - W_MOT_PAN_B: [1-2]
+    - J_M_PAN: [B_P, B_N]
+  - - J_DRV_TILT_PWR: [A_P, A_N]
+    - W_MOT_TILT_A: [1-2]
+    - J_M_TILT: [A_P, A_N]
+  - - J_DRV_TILT_PWR: [B_P, B_N]
+    - W_MOT_TILT_B: [1-2]
+    - J_M_TILT: [B_P, B_N]
+
+  # --- laser via modulo rele serial (substitui o antigo foco LED)
+  - - J_CTRL: [RELAY_CLK, RELAY_DATA]
+    - W_CTRL_RELAY: [1-2]
+    - J_LEVEL: [CLK_IN, DAT_IN]
+  - - J_PSU_5V: [VDC_P]
+    - W_LEVEL_V5: [1]
+    - J_LEVEL: [VCC_5V]
+  - - J_LEVEL: [CLK_OUT, DAT_OUT]
+    - W_LEVEL_RELAY: [1-2]
+    - J_RELAY: [CLK, DAT]
+  - - J_PSU_RELAY: [VDC_P]
+    - W_RLY_P_IN: [1]
+    - J_FUSE_RELAY: [IN]
+  - - J_FUSE_RELAY: [OUT]
+    - W_RLY_P_MOD: [1]
+    - J_RELAY: [V12]
+  - - J_RELAY: [GND]
+    - W_RLY_N_PSU: [1]
+    - J_PSU_RELAY: [GND_PWR]
+  - - J_PSU_LASER: [VDC_P]
+    - W_LASER_P_IN: [1]
+    - J_FUSE_LASER: [IN]
+  - - J_FUSE_LASER: [OUT]
+    - W_LASER_FUSE_RELAY: [1]
+    - J_RELAY: [COM_LASER]
+  - - J_RELAY: [NO_LASER]
+    - W_LASER_RELAY_OUT: [1]
+    - J_LASER: [LASER_P]
+  - - J_LASER: [LASER_N]
+    - W_LASER_N: [1]
+    - J_PSU_LASER: [GND_PWR]
+
+  # --- referência comum em ponto único (obrigatório para Clock/Data 5 V)
+  - - J_CTRL: [GND_LOGIC]
+    - W_REF_CTRL: [1]
+    - J_STAR_GND: [LOGICO]
+  - - J_LEVEL: [GND_LV]
+    - W_REF_LV: [1]
+    - J_STAR_GND: [LV]
+  - - J_LEVEL: [GND_HV]
+    - W_REF_HV: [1]
+    - J_STAR_GND: [HV]
+  - - J_PSU_5V: [GND]
+    - W_REF_5V: [1]
+    - J_STAR_GND: [FONTE_5V]
+  - - J_PSU_RELAY: [GND_PWR]
+    - W_REF_RELAY: [1]
+    - J_STAR_GND: [RELAY]
+  - - J_PSU_LASER: [GND_PWR]
+    - W_REF_LASER: [1]
+    - J_STAR_GND: [LASER]
+  - - J_PSU_MOT: [GND_PWR]
+    - W_REF_MOT: [1]
+    - J_STAR_GND: [MOTORES]
+
+  # --- item ausente precisa ser citado para aparecer no diagrama
+  - - J_ESTOP
+
+metadata:
+  title: "laserseg — controladora DM556D + NEMA 23 — esquema/wiring V0 (proposta)"
+  description: |-
+    Documentacao de hardware do no controladora. Nao e projeto de producao:
+    GPIOs vem do prototipo example02 e dependem da revisao T5/T6 do hardware.
+  notes: |-
+    LEGENDA: PROTOTIPO = lido de docs/example02, nao validado em bancada;
+    NAO CONFIRMADO = depende de manual/etiqueta/revisao; PENDENTE = ainda ausente;
+    SUPERADO = esquema anterior mantido so como registro historico.
+    A camera JA esta ligada na S3_CAM_SIM V1.3 (no de visao). A controladora
+    desta pagina e uma ESP32-S3 SEPARADA. Nao inverter essa arquitetura.
+    Saida de luz (2026-11-20): LASER via modulo rele serial RoboCore; Clock/Data
+    em 5 VDC exige conversor 3,3->5 V; bobinas 12 VDC em fonte separada;
+    contato NA + chave de emergencia + watchdog. GPIOs do rele NAO CONFIRMADOS.
+
+options:
+  color_mode: SHORT

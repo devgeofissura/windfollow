@@ -1,0 +1,139 @@
+# laserseg — no de visao: LILYGO S3_CAM_SIM (pinout detalhado pelo usuario)
+#
+# FONTE PRIMARIA DESTE ARQUIVO: pinout detalhado pelo usuario em 2026-11-20
+# (serigrafia da placa + mapeamento interno). Transcrito para o WireViz sem
+# alterar os numeros informados. Renderize com:
+#   wireviz no-visao-s3-camsim.yaml
+#
+# A SIMCAM tem POUCOS GPIOs LIVRES: IO3, IO21, IO45 e IO46 (mais TX/RX do
+# conector JST se o monitor serial nao estiver em uso). Nao tolera 5 V nos
+# pinos de sinal. Para motores: driver + fonte externa separada. Por isso a
+# controladora de motores/luz e uma ESP32-S3 SEPARADA, conforme a arquitetura.
+#
+# DIVERGENCIAS com a tabela oficial (.opencode/skills/espressif-lilygo) e com
+# o issue #33 estao registradas em J_DIVERGENCIAS e em metadata.notes. Nao
+# foram resolvidas: revisao fisica da placa NAO CONFIRMADA.
+
+connectors:
+  # ------------------------------------------ conector preto superior esquerdo
+  J_GPIO_LIVRES:
+    type: "Conector preto (6 pinos) — unicos GPIOs livres da SIMCAM"
+    notes: |-
+      Transcricao da serigrafia informada pelo usuario. IO45 e IO46 sao pinos
+      de STRAPPING: nao puxar para nivel alto no boot (IO46) e cuidado com a
+      tensao da Flash no boot (IO45). IO21 e o mais seguro para sensores/I2C.
+      Nao aplicar 5 V nos pinos de sinal: a logica e de 3,3 V.
+    pinlabels:
+      - "IO3 / GPIO3 — digital, PWM ou ADC"
+      - "IO46 / GPIO46 — saida digital ou PWM; strapping, evitar HIGH no boot"
+      - "IO45 / GPIO45 — digital ou PWM; strapping, define tensao da Flash no boot"
+      - "IO21 / GPIO21 — digital, PWM, I2C (SDA/SCL); mais seguro p/ sensores"
+      - "GND — terra"
+      - "3V3 — alimentacao 3,3 V para sensores"
+
+  # ------------------------------------- conector branco JST 4 pinos (UART/Grove)
+  J_JST_UART:
+    type: "Conector branco inf. direito (JST 4 pinos) — UART / Grove"
+    notes: |-
+      Ao lado da porta USB-C. TX/RX podem ser usados como GPIOs extras
+      somente se o monitor serial nao estiver em uso.
+    pinlabels:
+      - "GND — terra"
+      - "5V / VCC — alimentacao"
+      - "U0TXD / GPIO43 — transmissao serial"
+      - "U0RXD / GPIO44 — recepcao serial"
+
+  # ------------------------------------------------------- perifericos internos
+  J_CAM:
+    type: "Camera onboard — OV2640 (informado pelo usuario; nao lido via sensor_id)"
+    notes: |-
+      Mapeamento informado pelo usuario. D0..D7 = 11,9,8,10,12,17,16,15.
+      RESET em GPIO18 conforme o usuario; a tabela oficial marca RESET como
+      nao usado (-1) e GPIO18 como IR-CUT. Ver J_DIVERGENCIAS.
+    pinlabels:
+      - "SIOD / SDA GPIO4"
+      - "SIOC / SCL GPIO5"
+      - "VSYNC GPIO6"
+      - "HREF GPIO7"
+      - "PCLK GPIO13"
+      - "XCLK GPIO14"
+      - "D0 GPIO11"
+      - "D1 GPIO9"
+      - "D2 GPIO8"
+      - "D3 GPIO10"
+      - "D4 GPIO12"
+      - "D5 GPIO17"
+      - "D6 GPIO16"
+      - "D7 GPIO15"
+      - "RESET GPIO18 (divergencia com tabela oficial)"
+
+  J_MIC:
+    type: "Microfone digital I2S onboard"
+    pinlabels:
+      - "SCK GPIO41"
+      - "WS GPIO42"
+      - "DOUT GPIO2"
+
+  J_SD:
+    type: "Cartao microSD onboard (SPI)"
+    pinlabels:
+      - "CS GPIO47"
+      - "MOSI GPIO38"
+      - "CLK GPIO39"
+      - "MISO GPIO40"
+
+  J_MPCIE:
+    type: "Slot mPCIe — modem 4G / SIM"
+    notes: |-
+      RX em GPIO35 e PWR/RST em 1, 20 ou 46 dependendo da revisao, segundo o
+      usuario. Isso conflita com a tabela oficial (RX 46) e com o relato do
+      issue #33 (45/46 UART do modem). Ver J_DIVERGENCIAS.
+    pinlabels:
+      - "TX GPIO48"
+      - "RX GPIO35 (divergencia)"
+      - "PWR/RST GPIO1 (depende da revisao)"
+      - "PWR/RST GPIO20 (depende da revisao)"
+      - "PWR/RST GPIO46 (depende da revisao)"
+
+  # -------------------------------------------------------- divergencias pendentes
+  J_DIVERGENCIAS:
+    type: "Divergencias entre pinout do usuario, tabela oficial e issue #33"
+    notes: |-
+      NAO resolver por suposicao. Confirmar no esquema da revisao e em ensaio
+      sem alimentacao antes de usar qualquer pino em projeto de PCB/shield.
+      1) RESET da camera: usuario=18; oficial=-1 (18 seria IR-CUT).
+      2) RX do modem: usuario=35; oficial=46; issue=45/46.
+      3) GPIO21: usuario=I2C/sensor seguro; oficial=STATUS modem; issue=LED mPCIe.
+      4) GPIO45/46: usuario=livres (com strapping); issue=UART do modem.
+      5) Sensor: usuario=OV2640; projeto ainda registra OV2640/OV5640 como nao
+         confirmado ate leitura de sensor_id.
+    pinlabels:
+      - "RESET camera 18 x -1 / IR-CUT"
+      - "RX modem 35 x 46"
+      - "GPIO21 I2C x STATUS x LED mPCIe"
+      - "GPIO45/46 livres x UART modem"
+      - "OV2640 x OV5640 (sensor_id)"
+
+connections:
+  - - J_GPIO_LIVRES
+  - - J_JST_UART
+  - - J_CAM
+  - - J_MIC
+  - - J_SD
+  - - J_MPCIE
+  - - J_DIVERGENCIAS
+
+metadata:
+  title: "laserseg — pinout detalhado da S3_CAM_SIM (no de visao)"
+  description: |-
+    Mapa de GPIOs livres e ocupados da placa de camera, informado pelo usuario
+    em 2026-11-20. Base para o futuro shield/PCB.
+  notes: |-
+    GPIOs livres: IO3, IO21, IO45, IO46 (+ GPIO43/44 se nao usar serial).
+    Logica de 3,3 V — nunca 5 V nos pinos de sinal. Motores/luz ficam na
+    controladora ESP32-S3 separada (controladora-dm556d-nema23.yaml), com
+    driver e fonte externa separada. Sensor e revisao fisica nao confirmados
+    por instrumentacao; divergencias documentadas em J_DIVERGENCIAS.
+
+options:
+  color_mode: SHORT

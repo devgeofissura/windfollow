@@ -7,7 +7,8 @@ Status: aprovada e implementada em 2026-11-20. Plano: `tasks/plan-simulador-web.
 Entregar uma pagina web local que permita ao operador **testar a interface do
 laserseg sem nenhuma placa**:Painel com camera/alvo simulados, estados
 `SAFE/TRACK/MANUAL`, telemetria `ACK`, comandos `TRACK/LIGHT/MANUAL`, watchdog
-de link e uma tela de provisionamento Wi-Fi conforme a spec ja aprovada.
+de link, uma tela de provisionamento Wi-Fi conforme a spec ja aprovada e uma
+aba **Pinout somente leitura** com o mapa primario enviado pelo usuario.
 
 Usuario: operador de bancada que quer validar o fluxo e o vocabulario da interface
 antes de existirem `camera_node/` de producao e UDP na controladora (T6).
@@ -30,7 +31,7 @@ tocar em firmware, GPIO, motor ou luz.
 6. Interface em pt-BR, dark mode como cidadao de primeira classe, responsiva e
    acessivel (`label` nos campos, navegacao por teclado, sem `innerHTML` com
    entrada do usuario). Padrao visual reaproveitado de `firmware/windfollow/web/`.
-7. Testes host em Python 3.14 LTS; os 92 testes atuais permanecem verdes.
+7. Testes host em Python 3.14 LTS; a suite permanece verde apos cada mudanca.
 
 ## Tech Stack
 
@@ -61,7 +62,7 @@ powershell -ExecutionPolicy Bypass -File tools/save.ps1 -Message "feat(laserseg)
 ```text
 firmware/laserseg/
   simulator/
-    index.html                # abas Painel, Wi-Fi e Protocolo
+    index.html                # abas Painel, Wi-Fi, Protocolo e Pinout
     css/style.css             # tokens, tema claro/escuro, responsividade
     js/app.js                 # FSM simulada, comandos, telemetria e log
     README.md                 # como abrir, o que simula, limitacoes
@@ -103,7 +104,9 @@ decisao (`nextState`, `targetFromError`) sempre que possivel, zeros estados em
   campos de formulario.
 - `node --check` como gate de sintaxe do JavaScript, quando Node estiver
   disponivel.
-- Manual: abrir `index.html`, alternar tema, exercitar as tres abas, simular
+- Verifica tambem a aba Pinout: fontes primarias, divergencias e a nota do laser
+  via rele serial; testes host garantem que nao ha controle que altere a FSM.
+- Manual: abrir `index.html`, alternar tema, exercitar as quatro abas, simular
   perda de link e conferir o log `ACK`.
 - Fora desta V1: testes E2E de navegador (Playwright/Selenium).
 
@@ -134,7 +137,9 @@ decisao (`nextState`, `targetFromError`) sempre que possivel, zeros estados em
 - [x] Constantes JS iguais as do firmware e defendidas por teste host.
 - [x] Tema claro/escuro, layout responsivo, navegacao por teclado e `label` nos
       formularios.
-- [x] Suite host verde: 92 testes atuais + novos testes do simulador.
+- [x] Suite host verde (parser + movimento + simulador).
+- [x] Aba Pinout: mapa primario da S3_CAM_SIM, divergencias e nota do laser via
+      rele serial; **somente leitura**, sem acionar GPIO, motor ou luz.
 - [x] `git status` limpo apos commit e push, com DEVLOG atualizado.
 
 ## Out of Scope (Deferred)
@@ -151,6 +156,9 @@ decisao (`nextState`, `targetFromError`) sempre que possivel, zeros estados em
 ## Decisoes padrao se aprovado
 
 - Aba Protocolo somente leitura; injecao manual de mensagens invalidas fica em V2.
+- Aba Pinout somente leitura: espelha `docs/wireviz/no-visao-s3-camsim.yaml` e
+  nao altera a FSM `SAFE/TRACK/MANUAL` nem o comando `LIGHT`; GPIOs do rele
+  serial ficam NAO CONFIRMADOS.
 - Alvo sintetico ligado por padrao; webcam substitui o alvo quando autorizada.
 - Tema inicial segue a preferencia do sistema (`prefers-color-scheme`), com
   botao para alternar.

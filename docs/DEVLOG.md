@@ -11,6 +11,45 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-20 14:46 - feat(laserseg): aba Pinout e hardware WireViz do laser
+
+**Area:** laserseg, raiz
+
+**Feito:**
+- 3 YAMLs WireViz versionados e validados: controladora DM556D com 27 conectores/34 cabos, pinout da controladora e pinout primario da S3_CAM_SIM
+- aba Pinout somente leitura no simulador com 9 testes novos, sem tocar na FSM SAFE/TRACK/MANUAL nem em js/app.js
+- laser via rele serial RoboCore documentado com conversor 3,3 a 5 V, rail 5 V, star ground, fontes separadas e contato NA + emergencia + watchdog
+- mapas antigos LED_EN/GPIO12 e mapas historicos de GPIO marcados como SUPERADO sem apagar o registro, divergencias do pinout preservadas
+- 110 testes host verdes, node --check e git diff --check limpos
+
+**Dificuldades e solucoes:**
+- pinout do usuario divergia da tabela oficial e do issue 33 -> adotei o pinout como fonte primaria e registrei as divergencias sem suposicao
+- parser WireViz rejeitou conexao direta conector a conector e arquivo aberto como TextIOWrapper -> usei wireviz.wireviz.parse com cabo intermediario
+- PowerShell 5.1 leu script sem BOM como ANSI e corrompeu acentos -> ancora ASCII e escrita UTF-8 sem BOM
+- auditoria eletrica apontou GND sem referencia comum e rail 5 V ausente -> adicionei J_STAR_GND com loops, J_PSU_5V e fios de referencia, YAML passou de 25/26 para 27/34
+- revisores pediram redacao honesta sobre unwrapMillis e FSM -> helper mantido, status T6 explicado e comando LIGHT separado da FSM
+
+**Arquivos:**
+- `firmware/laserseg/.opencode/skills/hardware-safety/SKILL.md`
+- `firmware/laserseg/.opencode/skills/laserseg-context/SKILL.md`
+- `firmware/laserseg/README.md`
+- `firmware/laserseg/controller_dm556d/driver_config.h`
+- `firmware/laserseg/docs/ESTADO.md`
+- `firmware/laserseg/docs/HARDWARE-DECISIONS.md`
+- `firmware/laserseg/docs/PROTOCOLO_UDP.md`
+- `firmware/laserseg/docs/base-de-conhecimento-rastreamento-com-s3-cam-sim.md`
+- `"firmware/laserseg/docs/example01/Base de conhecimento ÔÇö rastreamento com S3_CAM_SIM.md"`
+- `"firmware/laserseg/docs/example01/Liga├º├Áes e ensaio.md"`
+- `firmware/laserseg/docs/foco-luz-seguidor-001`
+- `firmware/laserseg/docs/history.md`
+- `firmware/laserseg/simulator/README.md`
+- `firmware/laserseg/simulator/index.html`
+- `firmware/laserseg/spec/SPEC-dm556d-nema23.md`
+- `firmware/laserseg/spec/SPEC-simulador-web.md`
+- `firmware/laserseg/tasks/todo.md`
+- `firmware/laserseg/tests/test_simulator.py`
+- `firmware/laserseg/docs/wireviz/`
+
 ### 2026-11-20 13:56 - chore(laserseg): fecha checklists do simulador web
 
 **Area:** laserseg

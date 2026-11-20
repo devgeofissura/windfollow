@@ -21,10 +21,13 @@ Spec de origem: `spec/SPEC-dm556d-nema23.md` (aprovada em 2026-11-19).
 | 4 | Placa controladora | **Bloqueado** — a placa conectada hoje é a T-SIMCam de bancada; a arquitetura pede controladora separada | T5, T6 |
 | 5 | Pinos reais | **Bloqueado** — valores atuais vêm do protótipo `example02` | T5 |
 | 6 | Rede (SSID/modo/IP) | **Parcial** — modo AP e IPs do protótipo conhecidos; credencial real fora do repo e modo final não decididos | T6 |
-| 7 | Chave de emergência | **Ausente** — nenhum intertravamento físico descrito em código ou esquema | T5 |
+| 7 | Chave de emergência | **Parcial** — critério definido em 2026-11-20 (contato NA + chave física + watchdog), mas a chave física ainda não existe | T5 |
 
 Conclusão de gate: **T5 e T6 permanecem bloqueados**. O firmware gravado hoje é
 serial-only (`LASERSEG_ENABLE_GPIO=0`); nenhum pino, motor ou luz foi ativado.
+Isso inclui a saída de luz: o antigo LED+MOSFET (`LED_EN`/GPIO12) está superado
+pelo laser via módulo relé serial, cujos GPIOs Clock/Data ainda não foram
+escolhidos. Ver `docs/wireviz/00-LEIA-ME.md`.
 
 ## 1. Motor 23HS7628
 
@@ -91,7 +94,7 @@ protótipo**, não pinagem de produção:
 | STEP/DIR pan | GPIO 4 / 5 |
 | STEP/DIR tilt | GPIO 6 / 7 |
 | Fins de curso NF | GPIO 13/14 e 15/16 |
-| Foco LED | GPIO 12 |
+| Foco LED (SUPERADO) | GPIO 12 — hoje laser via relé serial, GPIOs Clock/Data a definir |
 | Micropasso | `STEPS_PER_REV=3200` |
 | Rede | `NET_MODE=0` (AP da câmera); câmera `192.168.4.1`, controladora `192.168.4.2`, UDP 4210 |
 | Modo STA | não configurado |
@@ -112,6 +115,16 @@ configura GPIO. A definição definitiva depende da placa controladora escolhida
 - Não existe chave física descrita em código ou esquema. Enquanto não houver
   corte físico, qualquer ensaio com motores energizados deve usar fonte
   limitada, sem carga mecânica e com o operador pronto para desligar.
+- **Saída de luz (decisão de 2026-11-20):** laser acionado por módulo relé serial
+  RoboCore. Dados do fabricante confirmados pelo usuário: alimentação 12 VDC,
+  Clock/Data em **5 VDC**, bobina 12 VDC / 30 mA por relé, acionamento 10 ms,
+  até 10 módulos em cascata. A controladora é 3,3 V: **conversor de nível
+  obrigatório** nos dois pinos de controle. Fontes separadas para bobinas e
+  laser, GNDs interligados em ponto único. Intertravamento escolhido: contato
+  **NA** (desenergizado = laser OFF) + chave física de emergência + watchdog
+  de link. Classe/potência do laser, anteparo, geometria do feixe, fusíveis e
+  GPIOs Clock/Data seguem **não confirmados** — laser bloqueado até P1–P6 e
+  auditoria elétrica. Fonte: <https://github.com/RoboCore/SerialRelay>.
 
 ## 6. Próximos passos (gate T5/T6)
 
@@ -125,8 +138,14 @@ configura GPIO. A definição definitiva depende da placa controladora escolhida
 6. Definir modo AP/STA e credenciais fora do repo — fecha item 6.
 7. Instalar chave de emergência/intertravamento que corte alimentação dos
    drivers — fecha item 7.
-8. Somente depois: `LASERSEG_ENABLE_GPIO=1`, ensaio sem carga, luz OFF,
-   watchdog por perda de pacote e verificação de corrente/temperatura.
+8. Escolher os GPIOs Clock/Data do relé serial e validar o conversor 3,3→5 V
+   com o módulo sozinho, sem laser conectado.
+9. Especificar classe/potência do laser, anteparo e geometria do feixe;
+   dimensionar fontes separadas (12 V bobinas e laser) e fusíveis.
+10. Instalar a chave de emergência e confirmar que o contato NA mantém o laser
+    desenergizado no boot, reset, perda de link e watchdog.
+11. Somente depois: `LASERSEG_ENABLE_GPIO=1`, ensaio sem carga, laser OFF,
+    watchdog por perda de pacote e verificação de corrente/temperatura.
 
 ## Referências
 

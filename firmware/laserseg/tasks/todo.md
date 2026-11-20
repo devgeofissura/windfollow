@@ -40,8 +40,13 @@ Plano de origem: `tasks/plan.md`. Spec aprovada:
 
 ## Fase 3 — Integração física (gate de hardware)
 
-- [ ] **T5** — STEP/DIR, fins de curso NF e LED sob `LASERSEG_ENABLE_GPIO=1`
-  - **BLOQUEADO:** 7 respostas de hardware + `hardware-auditor`.
+- [ ] **T5** — STEP/DIR, fins de curso NF e LASER via relé serial sob
+  `LASERSEG_ENABLE_GPIO=1`
+  - **BLOQUEADO:** P1–P6 de `docs/PROTOCOLO_UDP.md`, GPIOs Clock/Data
+    confirmados, conversor 3,3→5 V, fonte 12 V separada, contato NA +
+    emergência + watchdog e aprovação do `hardware-auditor`.
+  - O antigo item "LED sob GPIO" está **SUPERADO**: não montar o circuito
+    MOSFET/`LED_EN` no GPIO12 em paralelo.
 - [ ] **T6** — UDP 4210 na controladora
   - **BLOQUEADO:** T5 + definição de rede/credenciais fora do repo.
 

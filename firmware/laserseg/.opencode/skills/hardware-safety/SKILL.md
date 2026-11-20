@@ -23,10 +23,14 @@ apagada**. Segurança não depende da câmera, do Wi-Fi ou do operador estar olh
 - [ ] GPIOs da câmera confirmados no esquema da revisão da placa; sensor identificado
       (OV2640/OV5640 ainda é incógnita). Não usar `CAMERA_MODEL_TTGO_T_CAM_SIM` como prova.
 - [ ] Controladora ESP32-S3 separada continua acionando motores e luz — não a S3_CAM_SIM.
-- [ ] LED desligado no boot/reset (`OUTPUT` + LOW antes de qualquer `loop`), com MOSFET/driver
-      dimensionado para a corrente real; GPIO não alimenta o foco diretamente.
-- [ ] Laser apenas se Class 1/2, ≤ 1 mW, anteparo fosfo próximo, feixe abaixo da altura dos
-      olhos e nunca dirigido a pessoas, animais, veículos ou aeronaves. Na dúvida, LED difuso.
+- [ ] Luz desligada no boot/reset antes de qualquer `loop`: hoje por contato **NA** do
+      módulo relé serial do laser, sem depender do firmware. GPIO não alimenta laser
+      nem bobinas diretamente; Clock/Data 5 V exige conversor 3,3→5 V e as bobinas
+      12 V usam fonte separada. GPIOs Clock/Data ainda não confirmados.
+- [ ] Laser apenas com classe/potência e anteparo confirmados, feixe abaixo da altura
+      dos olhos e nunca dirigido a pessoas, animais, veículos ou aeronaves. Sem esses
+      dados o laser fica **bloqueado**; substituir por LED difuso exige decisão
+      registrada (o antigo `LED_EN`/MOSFET está superado).
 - [ ] Fins de curso NF com pull-up; sem `INPUT_PULLDOWN` e sem depender de contato mecânico
       perfeito. Testar fio desconectado antes de energizar motor.
 - [ ] Alimentação separada/capaz para motores; GND comum entre lógica e drivers; capacitor

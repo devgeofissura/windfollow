@@ -4,7 +4,7 @@
 
 ## Escopo
 
-Seguir visualmente um alvo em uma montagem pan-tilt e manter um foco de luz apontado para a cena de teste. A implementaçãoprioritária é com **LED/foco difuso**; laser só entra em discussão após revisão de segurança (Classe 1 ou 2, ≤ 1 mW, anteparo fosfo próximo, nunca pessoas/animalis/veículos/aeronaves).
+Seguir visualmente um alvo em uma montagem pan-tilt e manter um foco de luz apontado para a cena de teste. Em 2026-11-20 o iluminador foi definido como **laser** acionado por **módulo relé serial RoboCore** (2 pinos Clock/Data em 5 V, bobinas 12 V, cascata até 10 módulos). A controladora é 3,3 V, então o **conversor de nível é obrigatório**. Intertravamento: contato NA (desenergizado = laser OFF), chave de emergência e watchdog. Classe/potência do laser, GPIOs Clock/Data e fontes seguem **não confirmados** — nenhum GPIO é habilitado antes da auditoria (`LASERSEG_ENABLE_GPIO = 0`). Nunca apontar para pessoas, animais, veículos ou aeronaves.
 
 A arquitetura adotada separa responsabilidades:
 
@@ -15,13 +15,13 @@ A arquitetura adotada separa responsabilidades:
 [T-SIMCAM S3_CAM_SIM V1.3]  captura + rastreamento
       │ UDP 4210 (posição/erro + comandos)
       ▼
-[ESP32-S3 controladora]  STEP/DIR motores + fins de curso + foco LED
+[ESP32-S3 controladora]  STEP/DIR motores + fins de curso + laser
       ├──► driver PAN  ──► motor PAN
       ├──► driver TILT ──► motor TILT
-      └──► MOSFET/driver ──► foco LED difuso
+      └──► conversor 3,3→5 V ──► módulo relé serial ──► LASER
 ```
 
-Motivo da separação: a S3_CAM_SIM V1.3 tem GPIOs de borda com funções já reservadas (flash, modem, LED mPCIe). Não depender dela para acionar motores, iluminador e fins de curso evita conflito elétrico. A placa continua plenamente candidata à **visão**; o que não se deve é assumir pinos livres sem esquema/revisão confirmada.
+Motivo da separação: a S3_CAM_SIM V1.3 tem GPIOs de borda com funções já reservadas (flash, modem, LED mPCIe). Não depender dela para acionar motores, iluminador e fins de curso evita conflito elétrico. A placa continua plenamente candidata à **visão**; o que não se deve é assumir pinos livres sem esquema/revisão confirmada. O pinout detalhado enviado pelo usuário em 2026-11-20 é a fonte primária, em [`docs/wireviz/no-visao-s3-camsim.yaml`](docs/wireviz/no-visao-s3-camsim.yaml); divergências com a tabela oficial e o issue #33 não foram resolvidas por suposição.
 
 ## Decisões fixadas por enquanto
 
@@ -30,13 +30,13 @@ Motivo da separação: a S3_CAM_SIM V1.3 tem GPIOs de borda com funções já re
 | Visão | T-SIMCAM faz captura e localização do alvo; sem identificação biométrica |
 | Controle | Controladora ESP32-S3 separada com `AccelStepper` |
 | Link | UDP na porta `4210`, somente em rede confiável, sem autenticação no protótipo |
-| Foco | Preferir LED branco difuso; GPIO comanda apenas MOSFET/driver |
-| Segurança | Fins de curso NF, `INPUT_PULLUP`, LED desligado no boot, watchdog de 1200 ms |
+| Foco | Laser via módulo relé serial RoboCore; conversor 3,3→5 V obrigatório, GPIOs Clock/Data a definir |
+| Segurança | Fins de curso NF, `INPUT_PULLUP`, contato NA do relé + chave de emergência + watchdog de 1200 ms; laser OFF no boot/reset/perda de link |
 | Curso | Limite lógico inicial de ±60° em torno do centro manual |
 | Sensor | **Não confirmado** — pode ser OV2640 IR-CUT ou OV5640 IR-CUT |
 | Firmware | Exemplos servem de base; ainda será criada a estrutura de produção |
 
-Detalhes em [`docs/PROTOCOLO_UDP.md`](docs/PROTOCOLO_UDP.md), [`docs/ESTADO.md`](docs/ESTADO.md) e [`docs/base-de-conhecimento-rastreamento-com-s3-cam-sim.md`](docs/base-de-conhecimento-rastreamento-com-s3-cam-sim.md).
+Detalhes em [`docs/PROTOCOLO_UDP.md`](docs/PROTOCOLO_UDP.md), [`docs/ESTADO.md`](docs/ESTADO.md), [`docs/base-de-conhecimento-rastreamento-com-s3-cam-sim.md`](docs/base-de-conhecimento-rastreamento-com-s3-cam-sim.md) e nos artefatos versionáveis de [`docs/wireviz/`](docs/wireviz/00-LEIA-ME.md) (esquemático, diagrama de ligação e pinouts).
 
 ## Estrutura
 
@@ -53,6 +53,7 @@ firmware/laserseg/
 │   ├── PROTOCOLO_UDP.md              contrato de mensagens entre os nós
 │   ├── base-de-conhecimento-...md    escopo e evidências
 │   ├── foco-luz-seguidor-001         memorial de ligação revisada
+│   ├── wireviz/                     esquemático, ligação e pinouts (YAML)
 │   ├── example01/                   protótipos, CAD, zips e referências
 │   ├── example02/simcam_tracker/    protótipos organizados por nó
 └── .opencode/
@@ -70,10 +71,12 @@ Pastas de firmware ainda serão criadas: `camera_node/`, `controller_drv8834/` e
 ## Simulador web (V1)
 
 Abra `simulator/index.html` com duplo clique: funciona em `file://`, sem servidor,
-build ou placa. Três abas — **Painel** (webcam/alvo sintético, `SAFE/TRACK/MANUAL`,
+build ou placa. Quatro abas — **Painel** (webcam/alvo sintético, `SAFE/TRACK/MANUAL`,
 `x/y/seq`, watchdog e log `T`/`ACK`), **Wi-Fi** (AP `laserseg`/`123456`, varredura
-simulada, senha da rede **somente em memória**, fallback "AP e para") e
-**Protocolo** (constantes e formatos UDP, somente leitura).
+simulada, senha da rede **somente em memória**, fallback "AP e para"),
+**Protocolo** (constantes e formatos UDP, somente leitura) e **Pinout** (mapa da
+S3_CAM_SIM e ressalva do laser via relé serial, somente leitura). A aba Pinout
+não altera a FSM `SAFE/TRACK/MANUAL` nem o comando `LIGHT`, e não aciona hardware.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File firmware/laserseg/tests/run.ps1
@@ -161,7 +164,8 @@ Nunca fixar porta COM no código ou na documentação como se fosse permanente.
 ## Referências
 
 - [Base de conhecimento](docs/base-de-conhecimento-rastreamento-com-s3-cam-sim.md)
-- [Ligação revisada — S3_CAM_SIM V1.3 + pan-tilt + iluminador LED](docs/foco-luz-seguidor-001)
+- [Ligação revisada — S3_CAM_SIM V1.3 + pan-tilt + laser via relé](docs/foco-luz-seguidor-001)
+- [Documentação de hardware em WireViz](docs/wireviz/00-LEIA-ME.md)
 - [SIMCAM Tracker — Arduino CLI + pan-tilt](docs/example01/SIMCAM%20Tracker%20—%20Arduino%20CLI%20%2B%20pan-tilt.md)
 - [Ligações e ensaio](docs/example01/Ligações%20e%20ensaio.md)
 - [AGENTS.md do repositório](../../AGENTS.md)

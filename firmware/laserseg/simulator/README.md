@@ -22,6 +22,9 @@ sem conexão. Não é preciso instalar nada.
   simulada, campo de senha da rede local, IP da controladora (padrão
   `192.168.4.2`), fluxo salvar/reiniciar e fallback "AP e para".
 - **Aba Protocolo:** constantes e formatos do contrato UDP v0.1, somente leitura.
+- **Aba Pinout:** mapa primário da S3_CAM_SIM V1.3 enviado pelo usuário,
+  divergências registradas e ressalva do laser via relé serial. **Somente
+  leitura:** não altera a FSM `SAFE/TRACK/MANUAL` nem o comando `LIGHT`, e não aciona hardware.
 
 ## Regras de segurança
 
@@ -30,6 +33,10 @@ sem conexão. Não é preciso instalar nada.
   arquivo, `localStorage` nem serial. O campo começa vazio.
 - As constantes exibidas espelham `controller/parser.h` e
   `controller_dm556d/driver_config.h`; um teste host barra qualquer divergência.
+- A aba Pinout é consulta: nenhum controle nela muda estado, GPIO, motor ou luz.
+  O iluminador é laser com relé serial (Clock/Data 5 V → conversor obrigatório,
+  contato NA + emergência + watchdog); GPIOs Clock/Data não confirmados.
+  Fonte versionável: `docs/wireviz/00-LEIA-ME.md`.
 
 ## Validação
 

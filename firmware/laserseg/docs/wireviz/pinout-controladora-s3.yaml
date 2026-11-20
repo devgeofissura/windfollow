@@ -1,0 +1,84 @@
+# laserseg — mapa de pinagem/GPIOs da controladora (V0, proposta)
+#
+# Artefato WireViz do PINOUT. Renderiza uma caixa com o header rotulado:
+#   wireviz pinout-controladora-s3.yaml
+#
+# VALORES PROTOTIPO, NAO CONFIRMADOS EM BANCADA. Fonte:
+# docs/example02/simcam_tracker/docs/LIGACAO_E_TESTES.md e
+# docs/HARDWARE-DECISIONS.md (itens 4 e 5 bloqueados).
+#
+# IMPORTANTE: a S3_CAM_SIM V1.3 JA tem a camera conectada na placa e NAO e
+# esta controladora. Seus GPIOs de camera/SD/modem estao ocupados.
+# Sobre os contatos laterais: o pinout primario do usuario informa IO3/IO21/
+# IO45/IO46 como livres (com ressalvas de strapping). O issue #33 afirma que
+# IO45/46 seriam UART do modem e IO21 seria LED mPCIe, mas o maintainer so
+# confirmou GPIO31=flash. DIVERGENCIA NAO RESOLVIDA: nao usar como fato.
+# Veja J_DIVERGENCIAS em no-visao-s3-camsim.yaml.
+#
+# MUDANCA 2026-11-20: o antigo LED_EN/GPIO12 (MOSFET + LED difuso) esta
+# SUPERADO. A saida de luz e agora um LASER acionado por modulo rele serial
+# RoboCore: 2 pinos de controle (Clock/Data), 5 VDC no modulo, conversor
+# 3,3 V -> 5 V obrigatorio. Os GPIOs da controladora AINDA NAO FORAM ESCOLHIDOS.
+
+connectors:
+  J_CTRL:
+    type: "Header — controladora ESP32-S3 SEPARADA (modelo/revisao NAO CONFIRMADO)"
+    subtype: "GPIOs do prototipo example02 — PROTOTIPO, sujeitos a revisao T5"
+    notes: |-
+      Nao alimentar motores nem laser diretamente destes pinos: sao apenas
+      sinal logico de 3,3 V. A interface 3,3 V -> opto do DM556D e
+      obrigatoria e sua topologia ainda NAO FOI CONFIRMADA. O modulo rele
+      serial exige Clock/Data em 5 VDC: conversor obrigatorio nos 2 pinos
+      de controle, que ainda NAO FORAM ESCOLHIDOS.
+    pinlabels:
+      - "GPIO4 / STEP PAN"          # PROTOTIPO
+      - "GPIO5 / DIR PAN"           # PROTOTIPO
+      - "GPIO6 / STEP TILT"         # PROTOTIPO
+      - "GPIO7 / DIR TILT"          # PROTOTIPO
+      - "GPIO13 / LIM PAN MIN"      # PROTOTIPO — NF, INPUT_PULLUP
+      - "GPIO14 / LIM PAN MAX"      # PROTOTIPO — NF, INPUT_PULLUP
+      - "GPIO15 / LIM TILT MIN"     # PROTOTIPO — NF, INPUT_PULLUP
+      - "GPIO16 / LIM TILT MAX"     # PROTOTIPO — NF, INPUT_PULLUP
+      - "RELAY_CLK — GPIO NAO CONFIRMADO"   # via conversor 3,3 V -> 5 V
+      - "RELAY_DATA — GPIO NAO CONFIRMADO"  # via conversor 3,3 V -> 5 V
+      - "GPIO12 / LED_EN — SUPERADO"        # regime antigo: MOSFET + LED
+      - "GND (referencia logica)"
+      - "ENA — NAO CONFIRMADO (nao ligar sem manual)"
+
+  J_RESERVADO:
+    type: "Pinos reservados / sem uso — NAO CONFIRMADO"
+    notes: |-
+      Placa controladora exata ainda nao escolhida. Reservas de flash/PSRAM
+      e funcoes alternativas devem ser conferidas na revisao da DevKit antes
+      de transformar esta proposta em pinout de producao.
+    pinlabels:
+      - "NAO CONFIRMADO 1"
+      - "NAO CONFIRMADO 2"
+      - "NAO CONFIRMADO 3"
+      - "NAO CONFIRMADO 4"
+
+connections:
+  - - J_CTRL
+  - - J_RESERVADO
+
+metadata:
+  title: "laserseg — pinout da controladora ESP32-S3 (V0 proposta)"
+  description: |-
+    Mapa de GPIOs extraido do prototipo example02. Nao e pinagem de producao.
+  notes: |-
+    Sinal          GPIO (PROTOTIPO)   Observacao
+    STEP PAN       4                  via interface de sinal
+    DIR PAN        5                  via interface de sinal
+    STEP TILT      6                  via interface de sinal
+    DIR TILT       7                  via interface de sinal
+    LIM PAN MIN    13                 NF entre entrada e GND, pull-up
+    LIM PAN MAX    14                 NF entre entrada e GND, pull-up
+    LIM TILT MIN   15                 NF entre entrada e GND, pull-up
+    LIM TILT MAX   16                 NF entre entrada e GND, pull-up
+    RELAY_CLK      nao definido       NAO CONFIRMADO — conversor 3,3 -> 5 V
+    RELAY_DATA     nao definido       NAO CONFIRMADO — conversor 3,3 -> 5 V
+    LED_EN         12                 SUPERADO — antigo MOSFET + LED difuso
+    ENA            nao definido       NAO CONFIRMADO — nao ligar
+
+options:
+  color_mode: SHORT

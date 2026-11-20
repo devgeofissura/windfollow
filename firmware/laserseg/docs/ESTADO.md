@@ -11,11 +11,11 @@
 | Protótipos de firmware | Existentes em `docs/example01/` e `docs/example02/` | `camera_node.ino`, `controller_drv8834.ino`, `controller_uln2003.ino` |
 | Firmware de produção | Parcial | `controller/` existe com parser/estado/autoteste/telemetria (somente serial); `camera_node/` ainda não existe |
 | Protocolo UDP | Validado em host e C++ | `PROTOCOLO_UDP.md` + contrato v0.1; 84 testes em `tests/test_protocol.py`, referência em `tools/protocol_ref.py`, vetores C++ gerados por `tools/gen_autotest_vectors.py` |
-| Simulador web V1 | Implementado (sem hardware) | `simulator/index.html` abre em `file://`; Constantes/contrato defendidos por `tests/test_simulator.py`; **102 testes host verdes**; spec `spec/SPEC-simulador-web.md` |
-| Pinout da câmera | Não confirmado | Protótipo usa `CAMERA_MODEL_TTGO_T_CAM_SIM`; sensor pode ser OV2640 ou OV5640 |
+| Simulador web V1 | Implementado (sem hardware) | `simulator/index.html` abre em `file://`; Constantes/contrato defendidos por `tests/test_simulator.py`; **110 testes host verdes**; spec `spec/SPEC-simulador-web.md` |
+| Pinout da câmera | Mapa primário recebido; revisão física não confirmada | Pinout detalhado enviado pelo usuário em 2026-11-20 em `docs/wireviz/no-visao-s3-camsim.yaml`; sensor OV2640/OV5640 ainda sem leitura de `sensor_id` |
 | Controladora escolhida | Parcial | ESP32-S3 separada definida; placa exata e GPIOs ainda a validar |
-| Motores/driver | Não definidos | Duas alternativas em estudo: bipolar + DRV8834 ou 28BYJ-48 + ULN2003 |
-| Foco de luz | Definido como LED difuso | Laser apenas após revisão de segurança |
+| Motores/driver | DM556D + NEMA 23 (protótipo) | Duas alternativas antigas (DRV8834/ULN2003) ficaram em `docs/example01/` |
+| Foco de luz | Laser via módulo relé serial | RoboCore: Clock/Data 5 V → conversor obrigatório, bobinas 12 V em fonte separada, contato NA + emergência + watchdog. GPIOs Clock/Data não confirmados |
 | Build/flash | Regularizado no host | `arduino-cli` 1.6.0 fora do repo; core `esp32:esp32@3.3.11`; perfil `laserseg` em `tools/flash.ps1` aponta para `controller/controller.ino`; probe de serial segue como fallback |
 | Porta serial | Detectada | `COM4`, USB nativo `303A:1001`, ESP32-S3 / 16 MB / MAC `dc:da:0c:28:25:30`; detectar de novo antes de cada gravação |
 | MQTT | Operacional | Mosquitto 2.1.4 local + WebSocket + Quick Tunnel; ver `MQTT.md` |
@@ -68,8 +68,11 @@
   seis condições obrigatórias antes de acionar GPIO (`PROTOCOLO_UDP.md`,
   "Condições obrigatórias antes de acionar hardware"): tratar `fault()` como
   parada+luz OFF, chamar `poll()` antes dos motores, nunca usar `now_ms=-1` em
-  campo, corrigir wrap-around do `millis()`, fechar o checklist elétrico e
-  restringir o UDP sem autenticação à bancada.
+  campo, **testar a fronteira do wrap-around** (o helper `unwrapMillis()` existe
+  e é provado por `static_assert`, mas ainda não foi ligado a `feed()/poll()` —
+  T6), fechar o checklist elétrico — agora incluindo conversor
+  3,3→5 V e fonte 12 V do relé do laser — e restringir o UDP sem autenticação à
+  bancada.
 
 ## Decisões registradas
 
@@ -77,26 +80,42 @@
 2. Enviar apenas posição/erro e comandos por UDP; não transmitir vídeo para outro computador.
 3. Usar `AccelStepper` na controladora, com fins de curso NF e timeout de link.
 4. Tratar `docs/example01/` como fonte de ideias validadas apenas por compilação, não por ensaio elétrico.
-5. Preferir LED difuso a laser no primeiro protótipo.
+5. Iluminador = **laser** acionado por módulo relé serial RoboCore (decisão de
+   2026-11-20): Clock/Data 5 V exige conversor 3,3→5 V, bobinas 12 V em fonte
+   separada, contato NA + chave de emergência + watchdog. O antigo LED+MOSFET
+   (`LED_EN`/GPIO12) está **superado**; ver `docs/wireviz/00-LEIA-ME.md`.
 6. Qualquer mudança de firmware deve atualizar este arquivo, o protocolo e o `DEVLOG.md`.
+7. O pinout detalhado enviado pelo usuário em 2026-11-20 é a **fonte primária**
+   da SIMCAM; divergências com a tabela oficial e o issue #33 ficam registradas
+   em `docs/wireviz/no-visao-s3-camsim.yaml`, sem resolução por suposição.
 
 ## Pendências priorizadas
 
 1. Re-detectar a placa (cabo/porta/driver) antes de qualquer gravação.
-2. Confirmar o sensor instalado na S3_CAM_SIM V1.3 e o pinout do esquema da revisão.
+2. Confirmar o sensor instalado na S3_CAM_SIM V1.3 (OV2640/OV5640) e conferir no
+   esquema da revisão as divergências do pinout (RESET 18 x -1/IR-CUT, RX modem
+   35 x 46, GPIO21 e GPIO45/46).
 3. Escolher a controladora ESP32-S3, placa de driver e motores com base em torque/corrente reais.
 4. Validar em bancada a FQBN `app3M_fat9M_16MB` já confirmada em `board details`; não misturar com o perfil `windfollow` da raiz (`huge_app`).
 5. Instrumentar o link UDP com sequência/idade e política de reconexão antes de uso fora de bancada.
 6. Definir homing/limites mecânicos reais; os ±60° atuais são apenas estimativa a partir do centro manual.
 7. Para o MQTT público, migrar do Quick Tunnel para Named Tunnel com dominio proprio antes de sair da bancada.
+8. Escolher os dois GPIOs da controladora para Clock/Data do relé serial e
+   validar o conversor 3,3→5 V com o módulo em bancada, sem laser conectado.
+9. Especificar a classe/potência do laser, a fonte/driver própria e o
+   dimensionamento dos fusíveis dos ramos relé (12 V) e laser.
+10. Instalar a chave de emergência e confirmar que o contato NA deixa o laser
+    desenergizado no boot, reset, perda de link e watchdog.
 
 ## Próximos passos sugeridos
 
 1. Fechar as seis condições de integração listadas em `PROTOCOLO_UDP.md` antes de
-   adicionar GPIO, motores ou LED.
+   adicionar GPIO, motores ou laser.
 2. Transformar os protótipos em sketches de produção, um nó por pasta.
-3. Fazer ensaio de bancada sem carga mecânica, seguindo `docs/example01/Ligações e ensaio.md`.
-4. Só então integrar câmera + controladora + foco com limites conservadores.
+3. Fazer ensaio de bancada sem carga mecânica e sem laser energizado, seguindo
+   `docs/example01/Ligações e ensaio.md`.
+4. Validar o relé serial sozinho (Clock/Data via conversor, 12 V nas bobinas)
+   e só então integrar câmera + controladora + laser com limites conservadores.
 
 ## Referência de sessão atual
 

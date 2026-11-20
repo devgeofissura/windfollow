@@ -31,6 +31,8 @@
                     aria-controls="tab-wifi" aria-selected="false" data-tab="wifi">Wi-Fi</button>
             <button type="button" class="tab" role="tab" id="tabbtn-protocolo"
                     aria-controls="tab-protocolo" aria-selected="false" data-tab="protocolo">Protocolo</button>
+            <button type="button" class="tab" role="tab" id="tabbtn-pinout"
+                    aria-controls="tab-pinout" aria-selected="false" data-tab="pinout">Pinout</button>
         </nav>
 
         <main>
@@ -166,6 +168,124 @@
                         Validacao: tamanho/codificação → formato → faixa → sequencia → idade.
                         Estado <code>SAFE | TRACK | MANUAL</code>; falha
                         <code>NONE | LENGTH | ENCODING | FORMAT | RANGE | SEQUENCE | AGE | LINK</code>.
+                    </p>
+                </article>
+            </section>
+
+            <!-- PINOUT (somente leitura) -->
+            <section id="tab-pinout" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-pinout" hidden>
+                <article class="card">
+                    <h2>Pinout da S3_CAM_SIM — aba somente leitura</h2>
+                    <p class="safety-note" role="note">
+                        Fonte primaria: pinout detalhado enviado pelo usuario em
+                        2026-11-20 (serigrafia da placa + mapeamento interno).
+                        Esta aba apenas replica
+                        <code>docs/wireviz/no-visao-s3-camsim.yaml</code> para consulta:
+                        nao altera estado, comandos <code>TRACK/LIGHT/MANUAL</code>,
+                        GPIO, motor ou luz. Divergencias com a tabela oficial e com o
+                        issue #33 estao listadas abaixo e NAO foram resolvidas por
+                        suposicao.
+                    </p>
+                </article>
+
+                <article class="card">
+                    <h2>GPIOs livres — conector preto (6 pinos)</h2>
+                    <table class="data-table">
+                        <thead><tr><th>Contato</th><th>Uso informado</th><th>Ressalva</th></tr></thead>
+                        <tbody>
+                            <tr><td>IO3 / GPIO 3</td><td>digital, PWM ou ADC</td><td>livre</td></tr>
+                            <tr><td>IO46 / GPIO 46</td><td>saida digital ou PWM</td><td><strong>strapping</strong>: evitar HIGH no boot</td></tr>
+                            <tr><td>IO45 / GPIO 45</td><td>digital ou PWM</td><td><strong>strapping</strong>: define tensao da Flash no boot</td></tr>
+                            <tr><td>IO21 / GPIO 21</td><td>digital, PWM, I2C (SDA/SCL)</td><td>mais seguro para sensores</td></tr>
+                            <tr><td>GND</td><td>terra</td><td>referencia comum</td></tr>
+                            <tr><td>3V3</td><td>alimentacao 3,3 V para sensores</td><td>nunca aplicar 5 V nos pinos de sinal</td></tr>
+                        </tbody>
+                    </table>
+                </article>
+
+                <article class="card">
+                    <h2>Conector branco JST (4 pinos) — UART / Grove</h2>
+                    <table class="data-table">
+                        <thead><tr><th>Pino</th><th>Funcao</th></tr></thead>
+                        <tbody>
+                            <tr><td>GND</td><td>terra</td></tr>
+                            <tr><td>5V / VCC</td><td>alimentacao</td></tr>
+                            <tr><td>U0TXD / GPIO 43</td><td>transmissao serial</td></tr>
+                            <tr><td>U0RXD / GPIO 44</td><td>recepcao serial</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="hint">TX/RX so podem servir como GPIOs extras se o monitor serial nao estiver em uso. Logica de 3,3 V.</p>
+                </article>
+
+                <article class="card">
+                    <h2>Perifericos internos — GPIOs ja ocupados</h2>
+                    <table class="data-table">
+                        <thead><tr><th>Periferico</th><th>Sinal</th><th>GPIO</th></tr></thead>
+                        <tbody>
+                            <tr><td>Camera</td><td>SIOD / SDA</td><td>GPIO 4</td></tr>
+                            <tr><td>Camera</td><td>SIOC / SCL</td><td>GPIO 5</td></tr>
+                            <tr><td>Camera</td><td>VSYNC</td><td>GPIO 6</td></tr>
+                            <tr><td>Camera</td><td>HREF</td><td>GPIO 7</td></tr>
+                            <tr><td>Camera</td><td>PCLK</td><td>GPIO 13</td></tr>
+                            <tr><td>Camera</td><td>XCLK</td><td>GPIO 14</td></tr>
+                            <tr><td>Camera</td><td>D0</td><td>GPIO 11</td></tr>
+                            <tr><td>Camera</td><td>D1</td><td>GPIO 9</td></tr>
+                            <tr><td>Camera</td><td>D2</td><td>GPIO 8</td></tr>
+                            <tr><td>Camera</td><td>D3</td><td>GPIO 10</td></tr>
+                            <tr><td>Camera</td><td>D4</td><td>GPIO 12</td></tr>
+                            <tr><td>Camera</td><td>D5</td><td>GPIO 17</td></tr>
+                            <tr><td>Camera</td><td>D6</td><td>GPIO 16</td></tr>
+                            <tr><td>Camera</td><td>D7</td><td>GPIO 15</td></tr>
+                            <tr><td>Camera</td><td>RESET (divergencia)</td><td>GPIO 18</td></tr>
+                            <tr><td>Microfone I2S</td><td>SCK</td><td>GPIO 41</td></tr>
+                            <tr><td>Microfone I2S</td><td>WS</td><td>GPIO 42</td></tr>
+                            <tr><td>Microfone I2S</td><td>DOUT</td><td>GPIO 2</td></tr>
+                            <tr><td>microSD</td><td>CS</td><td>GPIO 47</td></tr>
+                            <tr><td>microSD</td><td>MOSI</td><td>GPIO 38</td></tr>
+                            <tr><td>microSD</td><td>CLK</td><td>GPIO 39</td></tr>
+                            <tr><td>microSD</td><td>MISO</td><td>GPIO 40</td></tr>
+                            <tr><td>mPCIe</td><td>TX</td><td>GPIO 48</td></tr>
+                            <tr><td>mPCIe</td><td>RX (divergencia)</td><td>GPIO 35</td></tr>
+                            <tr><td>mPCIe</td><td>PWR/RST (depende da revisao)</td><td>GPIO 1</td></tr>
+                            <tr><td>mPCIe</td><td>PWR/RST (depende da revisao)</td><td>GPIO 20</td></tr>
+                            <tr><td>mPCIe</td><td>PWR/RST (depende da revisao)</td><td>GPIO 46</td></tr>
+                        </tbody>
+                    </table>
+                </article>
+
+                <article class="card">
+                    <h2>Divergencias e ressalvas — NAO CONFIRMADO</h2>
+                    <ul>
+                        <li>RESET da camera: usuario=18; tabela oficial=-1 (18 seria IR-CUT).</li>
+                        <li>RX do modem: usuario=35; tabela oficial=46; issue #33=45/46.</li>
+                        <li>GPIO 21: usuario=I2C/sensor seguro; oficial=STATUS modem; issue=LED mPCIe.</li>
+                        <li>GPIO 45/46: usuario=livres (com strapping); issue=UART do modem.</li>
+                        <li>Sensor: usuario=<code>OV2640</code>; o projeto ainda registra
+                            <code>OV2640</code>/<code>OV5640</code> como NAO CONFIRMADO ate
+                            leitura de <code>sensor_id</code>.</li>
+                        <li>Revisao fisica da placa NAO CONFIRMADA. Nivel logico de 3,3 V:
+                            nunca aplicar 5 V nos pinos de sinal.</li>
+                    </ul>
+                    <p class="safety-note" role="note">
+                        Mudanca de arquitetura em 2026-11-20: o iluminador passa a ser
+                        <strong>laser</strong> acionado por <strong>modulo rele serial
+                        RoboCore</strong> (2 pinos de controle Clock/Data, expansao em
+                        cascata ate 10 modulos). Dados confirmados: Clock/Data em
+                        <strong>5 VDC</strong>, alimentacao 12 VDC, bobina 12 VDC / 30 mA
+                        por rele, acionamento 10 ms, carga nominal 7 A 30 VDC. Como a
+                        controladora e de 3,3 V, <strong>conversor de nivel obrigatorio</strong>
+                        nos 2 pinos. Fontes separadas para bobinas e laser. Intertravamento:
+                        contato NA (desenergizado = laser OFF), chave de emergencia e
+                        watchdog. Isso substitui o antigo LED + MOSFET/<code>LED_EN</code>
+                        no GPIO 12, agora SUPERADO. Os GPIOs Clock/Data ainda estao
+                        <strong>NAO CONFIRMADO</strong>. Nenhum GPIO sera habilitado antes
+                        de fechar a auditoria P1–P6;
+                        <code>LASERSEG_ENABLE_GPIO = 0</code> permanece.
+                    </p>
+                    <p class="hint">
+                        Fonte versionavel:
+                        <code>docs/wireviz/no-visao-s3-camsim.yaml</code> e
+                        <code>docs/wireviz/00-LEIA-ME.md</code>.
                     </p>
                 </article>
             </section>

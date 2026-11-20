@@ -28,8 +28,11 @@ Habilita ou desabilita o seguimento na controladora.
 
 Liga ou desliga a saída do foco.
 
-- `LIGHT,1` — saída HIGH no pino do MOSFET/driver.
-- `LIGHT,0` — saída LOW.
+- `LIGHT,1` — liga a saída de luz. Hoje é apenas estado lógico (`LASERSEG_ENABLE_GPIO=0`);
+  na integração, comanda o módulo relé serial pelas linhas Clock/Data via conversor
+  3,3→5 V, com fontes separadas e contato NA (desenergizado = laser OFF).
+- `LIGHT,0` — desliga a saída de luz (estado de segurança no boot, reset, perda de
+  link e watchdog).
 
 ### `MANUAL,<axis>,<dir>`
 
@@ -149,7 +152,7 @@ implementado, ele deve transmitir exatamente esta linha (sem CRLF no payload).
 ### Condições obrigatórias antes de acionar hardware
 
 A auditoria de hardware aprovou a gravação deste bloco somente serial. Para a
-integração com motores/LED, **todas** as condições abaixo devem ser fechadas e
+integração com motores/laser, **todas** as condições abaixo devem ser fechadas e
 revisadas novamente:
 
 1. **Rejeição não pode deixar a máquina ativa.** Hoje um datagrama inválido,
@@ -161,13 +164,18 @@ revisadas novamente:
    mesmo ciclo, aplicando as três ações (parar pan, parar tilt, luz OFF).
 3. **Nunca usar o `now_ms` default (-1) em campo:** chamar sempre
    `feed(buf, len, rx_ms, millis())`; o default existe apenas para os testes.
-4. **Wrap-around do `millis()` (~49,7 dias):** a subtração atual em `int64_t`
-   fica negativa após o rollover e o watchdog não dispara. Antes da integração,
-   trocar por delta modular de 32 bits e adicionar teste de fronteira.
+4. **Wrap-around do `millis()` (~49,7 dias):** o helper `unwrapMillis()` já
+   existe em `controller_dm556d/driver_config.h` e é provado por `static_assert`
+   de compilação. Falta conectá-lo a `Session::feed()/poll()` (T6) e usar a
+   **mesma** base temporal para `rx_ms` e `now_ms`; sem isso a idade pode ficar
+   negativa após ~49,7 dias. Não reimplementar o delta modular.
 5. Checklist elétrico/mecânico completo em
    `.opencode/skills/hardware-safety/SKILL.md`: sensor e pinout confirmados,
-   fins de curso NF, fonte separada com GND comum, driver dimensionado, LED
-   difuso antes de qualquer laser e chave de emergência.
+   fins de curso NF, fonte separada com GND comum, driver dimensionado e chave
+   de emergência. A saída de luz passou a ser **laser** acionado por módulo
+   rele serial RoboCore: conversor 3,3→5 V obrigatório em Clock/Data, bobinas
+   12 V em fonte separada, contato NA (desenergizado = laser OFF). GPIOs do
+   relé ainda não confirmados; ver `docs/wireviz/00-LEIA-ME.md`.
 6. UDP sem autenticação: restringir à bancada e prever filtro de origem ou
    intertravamento físico antes de qualquer saída física.
 

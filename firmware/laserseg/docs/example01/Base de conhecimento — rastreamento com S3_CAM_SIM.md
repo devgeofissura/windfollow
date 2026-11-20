@@ -48,7 +48,7 @@ A página comercial da LILYGO oferece variantes com sensores OV2640 IR-CUT e OV5
 [ESP32-S3 controladora separada]
       ├──► [Driver motor eixo pan] ──► [Motor de passo pan]
       ├──► [Driver motor eixo tilt] ──► [Motor de passo tilt]
-      └──► [Estágio de acionamento] ──► [Foco LED branco difuso]
+      └──► [Conversor 3,3→5 V] ──► [Relé serial] ──► [Laser]
                 ▲
        alimentação e proteções
        a dimensionar/validar
@@ -102,6 +102,11 @@ Motores e drivers devem receber alimentação dimensionada separadamente dos sin
 | Pinos de borda | Não são GPIOs extras por estarem expostos na borda | Não inferir pinagem/recursos pela aparência. [1] |
 
 A lista acima não é pinout completo. A conclusão de projeto é não depender da T-SIMCAM para acionar diretamente todas as cargas externas; validar cada sinal com esquema/documentação da revisão e medições seguras. Isso não impede o processamento visual na placa.
+
+Em 2026-11-20 o usuario enviou um pinout detalhado (serigrafia + mapeamento
+interno) que passou a ser a **fonte primária** do subprojeto. Ele diverge da tabela oficial e do issue #33 em RESET camera, RX modem, GPIO21 e GPIO45/46.
+As divergencias estao registradas, sem resolucao por suposicao, em
+docs/wireviz/no-visao-s3-camsim.yaml.
 
 ## 11. Riscos e segurança
 

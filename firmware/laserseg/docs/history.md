@@ -9,7 +9,8 @@
 
 1. T-SIMCAM faz **visão**; ESP32-S3 separada faz **motores + luz**. Não inverter.
 2. `docs/example01/` é protótipo compilável, **não** firmware validado em bancada.
-3. LED desligado no boot, no reset, na perda de link e no watchdog.
+3. Luz desligada no boot, no reset, na perda de link e no watchdog: hoje por
+   contato NA do rele serial do laser; antigo `LED_EN` esta SUPERADO.
 4. Motores param com fin de curso NF, comando inválido ou link > 1200 ms.
 5. Sensor, pinout, chip, flash e MAC não confirmados não viram fato. Diga "não confirmado".
 6. Porta COM nunca fixa; detectar sempre antes de gravar.
@@ -52,6 +53,8 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
 | `440ed12` | `docs(laserseg): versiona prototipos e spec wifi provisioning` — `example/` → `example01/` com 18 arquivos byte-identicos, `example02/`, spec AP → STA aprovada e 92 testes host verdes |
 | `a69cc57` | `docs(laserseg): spec do simulador web V1` — gate spec/aprovacao/completo; premissas, limites e criterios de aceite |
 | `—` | `feat(laserseg): simulador web V1` — `simulator/` com Painel/Wi-Fi/Protocolo, 10 testes de contrato e 102 testes host verdes |
+| `—` | `docs(laserseg): hardware em WireViz e aba Pinout` — 3 YAMLs validados, pinout primario da SIMCAM, divergencias preservadas |
+| `—` | `feat(laserseg): saida de luz laser via rele serial` — conversor 3,3→5 V, fontes separadas, contato NA + emergencia + watchdog; aba Pinout somente leitura |
 
 > Hash exato do commit atual: `git log -1 --oneline`.
 
@@ -61,11 +64,14 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
 [cena/alvo] → [T-SIMCAM S3_CAM_SIM V1.3] → UDP 4210 → [ESP32-S3 controladora]
                                                           ├→ driver PAN
                                                           ├→ driver TILT
-                                                          └→ MOSFET → LED difuso
+                                                          └→ conversor 3,3→5 V → rele serial → LASER
 ```
 
-- Separação escolhida porque a S3_CAM_SIM V1.3 tem GPIOs de borda com funções reservadas
-  (flash, modem, LED mPCIe). Não depender dela para motores/iluminação evita conflito elétrico.
+- Separação escolhida porque a S3_CAM_SIM V1.3 tem GPIOs de borda com funções
+  reservadas (flash, modem, LED mPCIe segundo relato do issue #33) e apenas
+  quatro GPIOs livres segundo o pinout primário do usuário. Não depender dela
+  para motores/iluminação evita conflito elétrico; a divergência entre as duas
+  fontes permanece registrada em `docs/wireviz/no-visao-s3-camsim.yaml`.
 - A placa continua candidata à **visão**; o que não se pode fazer é assumir pinos livres
   sem esquema da revisão.
 - Detecção por diferença entre quadros: não reconhece pessoa/animal/objeto e reage a
@@ -96,9 +102,12 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
 
 ## 4. Hardware e segurança
 
-- Preferir **LED branco difuso**. Laser só com Classe 1/2, ≤ 1 mW, anteparo fosfo próximo,
-  feixe abaixo dos olhos, nunca pessoas/animais/veículos/aeronaves.
-- GPIO comanda **MOSFET/driver**, nunca o foco diretamente. Led OFF antes de qualquer `loop`.
+- Iluminador = **laser** via módulo relé serial RoboCore (decisão de 2026-11-20):
+  Clock/Data 5 V exige conversor 3,3→5 V, bobinas 12 V em fonte separada, contato
+  NA + chave física de emergência + watchdog. Classe/potência e anteparo ainda
+  **NAO CONFIRMADOS**; nunca apontar a pessoas, animais, veículos ou aeronaves.
+- GPIOs Clock/Data do relé ainda não escolhidos; nunca alimentar laser ou bobinas
+  diretamente deles. Laser OFF no boot/reset, antes de qualquer `loop`.
 - Fins de curso NF com `INPUT_PULLUP`: HIGH bloqueia o sentido; fio rompido também bloqueia.
   Sem `INPUT_PULLDOWN`, sem homing automático; eixos começam centralizados manualmente.
 - Precedência: parada física > fins de curso > watchdog > mensagem inválida > zona morta.
@@ -196,7 +205,8 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
 2. Enviar só posição/erro e comandos por UDP; sem vídeo.
 3. `AccelStepper` na controladora, fins de curso NF e timeout de link.
 4. Protótipos são fonte de ideias, não de verdade elétrica.
-5. LED difuso no primeiro protótipo; laser após revisão explícita.
+5. Laser via relé serial desde 2026-11-20, com conversor 3,3→5 V, fonte 12 V
+   separada e contato NA + emergência + watchdog; antigo LED+MOSFET está SUPERADO.
 6. Mudança de firmware atualiza `ESTADO.md`, `PROTOCOLO_UDP.md` e `DEVLOG.md` no mesmo commit.
 
 ## 8. Pendências em ordem
