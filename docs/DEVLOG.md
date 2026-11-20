@@ -11,6 +11,26 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-20 17:00 - docs(ventiseg): publica diagrama organizado no SCAD Studio
+
+**Area:** ventiseg
+
+**Feito:**
+- adiciona modo organizado no SCAD Studio com DOT, SVG e PNG
+- substitui diagrama espalhado do ventiseg por layout compacto com fontes abaixo
+- atualiza guia de renderizacao e dimensoes do PNG
+
+**Dificuldades e solucoes:**
+- modo classico contava 25 linhas de cor em vez de 15 -> colorRows agora emite 3 linhas para fio simples e 5 para bicolor
+- fontes subiam acima dos blocos -> invis edges com constraint=false foram trocados por constraint padrao e portas ajustadas
+
+**Arquivos:**
+- `firmware/ventiseg/docs/wireviz/00-LEIA-ME.md`
+- `firmware/ventiseg/docs/wireviz/ventiseg-pan-24v-diagrama-hires.png`
+- `firmware/ventiseg/docs/wireviz/ventiseg-pan-24v-diagrama.gv`
+- `firmware/ventiseg/docs/wireviz/ventiseg-pan-24v-diagrama.png`
+- `firmware/ventiseg/docs/wireviz/ventiseg-pan-24v-diagrama.svg`
+
 ### 2026-11-20 16:28 - docs(ventiseg): diagrama eletrico colorido com blocos e avisos
 
 **Area:** ventiseg

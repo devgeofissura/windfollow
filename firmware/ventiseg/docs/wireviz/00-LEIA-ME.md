@@ -5,7 +5,9 @@ subprojeto: uma placa, um motor, um driver.
 
 | Arquivo | Conteúdo |
 |---|---|
-| [`ventiseg-pan-24v-diagrama.yaml`](ventiseg-pan-24v-diagrama.yaml) | **Desenho técnico colorido**: 7 blocos retangulares + banner de avisos, ordem física Fonte 24 V → DM556D → Motor e SIMCAM → Conversor → DM556D. Entregue em `.svg`, `.png` e `.png` 200 dpi |
+| [`ventiseg-pan-24v-diagrama.yaml`](ventiseg-pan-24v-diagrama.yaml) | **Fonte técnica**: 7 conectores, 24 cabos unifilares, 26 conexões, `loops` do GND estrela e os pinos `ENA+`/`ENA-` isolados. Não alterar sem revisão elétrica. |
+| [`ventiseg-pan-24v-diagrama.gv`](ventiseg-pan-24v-diagrama.gv) | **Layout organizado** gerado pelo SCAD Studio: SIMCAM à esquerda, conversor ao centro, DM556D/motor à direita, fontes abaixo, GND único, legenda e quadro de avisos em nós separados. |
+| [`ventiseg-pan-24v-diagrama.svg`](ventiseg-pan-24v-diagrama.svg), [`.png`](ventiseg-pan-24v-diagrama.png), [`.png` 200 dpi](ventiseg-pan-24v-diagrama-hires.png) | **Renderizações Graphviz** do `.gv` organizado. O PNG de alta resolução mede 9655 × 2532 px. |
 | [`ventiseg-pan-24v.yaml`](ventiseg-pan-24v.yaml) | Esquema original em nível de terminal: SIMCAM → conversor 3,3 V→5 V → DM556D 24–36 V → motor KTC-HT23-400 em bipolar paralela, com referência comum |
 | [`../LIGACOES.md`](../LIGACOES.md) | Guia de execução: pino a pino, polaridade do opto, fases do motor, alimentação e ordem de ensaio |
 
@@ -29,27 +31,34 @@ subprojeto: uma placa, um motor, um driver.
 
 ## Como renderizar
 
-Requer WireViz 0.4.1 e Graphviz (`dot`, instalado em
-`C:\Program Files\Graphviz\bin`). Comando **exato**, na raiz do repositório:
+No **SCAD Studio**, abra a aba WireViz, solte
+`ventiseg-pan-24v-diagrama.yaml`, mantenha **LAYOUT = Organizado** e clique
+em **Gerar diagrama**. O aplicativo converte o YAML em DOT e renderiza o SVG
+com Graphviz WASM, localmente. Use os botões **DOT**, **SVG** e **PNG**
+(RESOLUÇÃO PNG = 4×) para exportar.
+
+Para regenerar os PNGs entregues a partir do `.gv` já versionado (Graphviz
+instalado em `C:\Program Files\Graphviz\bin`):
 
 ```powershell
 $env:PATH = "C:\Program Files\Graphviz\bin;$env:PATH"
-wireviz -f gsp -o firmware\ventiseg\docs\wireviz firmware\ventiseg\docs\wireviz\ventiseg-pan-24v-diagrama.yaml
+$base = "firmware\ventiseg\docs\wireviz\ventiseg-pan-24v-diagrama"
+dot -Tpng -Gdpi=120 "$base.gv" -o "$base.png"
+dot -Tpng -Gdpi=200 "$base.gv" -o "$base-hires.png"
 ```
 
-Gera `.gv`, `.svg` e `.png` na própria pasta. Para o PNG em alta resolução
-(200 dpi), a partir do `.gv`:
-
-```powershell
-& "C:\Program Files\Graphviz\bin\dot.exe" -Tpng -Gdpi=200 `
-  "firmware\ventiseg\docs\wireviz\ventiseg-pan-24v-diagrama.gv" `
-  -o "firmware\ventiseg\docs\wireviz\ventiseg-pan-24v-diagrama-hires.png"
-```
-
-Para apenas validar o YAML original sem Graphviz:
+Não rode `wireviz -f gsp -o firmware\ventiseg\docs\wireviz ...`: isso
+substituiria o DOT organizado pelo desenho espalhado no estilo WireViz.
+Para validar o YAML com o WireViz original, escreva apenas em `%TEMP%`:
 
 ```powershell
 & "$env:LOCALAPPDATA\Programs\Python\Python314\Scripts\wireviz.exe" -f g -o "$env:TEMP\opencode\wireviz-gv" "firmware\ventiseg\docs\wireviz\ventiseg-pan-24v.yaml"
+```
+
+Validação do modo organizado (no repositório `E:\dev\scadstudio`):
+
+```powershell
+node scripts\check-wireviz-schematic.mjs "E:\dev\windfollow\firmware\ventiseg\docs\wireviz\ventiseg-pan-24v-diagrama.yaml"
 ```
 
 ## Confirmado — pode constar como fato
@@ -95,8 +104,9 @@ em [`../HARDWARE-DECISIONS.md`](../HARDWARE-DECISIONS.md).
 ## Estado
 
 - [x] YAML enxuto escrito e validado pelo parser WireViz 0.4.1.
-- [x] Desenho colorido com 7 blocos, legenda de cores e banner de avisos
-      gerado em SVG, PNG e PNG 200 dpi (32 nós, sem sobreposição).
+- [x] Layout organizado em DOT/SVG/PNG com 7 blocos, legenda de cores e
+      quadro de avisos separado. Auditoria: 24 arestas, 2 terminais isolados
+      (`ENA+`/`ENA-`) e 3 `loops` do GND estrela — mesmas conexões do YAML.
 - [x] Incertezas explícitas em `notes`, sem "chutar" interface elétrica.
 - [x] Nenhum elemento de laser/relé/fim de curso/tilt ou fonte 12 V.
       A fonte 5 V existe somente para o lado HV do conversor.
