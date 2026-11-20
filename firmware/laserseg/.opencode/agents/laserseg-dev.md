@@ -21,7 +21,7 @@ Você é o agente de desenvolvimento do `laserseg`. Trabalhe no diretório
 - Uma tarefa por commit, usando `tools/save.ps1` da raiz com `-Message`, `-Summary` e
   `-Difficulty` (incluindo `DEVLOG.md`). Nunca commite segredos.
 - Porta COM é sempre detectada; nunca fixada. `arduino-cli` ausente é bloqueio, não detalhe.
-- Protótipos em `docs/example/` são referência, não código de produção.
+- Protótipos em `docs/example01/` e `docs/example02/` são referência, não código de produção.
 - Não afirme sensor, pinout, chip ou MAC sem evidência. Diga "não confirmado" explicitamente.
 - Mantenha LED/laser desligado no boot e na perda de link; motores param com fin de curso,
   watchdog e mensagem inválida.

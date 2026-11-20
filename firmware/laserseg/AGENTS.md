@@ -54,7 +54,7 @@ antes de qualquer mudança que toque pinagem, alimentação ou saída de luz.
 
 ## Fontes e ressalvas
 
-`docs/example/` é protótipo de referência, não firmware validado. Sensor da S3_CAM_SIM
+`docs/example01/` e `docs/example02/` são protótipos de referência, não firmware validado. Sensor da S3_CAM_SIM
 (OV2640 vs OV5640) e revisão do pinout ainda não foram confirmados. Se uma decisão depender
 disso, pare e pergunte em vez de assumir.
 

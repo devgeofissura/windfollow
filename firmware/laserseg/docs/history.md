@@ -2,12 +2,13 @@
 
 > **Para que serve:** memória de sessão. Um modelo de médio contexto deve conseguir ler
 > este arquivo inteiro. Detalhes ficam em `README.md`, `ESTADO.md`, `PROTOCOLO_UDP.md` e
-> nos documentos de `docs/example/`. Atualize no fim de cada commit, com entradas curtas.
+> nos documentos de `docs/example01/` e `docs/example02/`. Atualize no fim de cada commit,
+> com entradas curtas.
 
 ## 0. Regra de ouro
 
 1. T-SIMCAM faz **visão**; ESP32-S3 separada faz **motores + luz**. Não inverter.
-2. `docs/example/` é protótipo compilável, **não** firmware validado em bancada.
+2. `docs/example01/` é protótipo compilável, **não** firmware validado em bancada.
 3. LED desligado no boot, no reset, na perda de link e no watchdog.
 4. Motores param com fin de curso NF, comando inválido ou link > 1200 ms.
 5. Sensor, pinout, chip, flash e MAC não confirmados não viram fato. Diga "não confirmado".
@@ -46,6 +47,7 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
 | `7f54c65` | `chore: remove pycache versionado do parser` |
 | `44cf96d` | `feat(laserseg): parser UDP C++ com autoteste e telemetria` — `controller/`, 55 vetores gerados da referência Python, perfil repontado e 6 condições de integração |
 | **commit atual** | `fix(laserseg): telemetria em maiusculas validada na placa` — `AUTOTEST PASS` 76/76; bug de `none`/`range`/`link` minusculos só apareceu no dispositivo |
+| `—` | `docs(laserseg): versiona prototipos e spec wifi provisioning` — `example/` → `example01/` com 18 arquivos byte-identicos, `example02/`, spec AP → STA aprovada e 92 testes host verdes |
 
 > Hash exato do commit atual: `git log -1 --oneline`.
 
@@ -175,7 +177,7 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
   aceito atualiza `lastPacket`; `TRACK,1` reinicia a janela de sequência.
   `axes_stopped` explícito no boot, no `TRACK,0`, em amostra inválida e no
   watchdog — o firmware deve parar AMBOS os eixos e desligar a luz.
-  Protótipos em `docs/example/` não cumprem isso (`toInt()` aceita lixo).
+  Protótipos em `docs/example01/` não cumprem isso (`toInt()` aceita lixo).
 - Revisão `laserseg-reviewer` (somente leitura) apontou: idade só em `T`,
   watchdog sem parada de eixos, perfil apontando para sketch inexistente e
   três documentos defasados. Tudo corrigido no mesmo bloco; `Stop-Process`
@@ -234,7 +236,8 @@ powershell -ExecutionPolicy Bypass -File tools/save.ps1 `
 | `firmware/laserseg/docs/ESTADO.md` | status e pendências detalhadas |
 | `firmware/laserseg/docs/PROTOCOLO_UDP.md` | contrato completo das mensagens |
 | `firmware/laserseg/docs/foco-luz-seguidor-001` | ligação revisada e memorial |
-| `firmware/laserseg/docs/example/` | sketches, CAD e referências (protótipos) |
+| `firmware/laserseg/docs/example01/` | sketches, CAD e referências (protótipos) |
+| `firmware/laserseg/docs/example02/simcam_tracker/` | protótipos organizados por nó |
 | `firmware/laserseg/.opencode/` | config, skills, agentes, MCPs, atribuição MIT |
 | `docs/LICOES_APRENDIDAS.md` (raiz) | lições dos projetos iRobot/Windfollow |
 

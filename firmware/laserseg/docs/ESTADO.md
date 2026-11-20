@@ -8,7 +8,7 @@
 | Item | Status | Evidência / observação |
 |---|---|---|
 | Escopo e arquitetura | Definidos | `base-de-conhecimento-rastreamento-com-s3-cam-sim.md`, `foco-luz-seguidor-001` |
-| Protótipos de firmware | Existentes em `docs/example/` | `camera_node.ino`, `controller_drv8834.ino`, `controller_uln2003.ino` |
+| Protótipos de firmware | Existentes em `docs/example01/` e `docs/example02/` | `camera_node.ino`, `controller_drv8834.ino`, `controller_uln2003.ino` |
 | Firmware de produção | Parcial | `controller/` existe com parser/estado/autoteste/telemetria (somente serial); `camera_node/` ainda não existe |
 | Protocolo UDP | Validado em host e C++ | `PROTOCOLO_UDP.md` + contrato v0.1; 84 testes em `tests/test_protocol.py`, referência em `tools/protocol_ref.py`, vetores C++ gerados por `tools/gen_autotest_vectors.py` |
 | Pinout da câmera | Não confirmado | Protótipo usa `CAMERA_MODEL_TTGO_T_CAM_SIM`; sensor pode ser OV2640 ou OV5640 |
@@ -75,7 +75,7 @@
 1. Manter a T-SIMCAM como nó de visão; não acionar motores/iluminador diretamente por ela.
 2. Enviar apenas posição/erro e comandos por UDP; não transmitir vídeo para outro computador.
 3. Usar `AccelStepper` na controladora, com fins de curso NF e timeout de link.
-4. Tratar `docs/example/` como fonte de ideias validadas apenas por compilação, não por ensaio elétrico.
+4. Tratar `docs/example01/` como fonte de ideias validadas apenas por compilação, não por ensaio elétrico.
 5. Preferir LED difuso a laser no primeiro protótipo.
 6. Qualquer mudança de firmware deve atualizar este arquivo, o protocolo e o `DEVLOG.md`.
 
@@ -94,7 +94,7 @@
 1. Fechar as seis condições de integração listadas em `PROTOCOLO_UDP.md` antes de
    adicionar GPIO, motores ou LED.
 2. Transformar os protótipos em sketches de produção, um nó por pasta.
-3. Fazer ensaio de bancada sem carga mecânica, seguindo `docs/example/Ligações e ensaio.md`.
+3. Fazer ensaio de bancada sem carga mecânica, seguindo `docs/example01/Ligações e ensaio.md`.
 4. Só então integrar câmera + controladora + foco com limites conservadores.
 
 ## Referência de sessão atual

@@ -1,6 +1,6 @@
 # Protocolo UDP do laserseg
 
-Documento de referência para o enlace entre o nó de visão (T-SIMCAM) e a controladora. O formato abaixo é o que os protótipos em `docs/example/` implementam; qualquer mudança deve ser replicada nos dois sketches e registrada no `DEVLOG.md`.
+Documento de referência para o enlace entre o nó de visão (T-SIMCAM) e a controladora. O formato abaixo é o que os protótipos em `docs/example01/` implementam; qualquer mudança deve ser replicada nos dois sketches e registrada no `DEVLOG.md`.
 
 ## Transporte
 
@@ -69,7 +69,7 @@ A câmera envia `T,...` apenas quando `trackingEnabled` é verdadeiro. A detecç
 
 O formato no fio **não mudou**. O que mudou foi o conjunto de regras que a
 controladora de produção deve aplicar antes de agir. Os protótipos em
-`docs/example/` usam `String.toInt()` e atualizam `lastPacket` antes do parse;
+`docs/example01/` usam `String.toInt()` e atualizam `lastPacket` antes do parse;
 eles **não** satisfazem este contrato e não devem ser copiados como produção.
 
 ### Ordem das verificações

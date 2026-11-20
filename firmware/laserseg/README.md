@@ -1,6 +1,6 @@
 # laserseg — seguidor de luz com ESP32
 
-> **Estado atual (2026-11-19):** fundação do subprojeto. Documentação, regras, skills, agentes e MCPs criados antes do firmware de produção. Os sketches em `docs/example/` são **protótipos de referência**, não código final.
+> **Estado atual (2026-11-19):** fundação do subprojeto. Documentação, regras, skills, agentes e MCPs criados antes do firmware de produção. Os sketches em `docs/example01/` e `docs/example02/` são **protótipos de referência**, não código final.
 
 ## Escopo
 
@@ -50,7 +50,9 @@ firmware/laserseg/
 │   ├── PROTOCOLO_UDP.md              contrato de mensagens entre os nós
 │   ├── base-de-conhecimento-...md    escopo e evidências
 │   ├── foco-luz-seguidor-001         memorial de ligação revisada
-│   └── example/                      protótipos, CAD, zips e referências
+│   ├── example01/                   protótipos, CAD, zips e referências
+│   ├── example02/simcam_tracker/    protótipos organizados por nó
+│   └── spec/                        specs aprovadas (UDP, DM556D, Wi-Fi)
 └── .opencode/
     ├── opencode.jsonc                config do projeto (agente, instruções, MCP)
     ├── agents/                       agentes especializados
@@ -139,6 +141,6 @@ Nunca fixar porta COM no código ou na documentação como se fosse permanente.
 
 - [Base de conhecimento](docs/base-de-conhecimento-rastreamento-com-s3-cam-sim.md)
 - [Ligação revisada — S3_CAM_SIM V1.3 + pan-tilt + iluminador LED](docs/foco-luz-seguidor-001)
-- [SIMCAM Tracker — Arduino CLI + pan-tilt](docs/example/SIMCAM%20Tracker%20—%20Arduino%20CLI%20%2B%20pan-tilt.md)
-- [Ligações e ensaio](docs/example/Ligações%20e%20ensaio.md)
+- [SIMCAM Tracker — Arduino CLI + pan-tilt](docs/example01/SIMCAM%20Tracker%20—%20Arduino%20CLI%20%2B%20pan-tilt.md)
+- [Ligações e ensaio](docs/example01/Ligações%20e%20ensaio.md)
 - [AGENTS.md do repositório](../../AGENTS.md)

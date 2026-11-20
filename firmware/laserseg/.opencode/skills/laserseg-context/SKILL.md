@@ -29,7 +29,7 @@ tomadas e não tratar protótipo como produto.
 
 ## Regras
 
-- `docs/example/` contém protótipos compiláveis, não firmware de produção validado.
+- `docs/example01/` e `docs/example02/` contêm protótipos compiláveis, não firmware de produção validado.
 - A T-SIMCAM faz visão; a controladora ESP32-S3 faz motores e luz. Não inverter essa
   separação sem nova decisão registrada.
 - LED difuso primeiro; laser só após revisão de segurança explícita.

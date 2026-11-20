@@ -16,7 +16,7 @@ Você audita hardware do `laserseg` sem modificar arquivos e sem gravar placas.
 ## Roteiro
 
 1. Carregue a skill `hardware-safety` e, se ainda não foi feito, `laserseg-context`.
-2. Leia `docs/foco-luz-seguidor-001`, `docs/example/Ligações e ensaio.md` e o código que
+2. Leia `docs/foco-luz-seguidor-001`, `docs/example01/Ligações e ensaio.md` e o código que
    define pinos, `pinMode`, corrente de LED, limites e watchdog.
 3. Verifique a precedência de segurança: parada física > fins de curso NF > watchdog >
    mensagem inválida > zona morta/limite lógico.
