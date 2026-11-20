@@ -1,6 +1,6 @@
 # Spec: Simulador Web do laserseg — V1
 
-Status: proposta em 2026-11-20 — aguarda aprovacao humana antes da implementacao.
+Status: aprovada e implementada em 2026-11-20. Plano: `tasks/plan-simulador-web.md`.
 
 ## Objective
 
@@ -121,21 +121,21 @@ decisao (`nextState`, `targetFromError`) sempre que possivel, zeros estados em
 
 ## Success Criteria
 
-- [ ] `index.html` abre por duplo clique, sem servidor e sem erro de sintaxe.
-- [ ] Aba Painel: camera (webcam ou alvo sintetico), crosshair, status de
+- [x] `index.html` abre por duplo clique, sem servidor e sem erro de sintaxe.
+- [x] Aba Painel: camera (webcam ou alvo sintetico), crosshair, status de
       `TRACK/LIGHT/MANUAL`, x/y/seq, watchdog e log de mensagens/ACK.
-- [ ] Aba Wi-Fi: AP `laserseg`/`123456`, lista simulada de SSIDs, campo de senha,
+- [x] Aba Wi-Fi: AP `laserseg`/`123456`, lista simulada de SSIDs, campo de senha,
       IP da controladora (padrao `192.168.4.2`), salvar/reiniciar e fallback
       "AP e para" — sem persistir a senha da rede em arquivo.
-- [ ] Aba Protocolo: constantes e formatos `T,<seq>,<x>,<y>,<valid>`,
+- [x] Aba Protocolo: constantes e formatos `T,<seq>,<x>,<y>,<valid>`,
       `TRACK,<0|1>`, `LIGHT,<0|1>`, `MANUAL,<pan|tilt>,<-1|1>` e
       `ACK,<seq>,<state>,<fault>,<light>`, somente leitura.
-- [ ] Simular perda de link (botao) => eixos parados, luz OFF, fault `LINK`.
-- [ ] Constantes JS iguais as do firmware e defendidas por teste host.
-- [ ] Tema claro/escuro, layout responsivo, navegacao por teclado e `label` nos
+- [x] Simular perda de link (botao) => eixos parados, luz OFF, fault `LINK`.
+- [x] Constantes JS iguais as do firmware e defendidas por teste host.
+- [x] Tema claro/escuro, layout responsivo, navegacao por teclado e `label` nos
       formularios.
-- [ ] Suite host verde: 92 testes atuais + novos testes do simulador.
-- [ ] `git status` limpo apos commit e push, com DEVLOG atualizado.
+- [x] Suite host verde: 92 testes atuais + novos testes do simulador.
+- [x] `git status` limpo apos commit e push, com DEVLOG atualizado.
 
 ## Out of Scope (Deferred)
 

@@ -46,8 +46,12 @@ Repositório: `git@github.com:devgeofissura/windfollow.git`, branch `main`.
 | `ffff575` | `test(laserseg): parser udp validado e probe serial versionado` — `tools/protocol_ref.py`, 84 testes, contrato v0.1 e revisão independente aplicada |
 | `7f54c65` | `chore: remove pycache versionado do parser` |
 | `44cf96d` | `feat(laserseg): parser UDP C++ com autoteste e telemetria` — `controller/`, 55 vetores gerados da referência Python, perfil repontado e 6 condições de integração |
-| **commit atual** | `fix(laserseg): telemetria em maiusculas validada na placa` — `AUTOTEST PASS` 76/76; bug de `none`/`range`/`link` minusculos só apareceu no dispositivo |
-| `—` | `docs(laserseg): versiona prototipos e spec wifi provisioning` — `example/` → `example01/` com 18 arquivos byte-identicos, `example02/`, spec AP → STA aprovada e 92 testes host verdes |
+| `f580b44` | `fix(laserseg): telemetria em maiusculas validada na placa` — `AUTOTEST PASS` 76/76; bug de `none`/`range`/`link` minusculos só apareceu no dispositivo |
+| `cbe2f69` | `feat(laserseg): no DM556D serial-only com nucleo compartilhado` — `controller_dm556d/` reusa parser e constantes validados |
+| `99f7581` | `docs(laserseg): nota de verificacao de hardware T1` |
+| `440ed12` | `docs(laserseg): versiona prototipos e spec wifi provisioning` — `example/` → `example01/` com 18 arquivos byte-identicos, `example02/`, spec AP → STA aprovada e 92 testes host verdes |
+| `a69cc57` | `docs(laserseg): spec do simulador web V1` — gate spec/aprovacao/completo; premissas, limites e criterios de aceite |
+| `—` | `feat(laserseg): simulador web V1` — `simulator/` com Painel/Wi-Fi/Protocolo, 10 testes de contrato e 102 testes host verdes |
 
 > Hash exato do commit atual: `git log -1 --oneline`.
 

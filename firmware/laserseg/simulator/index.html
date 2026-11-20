@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>laserseg — simulador web</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="simulator-badge" role="note">
+        SIMULADOR — nenhum GPIO, motor ou luz real e acionado. Comandos ficam neste navegador.
+    </div>
+
+    <div class="app">
+        <header class="app-header">
+            <div>
+                <h1>laserseg <span class="muted">· simulador</span></h1>
+                <p class="subtitle">Contrato UDP v0.1, estados e provisionamento sem placa.</p>
+            </div>
+            <div class="header-actions">
+                <span class="status-chip" id="header-status" aria-live="polite">Simulacao ativa</span>
+                <button type="button" id="theme-toggle" class="btn btn-ghost"
+                        aria-label="Alternar tema claro e escuro">Alternar tema</button>
+            </div>
+        </header>
+
+        <nav class="tabs" role="tablist" aria-label="Areas do simulador">
+            <button type="button" class="tab active" role="tab" id="tabbtn-painel"
+                    aria-controls="tab-painel" aria-selected="true" data-tab="painel">Painel</button>
+            <button type="button" class="tab" role="tab" id="tabbtn-wifi"
+                    aria-controls="tab-wifi" aria-selected="false" data-tab="wifi">Wi-Fi</button>
+            <button type="button" class="tab" role="tab" id="tabbtn-protocolo"
+                    aria-controls="tab-protocolo" aria-selected="false" data-tab="protocolo">Protocolo</button>
+        </nav>
+
+        <main>
+            <!-- PAINEL -->
+            <section id="tab-painel" class="tab-panel active" role="tabpanel" aria-labelledby="tabbtn-painel">
+                <p class="safety-note" role="note">
+                    Seguranca: isto e uma simulacao. O firmware validado mantem
+                    <code>LASERSEG_ENABLE_GPIO = 0</code> e nenhuma saida fisica e ativada.
+                </p>
+
+                <div class="grid-2">
+                    <article class="card">
+                        <h2>Camera e alvo</h2>
+                        <div class="camera-stage" id="camera-stage">
+                            <video id="cam-video" autoplay muted playsinline hidden></video>
+                            <canvas id="cam-canvas" width="640" height="360" aria-label="Alvo simulado"></canvas>
+                            <div class="crosshair" aria-hidden="true"></div>
+                            <div class="target-dot" id="target-dot" aria-hidden="true"></div>
+                        </div>
+                        <div class="row">
+                            <button type="button" class="btn" id="btn-camera">Ativar webcam</button>
+                            <span class="hint" id="camera-mode">Alvo sintetico ativo</span>
+                        </div>
+                    </article>
+
+                    <article class="card">
+                        <h2>Estado da controladora</h2>
+                        <div class="status-grid" aria-live="polite">
+                            <div class="status-item"><span class="label">Estado</span><strong id="st-state">SAFE</strong></div>
+                            <div class="status-item"><span class="label">Movimento</span><strong id="st-motion">nao detectado</strong></div>
+                            <div class="status-item"><span class="label">X / Y</span><strong id="st-xy">0 / 0</strong></div>
+                            <div class="status-item"><span class="label">Sequencia</span><strong id="st-seq">-1</strong></div>
+                            <div class="status-item"><span class="label">Link</span><strong id="st-link">ativo</strong></div>
+                            <div class="status-item"><span class="label">Luz</span><strong id="st-light">OFF</strong></div>
+                            <div class="status-item"><span class="label">Wi-Fi</span><strong id="st-wifi">AP</strong></div>
+                            <div class="status-item"><span class="label">Falha</span><strong id="st-fault">NONE</strong></div>
+                        </div>
+                        <p class="hint">Zona morta 55 · ganho 0,75 · limite 533 passos · watchdog 1200 ms.</p>
+                    </article>
+                </div>
+
+                <article class="card">
+                    <h2>Controles</h2>
+                    <div class="control-group">
+                        <button type="button" class="btn btn-primary" id="btn-track" aria-pressed="false">Rastreamento: OFF</button>
+                        <button type="button" class="btn btn-primary" id="btn-light" aria-pressed="false">Luz: OFF</button>
+                        <button type="button" class="btn btn-warn" id="btn-link-cut" aria-pressed="false">Simular perda de link</button>
+                        <button type="button" class="btn btn-ghost" id="btn-reset">Reiniciar simulacao</button>
+                    </div>
+                    <div class="control-group" aria-label="Movimento manual">
+                        <span class="label">Movimento manual</span>
+                        <button type="button" class="btn" data-axis="pan" data-dir="-1">PAN −</button>
+                        <button type="button" class="btn" data-axis="pan" data-dir="1">PAN +</button>
+                        <button type="button" class="btn" data-axis="tilt" data-dir="-1">TILT −</button>
+                        <button type="button" class="btn" data-axis="tilt" data-dir="1">TILT +</button>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <h2>Log do protocolo</h2>
+                    <ol id="log" class="log" aria-live="polite" aria-label="Mensagens simuladas"></ol>
+                </article>
+            </section>
+
+            <!-- WI-FI -->
+            <section id="tab-wifi" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-wifi" hidden>
+                <article class="card">
+                    <h2>Provisionamento Wi-Fi (AP → STA)</h2>
+                    <p class="hint">
+                        Na primeira inicializacao o dispositivo publica o AP
+                        <strong>laserseg</strong> / <strong>123456</strong> em
+                        <code>192.168.4.1</code> — senha publica por decisao aprovada.
+                    </p>
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="wifi-network">Rede encontrada</label>
+                            <div class="row">
+                                <select id="wifi-network"><option value="">— varrer redes —</option></select>
+                                <button type="button" class="btn" id="btn-scan">Atualizar lista</button>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label for="wifi-ssid">SSID da rede local</label>
+                            <input type="text" id="wifi-ssid" placeholder="SSID" autocomplete="off">
+                        </div>
+                        <div class="field">
+                            <label for="wifi-pass">Senha da rede local</label>
+                            <input type="password" id="wifi-pass" autocomplete="new-password" placeholder="Somente nesta pagina">
+                        </div>
+                        <div class="field">
+                            <label for="ctrl-ip">IP da controladora</label>
+                            <input type="text" id="ctrl-ip" value="192.168.4.2" inputmode="numeric">
+                        </div>
+                        <div class="field checkbox-field">
+                            <input type="checkbox" id="fail-network">
+                            <label for="fail-network">Simular rede ausente (testar fallback)</label>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <button type="button" class="btn btn-primary" id="btn-save-wifi">Salvar e reiniciar</button>
+                        <button type="button" class="btn btn-ghost" id="btn-ap-only">Voltar ao AP</button>
+                    </div>
+                    <p class="status-line" id="prov-status" aria-live="polite">PROV AP_UP — aguardando configuracao.</p>
+                    <p class="hint">A senha digitada fica apenas na memoria da pagina: nao va para log, arquivo ou serial.</p>
+                </article>
+            </section>
+
+            <!-- PROTOCOLO -->
+            <section id="tab-protocolo" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-protocolo" hidden>
+                <article class="card">
+                    <h2>Contrato UDP v0.1 — somente leitura</h2>
+                    <p class="hint">
+                        Fonte da verdade: <code>tools/protocol_ref.py</code>,
+                        <code>controller/parser.cpp</code> e
+                        <code>docs/PROTOCOLO_UDP.md</code>. O simulador replica as
+                        constantes para validar a experiencia, nao para substituir o firmware.
+                    </p>
+                    <table class="data-table">
+                        <thead><tr><th>Constante</th><th>Valor</th></tr></thead>
+                        <tbody id="proto-constants"></tbody>
+                    </table>
+                    <table class="data-table">
+                        <thead><tr><th>Mensagem</th><th>Formato</th></tr></thead>
+                        <tbody>
+                            <tr><td>Rastreamento</td><td><code>TRACK,&lt;0|1&gt;</code></td></tr>
+                            <tr><td>Luz</td><td><code>LIGHT,&lt;0|1&gt;</code></td></tr>
+                            <tr><td>Manual</td><td><code>MANUAL,&lt;pan|tilt&gt;,&lt;-1|1&gt;</code></td></tr>
+                            <tr><td>Amostra</td><td><code>T,&lt;seq&gt;,&lt;x&gt;,&lt;y&gt;,&lt;valid&gt;</code></td></tr>
+                            <tr><td>Telemetria</td><td><code>ACK,&lt;seq&gt;,&lt;state&gt;,&lt;fault&gt;,&lt;light&gt;</code></td></tr>
+                        </tbody>
+                    </table>
+                    <p class="hint">
+                        Validacao: tamanho/codificação → formato → faixa → sequencia → idade.
+                        Estado <code>SAFE | TRACK | MANUAL</code>; falha
+                        <code>NONE | LENGTH | ENCODING | FORMAT | RANGE | SEQUENCE | AGE | LINK</code>.
+                    </p>
+                </article>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

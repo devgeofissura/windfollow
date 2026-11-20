@@ -1,7 +1,7 @@
 # Estado do projeto laserseg
 
-**Atualizado em:** 2026-11-19  
-**Fase:** bancada — nó controladora com parser/estado/autoteste/telemetria implementado e compilado; sem GPIO, motores ou luz.
+**Atualizado em:** 2026-11-20  
+**Fase:** bancada — nó controladora com parser/estado/autoteste/telemetria implementado e compilado; nó DM556D serial-only; simulador web V1 disponível; sem GPIO, motores ou luz.
 
 ## Situação atual
 
@@ -11,6 +11,7 @@
 | Protótipos de firmware | Existentes em `docs/example01/` e `docs/example02/` | `camera_node.ino`, `controller_drv8834.ino`, `controller_uln2003.ino` |
 | Firmware de produção | Parcial | `controller/` existe com parser/estado/autoteste/telemetria (somente serial); `camera_node/` ainda não existe |
 | Protocolo UDP | Validado em host e C++ | `PROTOCOLO_UDP.md` + contrato v0.1; 84 testes em `tests/test_protocol.py`, referência em `tools/protocol_ref.py`, vetores C++ gerados por `tools/gen_autotest_vectors.py` |
+| Simulador web V1 | Implementado (sem hardware) | `simulator/index.html` abre em `file://`; Constantes/contrato defendidos por `tests/test_simulator.py`; **102 testes host verdes**; spec `spec/SPEC-simulador-web.md` |
 | Pinout da câmera | Não confirmado | Protótipo usa `CAMERA_MODEL_TTGO_T_CAM_SIM`; sensor pode ser OV2640 ou OV5640 |
 | Controladora escolhida | Parcial | ESP32-S3 separada definida; placa exata e GPIOs ainda a validar |
 | Motores/driver | Não definidos | Duas alternativas em estudo: bipolar + DRV8834 ou 28BYJ-48 + ULN2003 |

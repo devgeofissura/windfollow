@@ -1,6 +1,6 @@
 # laserseg — seguidor de luz com ESP32
 
-> **Estado atual (2026-11-19):** fundação do subprojeto. Documentação, regras, skills, agentes e MCPs criados antes do firmware de produção. Os sketches em `docs/example01/` e `docs/example02/` são **protótipos de referência**, não código final.
+> **Estado atual (2026-11-20):** fundação do subprojeto + simulador web V1. Documentação, regras, skills, agentes e MCPs criados antes do firmware de produção; `simulator/` abre no navegador sem placa. Os sketches em `docs/example01/` e `docs/example02/` são **protótipos de referência**, não código final.
 
 ## Escopo
 
@@ -44,6 +44,9 @@ Detalhes em [`docs/PROTOCOLO_UDP.md`](docs/PROTOCOLO_UDP.md), [`docs/ESTADO.md`]
 firmware/laserseg/
 ├── AGENTS.md                         regras específicas do subprojeto
 ├── README.md                         este arquivo
+├── simulator/                        simulador web V1 (duplo clique, sem servidor)
+├── spec/                             specs aprovadas (UDP, DM556D, Wi-Fi, simulador)
+├── tasks/                            planos e tarefas (inclui o simulador)
 ├── docs/
 │   ├── ESTADO.md                     status, pendências e próximos passos
 │   ├── history.md                    memória compacta do desenvolvimento
@@ -52,7 +55,6 @@ firmware/laserseg/
 │   ├── foco-luz-seguidor-001         memorial de ligação revisada
 │   ├── example01/                   protótipos, CAD, zips e referências
 │   ├── example02/simcam_tracker/    protótipos organizados por nó
-│   └── spec/                        specs aprovadas (UDP, DM556D, Wi-Fi)
 └── .opencode/
     ├── opencode.jsonc                config do projeto (agente, instruções, MCP)
     ├── agents/                       agentes especializados
@@ -64,6 +66,25 @@ firmware/laserseg/
 ```
 
 Pastas de firmware ainda serão criadas: `camera_node/`, `controller_drv8834/` e `controller_uln2003/`.
+
+## Simulador web (V1)
+
+Abra `simulator/index.html` com duplo clique: funciona em `file://`, sem servidor,
+build ou placa. Três abas — **Painel** (webcam/alvo sintético, `SAFE/TRACK/MANUAL`,
+`x/y/seq`, watchdog e log `T`/`ACK`), **Wi-Fi** (AP `laserseg`/`123456`, varredura
+simulada, senha da rede **somente em memória**, fallback "AP e para") e
+**Protocolo** (constantes e formatos UDP, somente leitura).
+
+```powershell
+powershell -ExecutionPolicy Bypass -File firmware/laserseg/tests/run.ps1
+node --check firmware/laserseg/simulator/js/app.js
+```
+
+A senha do AP é pública por decisão aprovada; nenhuma credencial de rede é
+gravada. O simulador valida a experiência e o contrato, **não** o hardware.
+Detalhes em [`simulator/README.md`](simulator/README.md),
+[`spec/SPEC-simulador-web.md`](spec/SPEC-simulador-web.md) e
+[`tasks/plan-simulador-web.md`](tasks/plan-simulador-web.md).
 
 ## Usando OpenCode neste subprojeto
 

@@ -11,6 +11,30 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-20 13:56 - feat(laserseg): simulador web V1
+
+**Area:** laserseg
+
+**Feito:**
+- pagina index.html abre em file:// com abas Painel Wi-Fi e Protocolo sem servidor ou placa
+- FSM SAFE TRACK MANUAL com comandos TRACK LIGHT MANUAL telemetria ACK watchdog 1200 ms e webcam opcional com alvo sintetico
+- constantes espelhadas de parser.h e driver_config.h defendidas por teste host e senha da rede local fica so em memoria da pagina
+
+**Dificuldades e solucoes:**
+- testes do simulador falharam primeiro por arquivos ausentes RED confirmado antes da implementacao e ficaram verdes apos HTML CSS JS e README
+- ao restaurar link o fault LINK persistia ate o proximo comando entao o handler agora chama acceptCommand e emite ACK limpo
+- Node 26.13.1 disponivel permitiu node --check como gate de sintaxe
+
+**Arquivos:**
+- `firmware/laserseg/README.md`
+- `firmware/laserseg/docs/ESTADO.md`
+- `firmware/laserseg/docs/history.md`
+- `firmware/laserseg/spec/SPEC-simulador-web.md`
+- `firmware/laserseg/simulator/`
+- `firmware/laserseg/tasks/plan-simulador-web.md`
+- `firmware/laserseg/tasks/todo-simulador-web.md`
+- `firmware/laserseg/tests/test_simulator.py`
+
 ### 2026-11-20 13:40 - docs(laserseg): spec do simulador web V1
 
 **Area:** laserseg
