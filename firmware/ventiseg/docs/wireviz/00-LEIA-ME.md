@@ -5,7 +5,7 @@ subprojeto: uma placa, um motor, um driver.
 
 | Arquivo | Conteúdo |
 |---|---|
-| [`ventiseg-pan-24v.yaml`](ventiseg-pan-24v.yaml) | Esquema + diagrama de ligação em nível de terminal: SIMCAM → interface 3,3 V → DM556D 24 VDC → 1 motor, com referência comum |
+| [`ventiseg-pan-24v.yaml`](ventiseg-pan-24v.yaml) | Esquema + diagrama em nível de terminal: SIMCAM → conversor 3,3 V→5 V → DM556D 24–36 V → motor KTC-HT23-400 em bipolar paralela, com referência comum |
 | [`../LIGACOES.md`](../LIGACOES.md) | Guia de execução: pino a pino, polaridade do opto, fases do motor, alimentação e ordem de ensaio |
 
 ## Por que é enxuto
@@ -19,9 +19,10 @@ subprojeto: uma placa, um motor, um driver.
   são um único conjunto móvel acionado pelo **único** motor de passo via
   DM556D @ 24 VDC. O suporte e a folga do cabo nesse conjunto são
   `NAO CONFIRMADO`; não afetam esta ligação STEP/DIR.
-- Não há **laser, luz, módulo relé, fim de curso, eixo de tilt**, nem fontes
-  **12 V** ou **5 V** neste projeto. Não desenhe esses elementos por analogia
-  com o `laserseg`.
+- Não há **laser, luz, módulo relé, fim de curso, eixo de tilt** nem fonte
+  **12 V** neste projeto. Não desenhe esses elementos por analogia com o
+  `laserseg`. Existe **uma fonte de 5 V**, apenas para o lado HV do conversor
+  de nível; sua origem está em `NAO CONFIRMADO` (P1).
 - `VENTISEG_ENABLE_GPIO=0`: o firmware de bancada é serial-only. O YAML
   documenta a intenção de ligação; ele não autoriza energizar nada.
 
@@ -48,9 +49,11 @@ Fonte primária: serigrafia/decisões do usuário em 20/11/2026.
 | `J_GPIO_LIVRES` (preto, 6 pinos) | `1 IO3`, `2 IO46`, `3 IO45`, `4 IO21`, `5 GND`, `6 3V3` |
 | Sinais | `STEP = IO3` (PUL), `DIR = IO21` |
 | Reservas | IO45 e IO46 são **strapping**: não puxar HIGH no boot (IO46) e não alterar a tensão da Flash no boot (IO45) |
-| Elétrica | Lógica de **3,3 V**; nunca aplicar 5 V nos pinos de sinal; 3V3 é só para sensores |
-| Driver / alimentação | DM556D (Azaneli) com **24 VDC**; GND comum em ponto único |
-| Ausências | Sem laser, relé, fim de curso e tilt |
+| Elétrica | Lógica de **3,3 V**; nunca aplicar 5 V nos pinos; conversor 3,3→5 V obrigatório |
+| Interface | **Catodo comum**: GND em `PUL-`/`DIR-`, 5 V em `PUL+`/`DIR+`; `ENA` desconectado |
+| Driver / alimentação | DM556D (24–50 VDC, 2,1–5,6 A) com **24–36 VDC / mín. 4 A**; GND comum em ponto único |
+| Motor | **KTC-HT23-400**, 8 fios, bipolar paralela 2,8 A / 1,9 Nm |
+| Ausências | Sem laser, relé, fim de curso, tilt e fonte 12 V |
 
 ## NAO CONFIRMADO — não montar/energizar sem verificar
 
@@ -59,9 +62,9 @@ Tudo abaixo está marcado em `notes:` no YAML e corresponde às pendências
 
 | ID | Incerteza |
 |---|---|
-| P1 | Entradas PUL/DIR/ENA do DM556D Azaneli: comum-ânodo x comum-catodo, corrente dos optos, lógica de ENA e necessidade de conversor de nível. Mesmo modelo nominal pode ter revisão diferente do exemplar do `laserseg`. |
-| P2 | Modelo, corrente e torque do motor; ajuste de corrente do driver. |
-| P3 | Potência da fonte 24 V, fusível, bitolas e dissipação. |
+| P1 | Corrente dos optos, pulso mínimo e origem do 5 V do conversor. Catodo comum, conversor e `ENA` desconectado já foram confirmados; mesmo modelo nominal pode ter revisão diferente do exemplar do `laserseg`. |
+| P2 | Posições exatas de SW5–SW8 (alvo 1/8 passo = 1600 pulsos/volta) e curso/batentes. Modelo, fios e corrente do motor já confirmados. |
+| P3 | Potência exata da fonte 24–36 V, fusível, bitolas e dissipação. |
 | P4 | Acoplamento motor↔ventilador, curso útil em passos e batentes mecânicos; sem homing físico. |
 | P5 | Pulso falso no boot/reset do driver e comportamento com carga desacoplada. |
 

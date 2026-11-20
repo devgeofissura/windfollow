@@ -37,9 +37,11 @@ e `docs/DEVLOG.md` da raiz no mesmo commit.
 | 5 | GND | referência | Comum com o driver |
 | 6 | 3V3 | referência | Sensores apenas; **não aplicar 5 V nos sinais** |
 
-IO45 e IO46 ficam reservados. A lógica do driver deve ser 3,3 V ou
-interfaceada por conversor — `NAO CONFIRMADO` até conferir o manual/foto do
-DM556D Azaneli.
+IO45 e IO46 ficam reservados. A interface com o DM556D é **catodo comum** com
+conversor obrigatório **3,3 V → 5 V** (optos exigem alto > 3,5 V): GND em
+`PUL-`/`DIR-`, sinais em `PUL+`/`DIR+`, `ENA` desconectado. Corrente do opto,
+pulso mínimo e origem do 5 V seguem `NAO CONFIRMADO` (P1). Motor
+**KTC-HT23-400** em bipolar paralela 2,8 A; ver `docs/LIGACOES.md`.
 
 ## Antes de qualquer gravação
 

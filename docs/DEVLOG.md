@@ -11,6 +11,31 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-20 15:49 - docs(ventiseg): catodo comum, conversor 5V e motor KTC-HT23-400 no esquema
+
+**Area:** ventiseg
+
+**Feito:**
+- esquema WireViz reescrito para catodo comum com conversor obrigatorio 3,3V para 5V e ENA desconectado
+- motor KTC-HT23-400 em bipolar paralela com fios A+/A-/B+/B-, DIP SW1-SW4 e alvo de 1600 pulsos por volta documentados
+- guia LIGACOES, HARDWARE-DECISIONS, ESTADO, README e AGENTS alinhados com a nova interface e o novo motor
+- pinagem IO3=STEP e IO21=DIR preservada apos conflito resolvido como typo pelo usuario
+- 135 testes host verdes e WireViz 0.4.1 validado sem traceback
+
+**Dificuldades e solucoes:**
+- conflito IO3/IO21 no texto do usuario -> perguntei e o usuario confirmou que a serigrafia prevalece
+- WireViz rejeitou cabo de 2 condutores em um unico borne -> dividi em 8 condutores individuais e revalidei
+- topologia do opto divergia do YAML commitado -> usuario escolheu catodo comum e o esquema foi reescrito
+
+**Arquivos:**
+- `firmware/ventiseg/AGENTS.md`
+- `firmware/ventiseg/README.md`
+- `firmware/ventiseg/docs/ESTADO.md`
+- `firmware/ventiseg/docs/HARDWARE-DECISIONS.md`
+- `firmware/ventiseg/docs/LIGACOES.md`
+- `firmware/ventiseg/docs/wireviz/00-LEIA-ME.md`
+- `firmware/ventiseg/docs/wireviz/ventiseg-pan-24v.yaml`
+
 ### 2026-11-20 15:40 - feat(ventiseg): base serial-only, simulador e ligacoes DM556D 24V
 
 **Area:** ventiseg, raiz

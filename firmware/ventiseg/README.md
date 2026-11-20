@@ -9,10 +9,10 @@ motor, **um** driver, **sem** laser/luz, **sem** relé e **sem** fim de curso.
 |---|---|
 | ESP32-S3 LILYGO T-SIMCAM, 16 MB flash | Confirmado na bancada (MAC `dc:da:0c:28:25:30`; porta muda, sempre redetectar) |
 | Conector `J_GPIO_LIVRES` 6 pinos | Serigrafia transcrita pelo usuário |
-| STEP = IO3, DIR = IO21 | Decisão registrada |
-| Driver **DM556D (Azaneli)**, 24 VDC | Decisão registrada |
-| Motor de passo único acoplado ao ventilador/duto | Decisão registrada; modelo/corrente `NAO CONFIRMADO` |
-| Lógica de sinal 3,3 V | Confirmado pela placa; interface do driver `NAO CONFIRMADO` |
+| STEP = IO3, DIR = IO21 | Serigrafia; inversão posterior tratada como typo |
+| Driver **DM556D** (24–50 VDC, 2,1–5,6 A) | 24–36 VDC / mín. 4 A |
+| Motor **KTC-HT23-400**, bipolar paralela 2,8 A / 1,9 Nm | Fios e DIP em `docs/LIGACOES.md` |
+| Sinal 3,3 V → conversor → 5 V, catodo comum | `ENA` desconectado; corrente do opto `NAO CONFIRMADO` |
 
 ## Arquitetura
 
@@ -20,7 +20,7 @@ motor, **um** driver, **sem** laser/luz, **sem** relé e **sem** fim de curso.
    pessoa no quadro
           ^                         malha fechada (câmera gira com o duto)
           |                                       |
- [ SIMCAM: detecção + erro ] --STEP(IO3)/DIR(IO21)--> DM556D 24 V --> motor --> duto + câmera
+ [ SIMCAM: detecção + erro ] --STEP(IO3)/DIR(IO21)--> conversor 3,3→5 V --> DM556D 24-36 V --> motor --> duto + câmera
           |                                                                         |
           +--------------------------- telemetria ACK na serial --------------------+
 ```
@@ -46,6 +46,7 @@ firmware/ventiseg/
 ├── docs/
 │   ├── ESTADO.md             # status, pendências P1-P5
 │   ├── HARDWARE-DECISIONS.md # fatos x NAO CONFIRMADO
+│   ├── LIGACOES.md           # guia de execução: terminal a terminal
 │   ├── PROTOCOLO.md          # contrato v0.1
 │   └── wireviz/              # esquema enxuto
 ├── spec/                     # especificações aprovadas

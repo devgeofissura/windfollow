@@ -1,4 +1,4 @@
-# ventiseg — pan do fluxo de ar: SIMCAM -> interface 3,3V -> DM556D 24 VDC -> 1 motor
+# ventiseg — pan do fluxo de ar: SIMCAM -> conversor 3,3V->5V -> DM556D 24-36V -> 1 motor
 #
 # ESQUEMA DE DOCUMENTACAO E EXECUCAO. Renderizar com WireViz 0.4.1:
 #   wireviz firmware\ventiseg\docs\wireviz\ventiseg-pan-24v.yaml
@@ -7,14 +7,15 @@
 #   docs/LIGACOES.md
 # FONTE PRIMARIA: docs/HARDWARE-DECISIONS.md e AGENTS.md (serigrafia do usuario).
 # LEGENDA:
-#   CONFIRMADO     = registrado pelo usuario na bancada;
-#   NAO CONFIRMADO = manual, etiqueta, revisao fisica ou ensaio (P1-P5);
-#   VARIANTE DESENHADA = comum-anodo; conferir no manual antes de ligar.
+#   CONFIRMADO     = registrado pelo usuario na bancada ou nesta revisao;
+#   NAO CONFIRMADO = ensaio, etiqueta ou tabela da carcacao (P1-P5);
+#   VARIANTE DESENHADA = CATODO COMUM (decisao do usuario nesta revisao).
 #
 # Regra de ouro: VENTISEG_ENABLE_GPIO=0 => firmware serial-only, sem GPIO ativo.
 # Nao energizar motor antes de fechar P1-P5 em docs/ESTADO.md.
-# NAO HA: laser, relé, fim de curso, tilt, fonte 12 V nem fonte 5 V neste projeto.
-# NUNCA ligar GPIO 3,3 V direto em PUL/DIR: interface obrigatoria.
+# NAO HA: laser, rele, fim de curso, tilt nem fonte 12 V neste projeto.
+# Existe UMA fonte 5 V, apenas para o lado HV do conversor de nivel (NAO CONFIRMADO).
+# NUNCA ligar GPIO 3,3 V direto em PUL+/DIR+: conversor obrigatorio.
 
 connectors:
   J_GPIO_LIVRES:
@@ -29,156 +30,204 @@ connectors:
       no boot. Nao usar.
       (4) IO21/GPIO21 = DIR. DIVERGENCIA: tabela oficial marca como status do
       modem; prevalece a serigrafia do usuario (HARDWARE-DECISIONS.md).
-      (5) GND = referencia logica, comum com o driver em ponto unico.
-      (6) 3V3 = apenas sensores; NAO usar como alimentacao do driver e nunca
-      aplicar 5 V nos pinos de sinal (logica de 3,3 V).
+      (5) GND = referencia logica, comum com PUL-/DIR- (catodo) e ponto unico.
+      (6) 3V3 = sensores e lado LV do conversor (baixa corrente). NUNCA ir ao
+      driver, ao motor nem aplicar 5 V nos pinos de sinal da placa.
     pinlabels:
       - IO3_STEP
       - IO46_RESERVADO
       - IO45_RESERVADO
       - IO21_DIR
       - GND
-      - 3V3_SENSORES
+      - 3V3_LOGICA
 
-  # ------------------------------- interface obrigatoria 3,3 V -> opto (P1)
-  J_IF_IN:
-    type: "Interface de sinal 3,3 V -> opto — entrada logica (topologia NAO CONFIRMADA)"
+  # ------------------- conversor de nivel bidirecional 3,3 V <-> 5 V (P1)
+  J_LEVEL_LV:
+    type: "Conversor de nivel bidirecional — lado LV (3,3 V, SIMCAM)"
     notes: |-
-      STEP_IN <- IO3, DIR_IN <- IO21, GND_CTRL <- GND da SIMCAM.
-      O GPIO NAO alimenta o opto: usar conversor/buffer com saida em coletor
-      aberto, dimensionado para a corrente do opto do DM556D Azaneli.
-    pinlabels: [STEP_IN, DIR_IN, GND_CTRL]
+      STEP_LV <- IO3, DIR_LV <- IO21, VCC_3V3 <- 3V3, GND_LV <- GND.
+      Obrigatorio: os optos do DM556D exigem nivel alto > 3,5 V; o GPIO da
+      SIMCAM e 3,3 V e nao deve alimenta-los diretamente.
+    pinlabels: [STEP_LV, DIR_LV, VCC_3V3, GND_LV]
 
-  J_IF_OUT:
-    type: "Interface de sinal — saidas coletor aberto (afundam PUL-/DIR-)"
+  J_LEVEL_HV:
+    type: "Conversor de nivel bidirecional — lado HV (5 V, DM556D)"
     notes: |-
-      VARIANTE DESENHADA: COMUM-ANODO. As saidas afundam PUL- e DIR-.
-      Se o manual do exemplar indicar COMUM-CATODO, o comum vai em PUL-/DIR-
-      e a interface aciona PUL+/DIR+ (ver docs/LIGACOES.md, secao 3).
-      NAO CONFIRMADO: corrente do opto e pulso minimo (P1).
-    pinlabels: [PUL_N, DIR_N]
+      STEP_HV -> PUL+, DIR_HV -> DIR+. VCC_5V vem de fonte 5 V externa;
+      NAO CONFIRMADO se o proprio DM556D oferece saida auxiliar 5 V (P1).
+      GND_HV deve ser o mesmo ponto estrela do GND logico da SIMCAM.
+    pinlabels: [STEP_HV, DIR_HV, VCC_5V, GND_HV]
 
-  J_OPTO_COMMON:
-    type: "Comum do opto PUL/DIR — tensao NAO CONFIRMADA (P1)"
+  J_5V:
+    type: "Fonte 5 V para o lado HV do conversor — NAO CONFIRMADO (P1)"
     notes: |-
-      VARIANTE DESENHADA: COMUM-ANODO. Ambos os pinos sao o mesmo +V_OPTO
-      (representado pelo loop). Pode ser 3,3 V ou 5 V conforme a unidade:
-      NAO inventar fonte e NAO ligar antes de conferir o manual/etiqueta.
-      Se for comum-catodo, este ponto vira GND em PUL-/DIR-.
-    pinlabels: [VCC_PUL, VCC_DIR]
-    loops: [[1, 2]]
+      Nao tirar do 3V3 da SIMCAM. Pode vir de regulador 24 V->5 V ou de
+      saida auxiliar do driver, se existir. Confirmar no manual antes de
+      ligar. GND_5V vai ao mesmo ponto estrela dos demais GND.
+    pinlabels: [V5V, GND_5V]
 
   # -------------------------------------------------------------- DM556D
   J_DRV_SIG:
-    type: "DM556D (Azaneli) — entrada de sinal"
+    type: "DM556D (Azaneli/Policomp/Tecmaf) — entrada de sinal, CATODO COMUM"
     notes: |-
-      Terminais da etiqueta: PUL+/PUL- (passo), DIR+/DIR- (direcao),
-      ENA+/ENA- (habilitacao). Niveis, corrente do opto, pulso minimo e
-      logica do ENA NAO CONFIRMADOS. ENA fica sem ligacao ate o manual
-      confirmar que o driver habilita com ENA solto. NUNCA ligar por suposicao.
+      VARIANTE DESENHADA: CATODO COMUM. GND da SIMCAM em PUL- e DIR-;
+      sinais a 5 V do conversor em PUL+ e DIR+.
+      ENA+/ENA- ficam DESCONECTADOS: o driver ja inicia habilitado por
+      padrao (informado pelo usuario nesta revisao).
+      Corrente dos optos e pulso minimo NAO CONFIRMADOS (P1).
     pinlabels: [PUL_P, PUL_N, DIR_P, DIR_N, ENA_P, ENA_N]
 
   J_DRV_PWR:
-    type: "DM556D (Azaneli) — potencia 24 VDC e fases do motor"
+    type: "DM556D — potencia 24-36 VDC e fases do motor"
     notes: |-
-      VDC_P/GND_PWR = entrada de potencia 24 VDC (tensao CONFIRMADA).
-      A+/A- e B+/B- = bobinas do motor: identificar os pares por datasheet
-      ou ohmimetro, nunca pela cor dos fios. DIP/corrente NAO CONFIRMADOS (P2).
+      VDC_P/GND_PWR = entrada de potencia (24-36 VDC, minimo 4 A).
+      Faixa do driver: 24-50 VDC, corrente 2,1-5,6 A.
+      A+/A- e B+/B- = bobinas do motor KTC-HT23-400 em BIPOLAR PARALELA.
+      DIP: SW1=OFF SW2=ON SW3=OFF (2,7/2,8 A); SW4=OFF (meia corrente em
+      repouso); SW5-SW8 = 1/8 passo (1600 pulsos/volta) — posicoes exatas
+      conferir na tabela impressa na carcacao do exemplar (P2).
       NAO CONFIRMADO: fusivel, bitolas e dissipacao (P3).
     pinlabels: [VDC_P, GND_PWR, A_P, A_N, B_P, B_N]
 
   J_M_PAN:
-    type: "Motor de passo unico — acoplado ao conjunto duto + camera"
+    type: "Motor KTC-HT23-400 — 8 fios, BIPOLAR PARALELA, 2,8 A, 1,9 Nm"
     notes: |-
-      Modelo, corrente, torque, tamanho e curso util NAO CONFIRMADOS (P2/P4).
-      Par com continuidade no ohmimetro -> A+/A-; outro par -> B+/B-.
-      Inverter A+<->A- (ou B+<->B-) troca o sentido, com a fonte desligada.
-      Sem sensor de home: posicao inicial convencional por contagem de passos.
-    pinlabels: [A_P, A_N, B_P, B_N]
+      Conexao paralela informada pelo usuario (conferir datasheet/ohmimetro):
+      A+ = Vermelho + Preto/Branco; A- = Preto + Vermelho/Branco;
+      B+ = Verde + Amarelo/Branco; B- = Amarelo + Verde/Branco.
+      Motor gira o conjunto duto + camera (malha fechada de visao).
+      Curso util e batentes NAO CONFIRMADOS (P4).
+    pinlabels:
+      - A_P1
+      - A_P2
+      - A_N1
+      - A_N2
+      - B_P1
+      - B_P2
+      - B_N1
+      - B_N2
 
   J_PSU_24V:
-    type: "Fonte externa 24 VDC — exclusiva do driver/motor"
+    type: "Fonte externa 24-36 VDC, minimo 4 A — exclusiva do driver/motor"
     notes: |-
-      24 VDC CONFIRMADO como tensao do DM556D. NAO CONFIRMADO: corrente,
-      potencia, fusivel e bitola dos cabos (P3). NUNCA alimentar motor ou
-      driver pelo 3V3/USB da SIMCAM.
+      Faixa 24-36 VDC CONFIRMADA como recomendacao de alimentacao; o driver
+      aceita 24-50 VDC. NAO CONFIRMADO: potencia exata, fusivel e bitola (P3).
+      NUNCA alimentar motor ou driver pelo 3V3/USB da SIMCAM.
+      Nunca inverter a polaridade da fonte.
     pinlabels: [VDC_P, GND_PWR]
 
   J_REF_GND:
     type: "Referencia comum em ponto unico (star ground)"
     notes: |-
-      Une em um unico ponto o GND logico da SIMCAM (LOGICO), o GND do driver
-      (DRIVER) e o negativo da fonte 24 V (FONTE). Os `loops` curto-circuitam
-      os 3 pinos; sem eles a referencia comum nao fica representada.
-    pinlabels: [LOGICO, DRIVER, FONTE]
-    loops: [[1, 2], [2, 3]]
+      Une em um unico ponto o GND logico da SIMCAM (LOGICO), o GND do
+      conversor/fonte 5 V (AUX5V), o GND do driver (DRIVER) e o negativo
+      da fonte 24 V (FONTE). Os `loops` curto-circuitam os 4 pinos; sem
+      eles a referencia comum nao fica representada. O GND logico tambem
+      alimenta PUL-/DIR- (catodo comum).
+    pinlabels: [LOGICO, AUX5V, DRIVER, FONTE]
+    loops: [[1, 2], [2, 3], [3, 4]]
 
 cables:
   W_STEP:
-    type: "IO3 -> interface (logica 3,3 V)"
+    type: "IO3 -> conversor (logica 3,3 V)"
     gauge: 0.25 mm2
     colors: [YE]
     wirelabels: [STEP]
   W_DIR:
-    type: "IO21 -> interface (logica 3,3 V)"
-    gauge: 0.25 mm2
-    colors: [BN]
-    wirelabels: [DIR]
-  W_CTRL_GND:
-    type: "GND da SIMCAM -> interface"
-    gauge: 0.25 mm2
-    colors: [BK]
-    wirelabels: [GND_CTRL]
-
-  W_PUL_N:
-    type: "Interface -> DM556D PUL- (coletor aberto, comum-anodo)"
-    gauge: 0.25 mm2
-    colors: [BU]
-    wirelabels: [PUL_N]
-    notes: "Se comum-catodo: o sinal vai em PUL+ e este ponto vira GND."
-  W_DIR_N:
-    type: "Interface -> DM556D DIR- (coletor aberto, comum-anodo)"
+    type: "IO21 -> conversor (logica 3,3 V)"
     gauge: 0.25 mm2
     colors: [GY]
-    wirelabels: [DIR_N]
-    notes: "Se comum-catodo: o sinal vai em DIR+ e este ponto vira GND."
-  W_OPTO_VCC_P:
-    type: "Comum do opto -> DM556D PUL+ (VARIANTE comum-anodo)"
+    wirelabels: [DIR]
+  W_3V3:
+    type: "3V3 -> lado LV do conversor"
     gauge: 0.25 mm2
     colors: [RD]
-    wirelabels: [VCC_PUL]
-    notes: "Tensao NAO CONFIRMADA (P1). Conferir manual antes de ligar."
-  W_OPTO_VCC_D:
-    type: "Comum do opto -> DM556D DIR+ (VARIANTE comum-anodo)"
+  W_GND_LV:
+    type: "GND da SIMCAM -> lado LV do conversor"
+    gauge: 0.25 mm2
+    colors: [BK]
+
+  W_STEP_5V:
+    type: "Conversor -> DM556D PUL+ (nivel 5 V)"
+    gauge: 0.25 mm2
+    colors: [BN]
+    wirelabels: [PUL_P]
+  W_DIR_5V:
+    type: "Conversor -> DM556D DIR+ (nivel 5 V)"
+    gauge: 0.25 mm2
+    colors: [BU]
+    wirelabels: [DIR_P]
+  W_V5V:
+    type: "Fonte 5 V -> lado HV do conversor — NAO CONFIRMADO (P1)"
     gauge: 0.25 mm2
     colors: [OG]
-    wirelabels: [VCC_DIR]
-    notes: "Tensao NAO CONFIRMADA (P1). Conferir manual antes de ligar."
+    notes: "Conferir origem do 5 V no manual antes de ligar."
+  W_GND_HV:
+    type: "Fonte 5 V -> GND do lado HV do conversor"
+    gauge: 0.25 mm2
+    colors: [BK]
+
+  W_PUL_N:
+    type: "GND da SIMCAM -> DM556D PUL- (catodo comum)"
+    gauge: 0.25 mm2
+    colors: [BK]
+    wirelabels: [PUL_N]
+  W_DIR_N:
+    type: "GND da SIMCAM -> DM556D DIR- (catodo comum)"
+    gauge: 0.25 mm2
+    colors: [BK]
+    wirelabels: [DIR_N]
 
   W_PSU_P:
-    type: "Fonte 24 VDC -> DM556D +Vdc"
+    type: "Fonte 24-36 VDC -> DM556D +Vdc"
     gauge: 1.5 mm2
     colors: [RD]
     notes: "Bitola PROVISORIA — dimensionar fusivel e cabos apos P2/P3."
   W_PSU_N:
-    type: "Fonte 24 VDC -> DM556D GND de potencia"
+    type: "Fonte 24-36 VDC -> DM556D GND de potencia"
     gauge: 1.5 mm2
     colors: [BK]
     notes: "Bitola PROVISORIA — NAO CONFIRMADO."
 
-  W_M_A:
-    type: "Bobina A do motor (A+ / A-)"
-    gauge: 1.5 mm2
-    colors: [BU, BUWH]
-    notes: "Par identificado por ohmimetro; ordem NAO CONFIRMADA."
-  W_M_B:
-    type: "Bobina B do motor (B+ / B-)"
-    gauge: 1.5 mm2
-    colors: [OG, OGWH]
-    notes: "Par identificado por ohmimetro; ordem NAO CONFIRMADA."
+  # Oito condutores individuais: cada par vai junto no mesmo borne do driver.
+  W_M_AP1:
+    type: "A+ condutor 1 — Vermelho (paralela)"
+    gauge: 0.75 mm2
+    colors: [RD]
+  W_M_AP2:
+    type: "A+ condutor 2 — Preto/Branco (paralela)"
+    gauge: 0.75 mm2
+    colors: [BNWH]
+  W_M_AN1:
+    type: "A- condutor 1 — Preto (paralela)"
+    gauge: 0.75 mm2
+    colors: [BN]
+  W_M_AN2:
+    type: "A- condutor 2 — Vermelho/Branco (paralela)"
+    gauge: 0.75 mm2
+    colors: [RDWH]
+  W_M_BP1:
+    type: "B+ condutor 1 — Verde (paralela)"
+    gauge: 0.75 mm2
+    colors: [GN]
+  W_M_BP2:
+    type: "B+ condutor 2 — Amarelo/Branco (paralela)"
+    gauge: 0.75 mm2
+    colors: [YEWH]
+  W_M_BN1:
+    type: "B- condutor 1 — Amarelo (paralela)"
+    gauge: 0.75 mm2
+    colors: [YE]
+  W_M_BN2:
+    type: "B- condutor 2 — Verde/Branco (paralela)"
+    gauge: 0.75 mm2
+    colors: [GNWH]
 
   W_REF_LOG:
     type: "GND logico da SIMCAM -> referencia comum"
+    colors: [BK]
+  W_REF_AUX:
+    type: "GND da fonte 5 V -> referencia comum"
     colors: [BK]
   W_REF_DRV:
     type: "GND do driver -> referencia comum"
@@ -188,53 +237,83 @@ cables:
     colors: [BK]
 
 connections:
-  # --- GPIO -> interface obrigatoria (3,3 V)
+  # --- GPIO -> conversor de nivel (3,3 V)
   - - J_GPIO_LIVRES: [IO3_STEP]
     - W_STEP: [1]
-    - J_IF_IN: [STEP_IN]
+    - J_LEVEL_LV: [STEP_LV]
   - - J_GPIO_LIVRES: [IO21_DIR]
     - W_DIR: [1]
-    - J_IF_IN: [DIR_IN]
+    - J_LEVEL_LV: [DIR_LV]
+  - - J_GPIO_LIVRES: [3V3_LOGICA]
+    - W_3V3: [1]
+    - J_LEVEL_LV: [VCC_3V3]
   - - J_GPIO_LIVRES: [GND]
-    - W_CTRL_GND: [1]
-    - J_IF_IN: [GND_CTRL]
+    - W_GND_LV: [1]
+    - J_LEVEL_LV: [GND_LV]
 
-  # --- interface -> DM556D (VARIANTE DESENHADA: COMUM-ANODO)
-  - - J_IF_OUT: [PUL_N]
+  # --- conversor -> DM556D (CATODO COMUM)
+  - - J_LEVEL_HV: [STEP_HV]
+    - W_STEP_5V: [1]
+    - J_DRV_SIG: [PUL_P]
+  - - J_LEVEL_HV: [DIR_HV]
+    - W_DIR_5V: [1]
+    - J_DRV_SIG: [DIR_P]
+  - - J_5V: [V5V]
+    - W_V5V: [1]
+    - J_LEVEL_HV: [VCC_5V]
+  - - J_5V: [GND_5V]
+    - W_GND_HV: [1]
+    - J_LEVEL_HV: [GND_HV]
+  - - J_GPIO_LIVRES: [GND]
     - W_PUL_N: [1]
     - J_DRV_SIG: [PUL_N]
-  - - J_IF_OUT: [DIR_N]
+  - - J_GPIO_LIVRES: [GND]
     - W_DIR_N: [1]
     - J_DRV_SIG: [DIR_N]
-  - - J_OPTO_COMMON: [VCC_PUL]
-    - W_OPTO_VCC_P: [1]
-    - J_DRV_SIG: [PUL_P]
-  - - J_OPTO_COMMON: [VCC_DIR]
-    - W_OPTO_VCC_D: [1]
-    - J_DRV_SIG: [DIR_P]
 
-  # --- ENA sem ligacao ate confirmacao do manual (P1)
+  # --- ENA desconectado (driver ja inicia habilitado por padrao)
   - - J_DRV_SIG: [ENA_P]
   - - J_DRV_SIG: [ENA_N]
 
-  # --- potencia 24 VDC e fases do motor
+  # --- potencia e fases do motor (bipolar paralela)
   - - J_PSU_24V: [VDC_P]
     - W_PSU_P: [1]
     - J_DRV_PWR: [VDC_P]
   - - J_PSU_24V: [GND_PWR]
     - W_PSU_N: [1]
     - J_DRV_PWR: [GND_PWR]
-  - - J_DRV_PWR: [A_P, A_N]
-    - W_M_A: [1-2]
-    - J_M_PAN: [A_P, A_N]
-  - - J_DRV_PWR: [B_P, B_N]
-    - W_M_B: [1-2]
-    - J_M_PAN: [B_P, B_N]
+  - - J_DRV_PWR: [A_P]
+    - W_M_AP1: [1]
+    - J_M_PAN: [A_P1]
+  - - J_DRV_PWR: [A_P]
+    - W_M_AP2: [1]
+    - J_M_PAN: [A_P2]
+  - - J_DRV_PWR: [A_N]
+    - W_M_AN1: [1]
+    - J_M_PAN: [A_N1]
+  - - J_DRV_PWR: [A_N]
+    - W_M_AN2: [1]
+    - J_M_PAN: [A_N2]
+  - - J_DRV_PWR: [B_P]
+    - W_M_BP1: [1]
+    - J_M_PAN: [B_P1]
+  - - J_DRV_PWR: [B_P]
+    - W_M_BP2: [1]
+    - J_M_PAN: [B_P2]
+  - - J_DRV_PWR: [B_N]
+    - W_M_BN1: [1]
+    - J_M_PAN: [B_N1]
+  - - J_DRV_PWR: [B_N]
+    - W_M_BN2: [1]
+    - J_M_PAN: [B_N2]
 
   # --- referencia comum em ponto unico
   - - J_GPIO_LIVRES: [GND]
     - W_REF_LOG: [1]
     - J_REF_GND: [LOGICO]
+  - - J_5V: [GND_5V]
+    - W_REF_AUX: [1]
+    - J_REF_GND: [AUX5V]
   - - J_DRV_PWR: [GND_PWR]
     - W_REF_DRV: [1]
     - J_REF_GND: [DRIVER]
@@ -243,23 +322,24 @@ connections:
     - J_REF_GND: [FONTE]
 
 metadata:
-  title: "ventiseg — pan do fluxo de ar (SIMCAM + interface 3,3V + DM556D 24 VDC, 1 motor)"
+  title: "ventiseg — pan do fluxo de ar (SIMCAM + conversor 3,3V->5V + DM556D 24-36V, 1 motor)"
   description: |-
     Esquema de documentacao e execucao do ventiseg. Uma unica ESP32-S3
     LILYGO T-SIMCAM detecta a pessoa, comanda o pan e gira, com um unico
-    motor de passo, o conjunto duto + camera. Camera e duto giram juntos
-    (malha fechada de visao). Interface obrigatoria entre GPIO 3,3 V e opto.
+    motor KTC-HT23-400, o conjunto duto + camera. Camera e duto giram
+    juntos (malha fechada de visao). Conversor de nivel obrigatorio entre
+    GPIO 3,3 V e os optos do DM556D.
   notes: |-
     CONFIRMADO: placa/flash, pinagem do conector preto (STEP=IO3, DIR=IO21,
-    IO45/IO46 reservados, GND, 3V3), logica de 3,3 V, driver DM556D Azaneli a
-    24 VDC, camera acoplada ao duto e ausencia de laser, rele, fim de curso e
-    tilt.
-    NAO CONFIRMADO: interface PUL/DIR/ENA do driver (comum, corrente do opto,
-    pulso minimo, tensao do comum), modelo/corrente do motor, fonte/fusivel/
-    bitolas, acoplamento/curso/batentes, pulso no boot e divergencia da revisao
-    da placa.
-    VARIANTE DESENHADA: comum-anodo (+V_OPTO em PUL+/DIR+, interface afundando
-    PUL-/DIR-). Se o exemplar for comum-catodo, espelhar conforme LIGACOES.md.
+    IO45/IO46 reservados, GND, 3V3), logica de 3,3 V, conversor 3,3->5 V,
+    catodo comum, DM556D (24-50 VDC, 2,1-5,6 A) a 24-36 VDC/min 4 A, motor
+    KTC-HT23-400 em bipolar paralela (2,8 A, 1,9 Nm), ENA desconectado
+    (driver inicia habilitado), camera acoplada ao duto e ausencia de laser,
+    rele, fim de curso e tilt.
+    NAO CONFIRMADO: corrente dos optos e pulso minimo, origem do 5 V, DIP
+    SW5-SW8 exatos, curso/batentes, fusivel/bitolas, pulso no boot e revisao
+    da placa. Firmware mantem 3200 pulsos/volta provisorios; alvo e 1600.
+    VARIANTE DESENHADA: catodo comum (GND em PUL-/DIR-, 5 V em PUL+/DIR+).
     Documentacao apenas: nenhum GPIO, motor ou fonte foi alterado/energizado.
 
 options:

@@ -7,95 +7,116 @@ Aqui estão os **terminais exatos** de cada ponta. Este arquivo manda montar;
 
 > **ANTES DE LIGAR:** `VENTISEG_ENABLE_GPIO=0` ⇒ nenhum GPIO é escrito. Não
 > energize o motor, não acople a carga e não pule P1–P5 de
-> [`ESTADO.md`](ESTADO.md). **Nunca ligue um GPIO de 3,3 V direto em PUL/DIR**
-> do DM556D: a entrada é optoacoplada.
+> [`ESTADO.md`](ESTADO.md). **Nunca ligue um GPIO de 3,3 V direto em PUL+/DIR+**
+> do DM556D: os optos exigem nível alto acima de 3,5 V. Use o conversor.
 
 ## 1. Lado da SIMCAM — CONFIRMADO (serigrafia `J_GPIO_LIVRES`)
 
 | Pino do conector | GPIO | Uso no ventiseg | Vai para |
 |---|---|---|---|
-| 1 | IO3 / GPIO3 | `STEP` (PUL) | interface de sinal, entrada `STEP_IN` |
+| 1 | IO3 / GPIO3 | `STEP` (PUL) | conversor de nível, entrada `STEP_LV` |
 | 2 | IO46 / GPIO46 | **reservado** | nada — strapping, não puxar HIGH no boot |
 | 3 | IO45 / GPIO45 | **reservado** | nada — strapping, define tensão da Flash |
-| 4 | IO21 / GPIO21 | `DIR` | interface de sinal, entrada `DIR_IN` |
-| 5 | GND | referência lógica | `GND_CTRL` da interface **e** ponto único de terra |
-| 6 | 3V3 | sensores apenas | **NÃO usar** no driver nem no motor |
+| 4 | IO21 / GPIO21 | `DIR` | conversor de nível, entrada `DIR_LV` |
+| 5 | GND | referência lógica | `GND_LV`, `PUL-`, `DIR-` e ponto único de terra |
+| 6 | 3V3 | lógica de baixa corrente | `VCC_3V3` do conversor — **não** ao driver |
 
-## 2. Lado do DM556D (Azaneli) — terminais da etiqueta
+> A troca `IO21→PUL` / `IO3→DIR` que apareceu em uma mensagem foi tratada como
+> typo: prevalece **IO3 = STEP/PUL** e **IO21 = DIR**, conforme a serigrafia.
 
-Terminais conferidos no protótipo do `laserseg`; **confira os do seu exemplar**
-antes de ligar (P1).
+## 2. Lado do DM556D (Policomp/Tecmaf) — terminais da etiqueta
 
 | Terminal | Nome | Ligação no ventiseg |
 |---|---|---|
-| `PUL+` / `PUL-` | passos | saída da interface (polaridade conforme §3) |
-| `DIR+` / `DIR-` | direção | saída da interface (polaridade conforme §3) |
-| `ENA+` / `ENA-` | habilitação | **deixar sem ligação** somente se o manual disser que o driver habilita solto; nunca ligar por suposição |
-| `A+` / `A-` | fase A do motor | uma das duas bobinas do motor (§4) |
-| `B+` / `B-` | fase B do motor | a outra bobina do motor (§4) |
-| `+Vdc` | alimentação | **+24 V** da fonte externa |
+| `PUL+` | passo (ânodo do opto) | saída `STEP_HV` do conversor, **5 V** |
+| `PUL-` | passo (cátodo do opto) | **GND da SIMCAM** |
+| `DIR+` | direção (ânodo do opto) | saída `DIR_HV` do conversor, **5 V** |
+| `DIR-` | direção (cátodo do opto) | **GND da SIMCAM** |
+| `ENA+` / `ENA-` | habilitação | **desconectados** — o driver já inicia habilitado por padrão |
+| `A+` / `A-` | fase A do motor | dois fios da bobina A em paralelo (§4) |
+| `B+` / `B-` | fase B do motor | dois fios da bobina B em paralelo (§4) |
+| `VCC` / `+Vdc` | alimentação | **+24 a +36 V** da fonte externa (mín. 4 A) |
 | `GND` | alimentação | 0 V da fonte externa **e** terra comum (§5) |
 
-## 3. Interface obrigatória 3,3 V → opto (P1)
+**Topologia: CATODO COMUM.** É a variante desenhada no YAML e confirmada para
+esta bancada. Se o seu exemplar mostrar outra topologia na etiqueta, **pare** e
+atualize o esquema antes de soldar.
 
-O GPIO da ESP32-S3 **não alimenta o opto diretamente**. Use um conversor/
-buffer com saída em coletor aberto (ou circuito equivalente) dimensionado para
-a corrente do opto do seu DM556D. Existem duas variantes:
+## 3. Conversor de nível obrigatório 3,3 V → 5 V
 
-| Variante | Comum | Sinal comandado | Quando usar |
-|---|---|---|---|
-| **A — comum-ânodo** (desenhada no YAML) | `+V_OPTO` → `PUL+` e `DIR+` | a interface **afunda** `PUL-` e `DIR-` | o usual em DM556/DM556D; confirme no manual |
-| **B — comum-cátodo** | `PUL-` e `DIR-` → `GND` | a interface **aciona** `PUL+` e `DIR+` | se o manual/etiqueta do seu exemplar indicar |
+O GPIO da ESP32-S3 **não alimenta o opto diretamente**. Use um conversor
+bidirecional de 2 canais (3,3 V ↔ 5 V) ou driver de linha equivalente:
 
-`NAO CONFIRMADO` e obrigatório antes de soldar: tensão do comum do opto
-(pode ser 3,3 V ou 5 V conforme a unidade), corrente do LED do opto, pulso
-mínimo e lógica do pino `ENA`. Variantes de DM556 citam 7–16 mA e pulso
-≥ 2,5 µs, mas isso **não prova** o exemplar Azaneli.
+| Lado conversor | Pino | Origem/destino |
+|---|---|---|
+| LV (3,3 V) | `STEP_LV` | IO3 da SIMCAM |
+| LV (3,3 V) | `DIR_LV` | IO21 da SIMCAM |
+| LV (3,3 V) | `VCC_3V3` | pino 6 (`3V3`) da SIMCAM |
+| LV (3,3 V) | `GND_LV` | pino 5 (GND) da SIMCAM |
+| HV (5 V) | `STEP_HV` | `PUL+` do DM556D |
+| HV (5 V) | `DIR_HV` | `DIR+` do DM556D |
+| HV (5 V) | `VCC_5V` | fonte 5 V — origem a confirmar (P1) |
+| HV (5 V) | `GND_HV` | mesmo ponto estrela dos demais GND |
 
-Se a sua unidade for **comum-cátodo**, espelhe o YAML: o comum vai em
-`PUL-`/`DIR-` e os sinais em `PUL+`/`DIR+`. Não altere só o desenho sem
-alterar a montagem.
+- O 5 V **não** pode sair do `3V3` da SIMCAM. Pode vir de um regulador
+  24 V → 5 V ou de uma saída auxiliar do driver, **se o seu exemplar tiver**.
+- `NAO CONFIRMADO` e obrigatório antes de soldar: origem do 5 V, corrente do
+  LED do opto e pulso mínimo do DM556D. Não inventar esses valores.
 
-## 4. Motor — ligação das fases (P2/P4)
+## 4. Motor KTC-HT23-400 — bipolar paralela (P2)
+
+Motor de 8 fios, **2,8 A** em paralela, **1,9 Nm**. O DM556D aceita 2,1–5,6 A.
+
+| Borne do driver | Fios do motor (juntos no mesmo borne) |
+|---|---|
+| `A+` | **Vermelho** + **Preto/Branco** |
+| `A-` | **Preto** + **Vermelho/Branco** |
+| `B+` | **Verde** + **Amarelo/Branco** |
+| `B-` | **Amarelo** + **Verde/Branco** |
 
 1. Motor **desenergizado e desacoplado** do duto.
-2. Com um ohmímetro, ache os **dois pares de fios com continuidade entre si**.
-   Cada par é uma bobina. **Não escolha pela cor dos fios.**
-3. Um par vai em `A+`/`A-`; o outro em `B+`/`B-`. A ordem dentro do par define
-   o sentido de rotação.
-4. Se ao ensaiar o sentido estiver invertido, troque `A+`↔`A-` **ou**
+2. Confirme com datasheet/ohmímetro que os pares acima têm continuidade —
+   a cor é a referência informada, o ohmímetro é a prova.
+3. Se ao ensaiar o sentido estiver invertido, troque `A+`↔`A-` **ou**
    `B+`↔`B-` com a fonte desligada. Nunca troque só um fio entre fases.
-5. Ajuste a corrente do driver pela etiqueta do motor e pelos DIP switches do
-   seu exemplar. Os valores do `laserseg` (3200 passos/volta, SW5–SW8
-   `OFF OFF ON ON`) são **provisórios e NAO CONFIRMADOS** aqui.
 
-`NAO CONFIRMADO`: modelo, corrente/fase, torque, tamanho e curso útil.
+### DIP switches do DM556D
+
+| Chaves | Posição | Efeito |
+|---|---|---|
+| SW1, SW2, SW3 | `OFF, ON, OFF` | corrente de 2,7 / 2,8 A (paralela) |
+| SW4 | `OFF` | reduz pela metade a corrente em repouso |
+| SW5–SW8 | 1/8 de passo → **1600 pulsos/volta** | posições exatas: **conferir na tabela impressa na carcaça** (P2) |
+
+> O firmware mantém `VENTISEG_STEPS_PER_REV = 3200` como valor **provisório**.
+> O alvo é 1600 pulsos/volta; mudar a constante exige regenerar os vetores de
+> autoteste e rodar a suíte host no mesmo commit. Não faça isso no escuro.
 
 ## 5. Alimentação e terra comum (P3)
 
 ```
-Fonte 24 VDC  +24 V ----------> DM556D +Vdc
-Fonte 24 VDC  0 V  ----------> DM556D GND
+Fonte 24-36 VDC, min. 4 A   +V ----------> DM556D VCC
+Fonte 24-36 VDC, min. 4 A  0 V  ----------> DM556D GND
                                   |
 GND da SIMCAM -------------------+----> ponto único (star ground)
+GND da fonte 5 V ----------------+----> mesmo ponto
 ```
 
 - A fonte é **exclusiva** do driver/motor. Nunca alimente motor ou driver pelo
-  `3V3` ou USB da SIMCAM.
-- GND lógico, GND do driver e 0 V da fonte se encontram em **um único ponto**
-  (representado por `J_REF_GND` no YAML).
-- `NAO CONFIRMADO`: corrente/potência da fonte, fusível, bitola dos cabos e
-  dissipação do driver.
+  `3V3` ou USB da SIMCAM. **Nunca inverta a polaridade.**
+- GND lógico, GND do conversor/5 V, GND do driver e 0 V da fonte se encontram
+  em **um único ponto** (representado por `J_REF_GND` no YAML).
+- `NAO CONFIRMADO`: potência exata, fusível, bitola dos cabos e dissipação.
 
 ## 6. Ordem de montagem e ensaio
 
 | # | Ação | Critério para seguir |
 |---|---|---|
-| 1 | Ler manual/foto do DM556D Azaneli | comum do opto, corrente, pulso mínimo, ENA e DIP confirmados (fecha P1) |
-| 2 | Ler etiqueta do motor e ajustar corrente | corrente/fase compatível com o driver (fecha P2) |
-| 3 | Conferir fonte 24 V, fusível e bitolas | dimensionamento fechado (fecha P3) |
+| 1 | Conferir manual/etiqueta do DM556D | catodo comum, corrente do opto, pulso mínimo e origem do 5 V (fecha P1) |
+| 2 | Conferir fios do KTC-HT23-400 e ajustar DIP | paralela correta e 2,8 A (fecha P2) |
+| 3 | Conferir fonte 24–36 V / 4 A, fusível e bitolas | dimensionamento fechado (fecha P3) |
 | 4 | Montar com o motor **desacoplado** do duto | sem carga mecânica |
-| 5 | Medir a saída da interface (LED/osciloscópio) | pulso presente e com a polaridade da variante escolhida |
+| 5 | Medir `PUL+`/`DIR+` com osciloscópio | pulsos de 5 V na polaridade do catodo comum |
 | 6 | Definir curso em passos e comportamento no batente | limite por software definido (fecha P4) |
 | 7 | Observar boot/reset do driver com carga desacoplada | sem pulso falso no motor (fecha P5) |
 | 8 | Só então acoplar ao duto e calibrar ganho/curso | `VENTISEG_ENABLE_GPIO=1` registrado em decisão |
