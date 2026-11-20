@@ -30,34 +30,34 @@ sao defendidas por testes host.
 
 ### Phase 1 — Contrato e base visual
 
-- [ ] Task 1: escrever `tests/test_simulator.py` (RED) com constantes,
+- [x] Task 1: escrever `tests/test_simulator.py` (RED) com constantes,
       mensagens, segredos e acessibilidade.
-- [ ] Task 2: criar `index.html` + `css/style.css` com cabecalho, abas
+- [x] Task 2: criar `index.html` + `css/style.css` com cabecalho, abas
       Painel/Wi-Fi/Protocolo, tema claro/escuro e responsividade.
 
 ### Checkpoint: base
 
-- [ ] `tests/test_simulator.py` falha apenas pelo codigo ainda ausente (RED
+- [x] `tests/test_simulator.py` falha apenas pelo codigo ainda ausente (RED
       confirmado antes da implementacao).
-- [ ] Html abre sem servidor apos Task 2; `node --check` preparado para o JS.
+- [x] Html abre sem servidor apos Task 2; `node --check` preparado para o JS.
 
 ### Phase 2 — Logica e fluxos
 
-- [ ] Task 3: `js/app.js` — estado `SAFE/TRACK/MANUAL`, comandos
+- [x] Task 3: `js/app.js` — estado `SAFE/TRACK/MANUAL`, comandos
       `TRACK/LIGHT/MANUAL`, amostras `T`, telemetria `ACK`, watchdog 1200 ms,
       log e camera (webcam + alvo sintetico).
-- [ ] Task 4: `js/app.js` + `index.html` — aba Wi-Fi (AP, varredura, salvar,
+- [x] Task 4: `js/app.js` + `index.html` — aba Wi-Fi (AP, varredura, salvar,
       STA/fallback) e aba Protocolo (constantes e formatos, somente leitura).
 
 ### Checkpoint: fluxos
 
-- [ ] Suite host verde (92 testes existentes + novos).
-- [ ] `node --check firmware/laserseg/simulator/js/app.js` sem erros.
-- [ ] Revisao de codigo/simulador antes de fechar.
+- [x] Suite host verde (92 testes existentes + novos).
+- [x] `node --check firmware/laserseg/simulator/js/app.js` sem erros.
+- [x] Revisao de codigo/simulador antes de fechar.
 
 ### Phase 3 — Fechamento
 
-- [ ] Task 5: atualizar spec (status implementada), `README.md`,
+- [x] Task 5: atualizar spec (status implementada), `README.md`,
       `docs/ESTADO.md`, `docs/history.md`; revisar; commitar com `save.ps1`.
 
 ## Riscos e mitigacao

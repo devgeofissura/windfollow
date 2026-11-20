@@ -4,7 +4,7 @@ Plano: `tasks/plan-simulador-web.md`. Spec: `spec/SPEC-simulador-web.md`.
 
 ## Task 1 — Testes de contrato (RED)
 
-- [ ] Testes em `tests/test_simulator.py` para arquivos, constantes, mensagens,
+- [x] Testes em `tests/test_simulator.py` para arquivos, constantes, mensagens,
       segredos e acessibilidade.
 - **Aceite:** falham porque `simulator/` ainda nao existe.
 - **Verificar:** `powershell -ExecutionPolicy Bypass -File firmware/laserseg/tests/run.ps1`.
@@ -12,15 +12,15 @@ Plano: `tasks/plan-simulador-web.md`. Spec: `spec/SPEC-simulador-web.md`.
 
 ## Task 2 — Estrutura e tema
 
-- [ ] `index.html` com cabecalho, aviso de simulacao, abas e tres `section`s.
-- [ ] `css/style.css` com tokens do padrao Dracula/claro, responsividade e foco.
+- [x] `index.html` com cabecalho, aviso de simulacao, abas e tres `section`s.
+- [x] `css/style.css` com tokens do padrao Dracula/claro, responsividade e foco.
 - **Aceite:** abre por duplo clique, alterna tema, navega pelas abas.
 - **Verificar:** inspecao manual + `node --check` apos Task 3.
 - **Arquivos:** `simulator/index.html`, `simulator/css/style.css` (2 — S).
 
 ## Task 3 — Logica do Painel
 
-- [ ] FSM `SAFE/TRACK/MANUAL`, comandos, `T`, `ACK`, watchdog, log e camera.
+- [x] FSM `SAFE/TRACK/MANUAL`, comandos, `T`, `ACK`, watchdog, log e camera.
 - **Aceite:** ligar/desligar rastreamento e luz gera mensagens; perda de link
       para eixos e luz; log mostra `ACK` com fault `LINK`.
 - **Verificar:** testes host verdes + `node --check` + manual.
@@ -28,8 +28,8 @@ Plano: `tasks/plan-simulador-web.md`. Spec: `spec/SPEC-simulador-web.md`.
 
 ## Task 4 — Wi-Fi e Protocolo
 
-- [ ] Fluxo AP → varredura → salvar → STA/fallback com log `PROV ...`.
-- [ ] Aba Protocolo somente leitura com constantes e formatos.
+- [x] Fluxo AP → varredura → salvar → STA/fallback com log `PROV ...`.
+- [x] Aba Protocolo somente leitura com constantes e formatos.
 - **Aceite:** senha da rede nao aparece em log nem em arquivo; AP usa
       `laserseg`/`123456`.
 - **Verificar:** testes host + manual.
@@ -38,11 +38,11 @@ Plano: `tasks/plan-simulador-web.md`. Spec: `spec/SPEC-simulador-web.md`.
 
 ## Checkpoint
 
-- [ ] Suite completa verde (92 + novos), `node --check` limpo, revisao feita.
+- [x] Suite completa verde (92 + novos), `node --check` limpo, revisao feita.
 
 ## Task 5 — Fechamento
 
-- [ ] Spec marcada como implementada; README/ESTADO/history atualizados;
+- [x] Spec marcada como implementada; README/ESTADO/history atualizados;
       commit unico com DEVLOG e push.
 - **Aceite:** `git status` limpo e entrada nova no DEVLOG.
 - **Arquivos:** spec + 3 docs (4 — M).

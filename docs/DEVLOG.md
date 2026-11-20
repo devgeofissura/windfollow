@@ -11,6 +11,20 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-20 13:56 - chore(laserseg): fecha checklists do simulador web
+
+**Area:** laserseg
+
+**Feito:**
+- todas as tarefas do plano e do todo do simulador web marcadas como concluidas apos implementacao validacao e push
+
+**Dificuldades e solucoes:**
+- nenhuma
+
+**Arquivos:**
+- `firmware/laserseg/tasks/plan-simulador-web.md`
+- `firmware/laserseg/tasks/todo-simulador-web.md`
+
 ### 2026-11-20 13:56 - feat(laserseg): simulador web V1
 
 **Area:** laserseg
