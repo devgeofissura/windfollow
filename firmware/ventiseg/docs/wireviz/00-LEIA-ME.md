@@ -5,7 +5,8 @@ subprojeto: uma placa, um motor, um driver.
 
 | Arquivo | Conteúdo |
 |---|---|
-| [`ventiseg-pan-24v.yaml`](ventiseg-pan-24v.yaml) | Esquema + diagrama em nível de terminal: SIMCAM → conversor 3,3 V→5 V → DM556D 24–36 V → motor KTC-HT23-400 em bipolar paralela, com referência comum |
+| [`ventiseg-pan-24v-diagrama.yaml`](ventiseg-pan-24v-diagrama.yaml) | **Desenho técnico colorido**: 7 blocos retangulares + banner de avisos, ordem física Fonte 24 V → DM556D → Motor e SIMCAM → Conversor → DM556D. Entregue em `.svg`, `.png` e `.png` 200 dpi |
+| [`ventiseg-pan-24v.yaml`](ventiseg-pan-24v.yaml) | Esquema original em nível de terminal: SIMCAM → conversor 3,3 V→5 V → DM556D 24–36 V → motor KTC-HT23-400 em bipolar paralela, com referência comum |
 | [`../LIGACOES.md`](../LIGACOES.md) | Guia de execução: pino a pino, polaridade do opto, fases do motor, alimentação e ordem de ensaio |
 
 ## Por que é enxuto
@@ -28,16 +29,28 @@ subprojeto: uma placa, um motor, um driver.
 
 ## Como renderizar
 
-Requer WireViz 0.4.1. Nesta máquina o CLI está em
-`%LOCALAPPDATA%\Programs\Python\Python314\Scripts\wireviz.exe`:
+Requer WireViz 0.4.1 e Graphviz (`dot`, instalado em
+`C:\Program Files\Graphviz\bin`). Comando **exato**, na raiz do repositório:
+
+```powershell
+$env:PATH = "C:\Program Files\Graphviz\bin;$env:PATH"
+wireviz -f gsp -o firmware\ventiseg\docs\wireviz firmware\ventiseg\docs\wireviz\ventiseg-pan-24v-diagrama.yaml
+```
+
+Gera `.gv`, `.svg` e `.png` na própria pasta. Para o PNG em alta resolução
+(200 dpi), a partir do `.gv`:
+
+```powershell
+& "C:\Program Files\Graphviz\bin\dot.exe" -Tpng -Gdpi=200 `
+  "firmware\ventiseg\docs\wireviz\ventiseg-pan-24v-diagrama.gv" `
+  -o "firmware\ventiseg\docs\wireviz\ventiseg-pan-24v-diagrama-hires.png"
+```
+
+Para apenas validar o YAML original sem Graphviz:
 
 ```powershell
 & "$env:LOCALAPPDATA\Programs\Python\Python314\Scripts\wireviz.exe" -f g -o "$env:TEMP\opencode\wireviz-gv" "firmware\ventiseg\docs\wireviz\ventiseg-pan-24v.yaml"
 ```
-
-O parser validou o arquivo sem traceback e gerou
-`%TEMP%\opencode\wireviz-gv\ventiseg-pan-24v.gv`. SVG/PNG dependem do Graphviz
-(`dot`) no PATH e não são necessários para a validação do YAML.
 
 ## Confirmado — pode constar como fato
 
@@ -82,6 +95,9 @@ em [`../HARDWARE-DECISIONS.md`](../HARDWARE-DECISIONS.md).
 ## Estado
 
 - [x] YAML enxuto escrito e validado pelo parser WireViz 0.4.1.
+- [x] Desenho colorido com 7 blocos, legenda de cores e banner de avisos
+      gerado em SVG, PNG e PNG 200 dpi (32 nós, sem sobreposição).
 - [x] Incertezas explícitas em `notes`, sem "chutar" interface elétrica.
-- [x] Nenhum elemento de laser/relé/fim de curso/tilt ou fonte 12 V/5 V.
+- [x] Nenhum elemento de laser/relé/fim de curso/tilt ou fonte 12 V.
+      A fonte 5 V existe somente para o lado HV do conversor.
 - [ ] Auditoria elétrica fechada (P1–P5) antes de qualquer `VENTISEG_ENABLE_GPIO=1`.

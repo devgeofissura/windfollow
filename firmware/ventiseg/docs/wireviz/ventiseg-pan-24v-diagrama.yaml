@@ -1,0 +1,418 @@
+# =============================================================================
+# ventiseg — diagrama elétrico completo (desenho técnico colorido)
+# =============================================================================
+# Gerado/validado com WireViz 0.4.1 + Graphviz 16.1.1.
+#
+# COMANDO EXATO PARA RENDERIZAR (na raiz do repositório, PowerShell):
+#   $env:PATH = "C:\Program Files\Graphviz\bin;$env:PATH"
+#   wireviz -f gsp -o firmware\ventiseg\docs\wireviz firmware\ventiseg\docs\wireviz\ventiseg-pan-24v-diagrama.yaml
+#
+# Saídas: .gv, .svg e .png na mesma pasta (WireViz 0.4.1 + Graphviz 16.1.1).
+# Para PNG em alta resolução (200 dpi), usar o .gv gerado:
+#   & "C:\Program Files\Graphviz\bin\dot.exe" -Tpng -Gdpi=200 `
+#       "firmware\ventiseg\docs\wireviz\ventiseg-pan-24v-diagrama.gv" `
+#       -o "firmware\ventiseg\docs\wireviz\ventiseg-pan-24v-diagrama-hires.png"
+#
+# FONTES: docs/LIGACOES.md, docs/HARDWARE-DECISIONS.md, docs/ESTADO.md,
+#         docs/wireviz/00-LEIA-ME.md, docs/wireviz/ventiseg-pan-24v.yaml.
+#
+# LEGENDA DE CORES DOS CABOS (atende ao pedido):
+#   RD vermelho = alimentação positiva    BK preto   = GND / 0 V
+#   YE amarelo  = STEP/PUL (3,3 V)        BU azul    = DIR (3,3 V)
+#   VT roxo     = sinais após conversor   OG laranja = alimentação auxiliar 5 V
+#   GN verde    = fases do motor (as cores reais dos 8 fios vão no rótulo)
+#
+# REGRAS DE OURO:
+#   - NUNCA ligar GPIO 3,3 V diretamente em PUL+ ou DIR+ (opto exige > 3,5 V).
+#   - Conversor de nível 3,3 V -> 5 V é OBRIGATÓRIO.
+#   - VENTISEG_ENABLE_GPIO=0 até fechar P1-P5.
+#   - Primeiro teste com o motor DESACOPLADO; conferir pares com ohmímetro.
+#   - Tudo que não está confirmado está marcado
+#     "NAO CONFIRMADO — verificar antes de energizar".
+# =============================================================================
+
+connectors:
+
+  # ---------------------------------------------------------- 1) SIMCAM
+  J_SIMCAM:
+    type: "ESP32-S3 LILYGO T-SIMCAM"
+    subtype: "J_GPIO_LIVRES · 6 pinos · lógica 3,3 V"
+    bgcolor: "#deebf7"
+    bgcolor_title: "#9dc3e6"
+    notes: |-
+      STEP=IO3 (ADC de bateria, sem bateria no projeto); DIR=IO21.
+      IO45/IO46 RESERVADOS: pinos de strapping, nao puxar HIGH no boot.
+      Inversao IO3/IO21 foi typo; serigrafia prevalece.
+      NUNCA aplicar 5 V nestes pinos.
+      GND alimenta PUL-/DIR- (catodo comum) e o ponto estrela.
+    pinlabels:
+      - IO3_STEP
+      - IO46_RESERVADO
+      - IO45_RESERVADO
+      - IO21_DIR
+      - GND
+      - 3V3_LOGICA
+
+  # --------------------------------------------- 2) Conversor de nivel
+  J_LEVEL:
+    type: "Conversor de nivel bidirecional 3,3 V / 5 V"
+    subtype: "2 canais · obrigatorio · opto exige alto &gt; 3,5 V"
+    bgcolor: "#eadcf5"
+    bgcolor_title: "#c9a5e8"
+    notes: |-
+      Lado LV: IO3/IO21/3V3/GND da SIMCAM.
+      Lado HV: PUL+/DIR+ do DM556D a 5 V.
+      VCC_5V: origem NAO CONFIRMADO — verificar antes de energizar.
+      Corrente do opto e pulso minimo: NAO CONFIRMADO — verificar antes de energizar.
+    pinlabels:
+      - STEP_LV
+      - DIR_LV
+      - VCC_3V3
+      - GND_LV
+      - STEP_HV
+      - DIR_HV
+      - VCC_5V
+      - GND_HV
+
+  # ---------------------------------------- 3) Fonte auxiliar de 5 V
+  J_5V:
+    type: "Fonte auxiliar de 5 V"
+    subtype: "somente lado HV do conversor"
+    bgcolor: "#fce4d6"
+    bgcolor_title: "#f8cbad"
+    notes: |-
+      NAO CONFIRMADO — verificar antes de energizar:
+      regs. 24 V-&gt;5 V ou saida auxiliar do driver?
+      NAO tirar do 3V3 da SIMCAM.
+    pinlabels:
+      - V5V
+      - GND_5V
+
+  # -------------------------------------------------- 4) Driver DM556D
+  J_DM556D:
+    type: "Driver DM556D (Policomp/Tecmaf)"
+    subtype: "24-50 VDC · 2,1-5,6 A · catodo comum · alvo 1/8 passo"
+    bgcolor: "#d9f0f0"
+    bgcolor_title: "#a8d8d8"
+    notes: |-
+      ENA+/ENA- DESCONECTADOS: driver ja inicia habilitado.
+      DIP SW1=OFF SW2=ON SW3=OFF (2,7/2,8 A); SW4=OFF (meia corrente).
+      SW5-SW8 para 1/8 passo (1600 pulsos/volta):
+        NAO CONFIRMADO — verificar antes de energizar (tabela da carcaca).
+      Corrente do opto e pulso minimo:
+        NAO CONFIRMADO — verificar antes de energizar.
+      Sem laser, rele, fim de curso e tilt neste projeto.
+    pinlabels:
+      - PUL+
+      - PUL-
+      - DIR+
+      - DIR-
+      - ENA+_NC
+      - ENA-_NC
+      - VCC_24V
+      - GND_PWR
+      - A+_PAR
+      - A-_PAR
+      - B+_PAR
+      - B-_PAR
+
+  # -------------------------------------- 5) Fonte principal 24-36 V
+  J_PSU_24V:
+    type: "Fonte principal 24-36 VDC"
+    subtype: "minimo 4 A · exclusiva do driver/motor"
+    bgcolor: "#fbe0de"
+    bgcolor_title: "#f4b7b3"
+    notes: |-
+      Nunca alimentar driver/motor pelo 3V3 ou USB da SIMCAM.
+      NUNCA inverter a polaridade.
+      Potencia exata, fusivel e bitolas:
+        NAO CONFIRMADO — verificar antes de energizar.
+    pinlabels:
+      - VDC_P
+      - GND_PWR
+
+  # --------------------------------------------- 6) Motor KTC-HT23-400
+  J_M_PAN:
+    type: "Motor KTC-HT23-400"
+    subtype: "NEMA 23 · 8 fios · bipolar paralela · 2,8 A · 1,9 Nm"
+    bgcolor: "#e2f0d9"
+    bgcolor_title: "#b7dfa8"
+    notes: |-
+      BIPOLAR PARALELA (dobro de corrente, meio passo de tensao):
+        A+ = Vermelho + Preto/Branco
+        A- = Preto     + Vermelho/Branco
+        B+ = Verde     + Amarelo/Branco
+        B- = Amarelo   + Verde/Branco
+      Conferir os pares com OHMIMETRO antes de energizar.
+      Motor DESACOPLADO no primeiro teste.
+      Acoplamento, curso util e batentes:
+        NAO CONFIRMADO — verificar antes de energizar.
+    pinlabels:
+      - A_P1_RD
+      - A_P2_BNWH
+      - A_N1_BN
+      - A_N2_RDWH
+      - B_P1_GN
+      - B_P2_YEWH
+      - B_N1_YE
+      - B_N2_GNWH
+
+  # ----------------------------------------------- 7) Ponto unico GND
+  J_REF_GND:
+    type: "Ponto unico de GND (star ground)"
+    subtype: "referencia comum em um unico ponto"
+    bgcolor: "#e7e6e6"
+    bgcolor_title: "#bfbfbf"
+    notes: |-
+      Une GND logico (SIMCAM), GND do conversor/fonte 5 V,
+      GND do driver e 0 V da fonte 24 V.
+      Os quatro pinos estao curtos entre si (loops).
+    pinlabels:
+      - LOGICO
+      - AUX5V
+      - DRIVER
+      - FONTE
+    loops:
+      - [1, 2]
+      - [2, 3]
+      - [3, 4]
+
+# =============================================================================
+# CABOS — nomes unicos e legenda de cores aplicada
+# =============================================================================
+cables:
+
+  # --- SIMCAM -> conversor (3,3 V)
+  W_STEP:
+    type: "STEP 3,3 V — IO3 -&gt; STEP_LV"
+    colors: [YE]
+    wirelabels: [STEP_IO3]
+  W_DIR:
+    type: "DIR 3,3 V — IO21 -&gt; DIR_LV"
+    colors: [BU]
+    wirelabels: [DIR_IO21]
+  W_3V3:
+    type: "3V3 logico -&gt; VCC_3V3 do conversor"
+    colors: [RD]
+    wirelabels: [3V3_LOGICA]
+  W_GND_LV:
+    type: "GND da SIMCAM -&gt; GND_LV do conversor"
+    colors: [BK]
+    wirelabels: [GND_LV]
+
+  # --- Fonte auxiliar 5 V -> conversor (lado HV)
+  W_V5V:
+    type: "Auxiliar 5 V -&gt; VCC_5V do conversor"
+    colors: [OG]
+    wirelabels: [V5V]
+    notes: "Origem NAO CONFIRMADO — verificar antes de energizar."
+  W_GND_HV:
+    type: "GND auxiliar 5 V -&gt; GND_HV do conversor"
+    colors: [BK]
+    wirelabels: [GND_HV]
+
+  # --- Conversor -> DM556D (catodo comum, sinais a 5 V)
+  W_STEP_5V:
+    type: "STEP 5 V — STEP_HV -&gt; PUL+"
+    colors: [VT]
+    wirelabels: [PUL_5V]
+  W_DIR_5V:
+    type: "DIR 5 V — DIR_HV -&gt; DIR+"
+    colors: [VT]
+    wirelabels: [DIR_5V]
+
+  # --- Catodo comum: GND da SIMCAM em PUL-/DIR-
+  W_PUL_N:
+    type: "GND SIMCAM -&gt; PUL- (catodo comum)"
+    colors: [BK]
+    wirelabels: [PUL_N]
+  W_DIR_N:
+    type: "GND SIMCAM -&gt; DIR- (catodo comum)"
+    colors: [BK]
+    wirelabels: [DIR_N]
+
+  # --- Potencia principal
+  W_PSU_P:
+    type: "Fonte 24-36 VDC -&gt; VCC do DM556D"
+    colors: [RD]
+    wirelabels: [MAIS_24V]
+    notes: "Bitola/fusivel NAO CONFIRMADO — verificar antes de energizar."
+  W_PSU_N:
+    type: "Fonte 24-36 VDC -&gt; GND de potencia do DM556D"
+    colors: [BK]
+    wirelabels: [ZERO_V]
+
+  # --- Oito fios individuais do motor (verde = fase; cor real no rotulo)
+  W_M_AP1:
+    type: "A+ fio 1 — VERMELHO (paralela)"
+    colors: [GN]
+    wirelabels: [A_P1_RD]
+  W_M_AP2:
+    type: "A+ fio 2 — PRETO/BRANCO (paralela)"
+    colors: [GN]
+    wirelabels: [A_P2_BNWH]
+  W_M_AN1:
+    type: "A- fio 1 — PRETO (paralela)"
+    colors: [GN]
+    wirelabels: [A_N1_BN]
+  W_M_AN2:
+    type: "A- fio 2 — VERMELHO/BRANCO (paralela)"
+    colors: [GN]
+    wirelabels: [A_N2_RDWH]
+  W_M_BP1:
+    type: "B+ fio 1 — VERDE (paralela)"
+    colors: [GN]
+    wirelabels: [B_P1_GN]
+  W_M_BP2:
+    type: "B+ fio 2 — AMARELO/BRANCO (paralela)"
+    colors: [GN]
+    wirelabels: [B_P2_YEWH]
+  W_M_BN1:
+    type: "B- fio 1 — AMARELO (paralela)"
+    colors: [GN]
+    wirelabels: [B_N1_YE]
+  W_M_BN2:
+    type: "B- fio 2 — VERDE/BRANCO (paralela)"
+    colors: [GN]
+    wirelabels: [B_N2_GNWH]
+
+  # --- Estrela de terra
+  W_REF_LOG:
+    type: "GND logico -&gt; ponto unico"
+    colors: [BK]
+    wirelabels: [GND_SIMCAM]
+  W_REF_AUX:
+    type: "GND auxiliar 5 V -&gt; ponto unico"
+    colors: [BK]
+    wirelabels: [GND_5V]
+  W_REF_DRV:
+    type: "GND do driver -&gt; ponto unico"
+    colors: [BK]
+    wirelabels: [GND_DRV]
+  W_REF_PSU:
+    type: "0 V da fonte 24 V -&gt; ponto unico"
+    colors: [BK]
+    wirelabels: [GND_PSU]
+
+# =============================================================================
+# LIGACOES TERMINAL A TERMINAL (origem = esquerda, destino = direita)
+# =============================================================================
+connections:
+
+  # SIMCAM -> conversor (lado LV)
+  - - J_SIMCAM: [IO3_STEP]
+    - W_STEP: [1]
+    - J_LEVEL: [STEP_LV]
+  - - J_SIMCAM: [IO21_DIR]
+    - W_DIR: [1]
+    - J_LEVEL: [DIR_LV]
+  - - J_SIMCAM: [3V3_LOGICA]
+    - W_3V3: [1]
+    - J_LEVEL: [VCC_3V3]
+  - - J_SIMCAM: [GND]
+    - W_GND_LV: [1]
+    - J_LEVEL: [GND_LV]
+
+  # Fonte auxiliar 5 V -> conversor (lado HV)
+  - - J_5V: [V5V]
+    - W_V5V: [1]
+    - J_LEVEL: [VCC_5V]
+  - - J_5V: [GND_5V]
+    - W_GND_HV: [1]
+    - J_LEVEL: [GND_HV]
+
+  # Conversor -> DM556D (catodo comum)
+  - - J_LEVEL: [STEP_HV]
+    - W_STEP_5V: [1]
+    - J_DM556D: [PUL+]
+  - - J_LEVEL: [DIR_HV]
+    - W_DIR_5V: [1]
+    - J_DM556D: [DIR+]
+  - - J_SIMCAM: [GND]
+    - W_PUL_N: [1]
+    - J_DM556D: [PUL-]
+  - - J_SIMCAM: [GND]
+    - W_DIR_N: [1]
+    - J_DM556D: [DIR-]
+
+  # ENA+ / ENA- ficam DESCONECTADOS (sem cabo, sem loop)
+  - - J_DM556D: [ENA+_NC]
+  - - J_DM556D: [ENA-_NC]
+
+  # Fonte principal -> driver -> motor
+  - - J_PSU_24V: [VDC_P]
+    - W_PSU_P: [1]
+    - J_DM556D: [VCC_24V]
+  - - J_PSU_24V: [GND_PWR]
+    - W_PSU_N: [1]
+    - J_DM556D: [GND_PWR]
+
+  - - J_DM556D: [A+_PAR]
+    - W_M_AP1: [1]
+    - J_M_PAN: [A_P1_RD]
+  - - J_DM556D: [A+_PAR]
+    - W_M_AP2: [1]
+    - J_M_PAN: [A_P2_BNWH]
+  - - J_DM556D: [A-_PAR]
+    - W_M_AN1: [1]
+    - J_M_PAN: [A_N1_BN]
+  - - J_DM556D: [A-_PAR]
+    - W_M_AN2: [1]
+    - J_M_PAN: [A_N2_RDWH]
+  - - J_DM556D: [B+_PAR]
+    - W_M_BP1: [1]
+    - J_M_PAN: [B_P1_GN]
+  - - J_DM556D: [B+_PAR]
+    - W_M_BP2: [1]
+    - J_M_PAN: [B_P2_YEWH]
+  - - J_DM556D: [B-_PAR]
+    - W_M_BN1: [1]
+    - J_M_PAN: [B_N1_YE]
+  - - J_DM556D: [B-_PAR]
+    - W_M_BN2: [1]
+    - J_M_PAN: [B_N2_GNWH]
+
+  # Ponto unico de terra (estrela)
+  - - J_SIMCAM: [GND]
+    - W_REF_LOG: [1]
+    - J_REF_GND: [LOGICO]
+  - - J_5V: [GND_5V]
+    - W_REF_AUX: [1]
+    - J_REF_GND: [AUX5V]
+  - - J_DM556D: [GND_PWR]
+    - W_REF_DRV: [1]
+    - J_REF_GND: [DRIVER]
+  - - J_PSU_24V: [GND_PWR]
+    - W_REF_PSU: [1]
+    - J_REF_GND: [FONTE]
+
+metadata:
+  title: "ventiseg — diagrama elétrico completo (SIMCAM + conversor + DM556D + KTC-HT23-400)"
+  description: |-
+    Uma ESP32-S3 SIMCAM faz a visao e comanda o pan. Conversor obrigatorio
+    3,3 V -&gt; 5 V alimenta os optos do DM556D em catodo comum. Um unico
+    motor KTC-HT23-400 em bipolar paralela gira duto + camera.
+  notes: |-
+    CONFIRMADO: pinagem J_GPIO_LIVRES (STEP=IO3, DIR=IO21, IO45/46
+    reservados, GND, 3V3), logica 3,3 V, catodo comum, ENA desconectado,
+    DM556D 24-50 VDC / 2,1-5,6 A a 24-36 VDC / min 4 A, motor
+    KTC-HT23-400 2,8 A / 1,9 Nm em bipolar paralela, camera acoplada ao
+    duto, sem laser/rele/fim de curso/tilt/fonte 12 V.
+    NAO CONFIRMADO — verificar antes de energizar: corrente do opto,
+    pulso minimo, origem do 5 V, SW5-SW8 (alvo 1600 pulsos/volta;
+    firmware provisorio 3200), potencia/fusivel/bitolas, acoplamento,
+    curso/batentes e pulso no boot.
+    SEGURANCA: nunca GPIO 3,3 V direto em PUL+/DIR+; conversor
+    obrigatorio; VENTISEG_ENABLE_GPIO=0 ate P1-P5; 1o teste com motor
+    desacoplado; conferir pares com ohmimetro.
+
+# Banner de avisos: NAO e uma ligacao eletrica, e apenas uma anotacao visual
+# injetada no DOT (WireViz descarta conectores nao referenciados em connections).
+tweak:
+  append:
+    - 'J_AVISOS [shape=box,style=filled,fillcolor="#fff2cc",color="#bf9000",fontname="Arial",fontsize=10,label=<<TABLE BORDER="2" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fff2cc"><TR><TD BGCOLOR="#ffe699"><B>AVISOS DE SEGURANCA - LEIA ANTES DE ENERGIZAR</B></TD></TR><TR><TD ALIGN="LEFT">1) NUNCA ligar GPIO 3,3 V direto em PUL+ ou DIR+</TD></TR><TR><TD ALIGN="LEFT">2) Usar OBRIGATORIAMENTE o conversor de nivel 3,3 V para 5 V</TD></TR><TR><TD ALIGN="LEFT">3) Manter VENTISEG_ENABLE_GPIO=0 ate fechar P1-P5</TD></TR><TR><TD ALIGN="LEFT">4) Primeiro teste com o motor DESACOPLADO do duto</TD></TR><TR><TD ALIGN="LEFT">5) Conferir os oito pares do motor com OHMIMETRO</TD></TR><TR><TD ALIGN="LEFT">Pendencias: NAO CONFIRMADO — verificar antes de energizar</TD></TR></TABLE>>];'
+
+options:
+  bgcolor: WH
+  bgcolor_node: WH
+  color_mode: FULL

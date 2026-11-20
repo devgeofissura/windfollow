@@ -11,6 +11,30 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-20 16:28 - docs(ventiseg): diagrama eletrico colorido com blocos e avisos
+
+**Area:** ventiseg
+
+**Feito:**
+- novo YAML WireViz 0.4.1 com 7 blocos retangulares, cabos com legenda de cores e todos os terminais
+- SVG, PNG e PNG 200 dpi gerados com Graphviz 16.1.1 e comando exato documentado
+- indice wireviz e README atualizados com os novos artefatos
+
+**Dificuldades e solucoes:**
+- Graphviz ausente -> instalado Graphviz 16.1.1 e PATH ajustado
+- bloco de avisos descartado por nao estar em connections -> banner injetado via tweak.append
+- caracteres > em rotulos HTML quebraram o dot -> substituidos por entidades HTML no YAML
+- porta/flash nao tocados porque a tarefa e apenas documental
+
+**Arquivos:**
+- `firmware/ventiseg/README.md`
+- `firmware/ventiseg/docs/wireviz/00-LEIA-ME.md`
+- `firmware/ventiseg/docs/wireviz/ventiseg-pan-24v-diagrama-hires.png`
+- `firmware/ventiseg/docs/wireviz/ventiseg-pan-24v-diagrama.gv`
+- `firmware/ventiseg/docs/wireviz/ventiseg-pan-24v-diagrama.png`
+- `firmware/ventiseg/docs/wireviz/ventiseg-pan-24v-diagrama.svg`
+- `firmware/ventiseg/docs/wireviz/ventiseg-pan-24v-diagrama.yaml`
+
 ### 2026-11-20 15:49 - docs(ventiseg): catodo comum, conversor 5V e motor KTC-HT23-400 no esquema
 
 **Area:** ventiseg

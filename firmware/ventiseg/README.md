@@ -48,7 +48,7 @@ firmware/ventiseg/
 │   ├── HARDWARE-DECISIONS.md # fatos x NAO CONFIRMADO
 │   ├── LIGACOES.md           # guia de execução: terminal a terminal
 │   ├── PROTOCOLO.md          # contrato v0.1
-│   └── wireviz/              # esquema enxuto
+│   └── wireviz/              # diagrama colorido (.yaml/.svg/.png) + esquema enxuto
 ├── spec/                     # especificações aprovadas
 ├── tasks/                    # planos e TDD
 ├── tools/                    # referência executável do protocolo
