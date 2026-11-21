@@ -11,6 +11,36 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-21 11:47 - feat(ventiseg): camada step/dir configuravel pela web
+
+**Area:** ventiseg
+
+**Feito:**
+- camada STEP/DIR nao bloqueante com gate duplo e callbacks substituiveis -> firmware recusa liberacao sem gates de compilacao
+- painel web com velocidade aceleracao micropasso e modal de confirmacao -> watchdog e perda de link fecham o gate
+- testes diferenciais Python JS C++ e documentacao atualizada -> 156 testes verdes e sketch compila
+
+**Dificuldades e solucoes:**
+- divergencia REASON range e busy no CFG,MICRO entre as tres linguagens -> passei a validar a faixa antes do setter
+- harness JS lia argv[1] que era o proprio harness -> corrigi para argv[2]
+- comentario com delay() quebrava o teste de ausencia de bloqueio -> troquei a asserção por regex que exige argumento
+
+**Arquivos:**
+- `firmware/ventiseg/controller/controller.ino`
+- `firmware/ventiseg/controller/driver_config.h`
+- `firmware/ventiseg/docs/ESTADO.md`
+- `firmware/ventiseg/docs/PROTOCOLO.md`
+- `firmware/ventiseg/simulator/README.md`
+- `firmware/ventiseg/simulator/css/style.css`
+- `firmware/ventiseg/simulator/index.html`
+- `firmware/ventiseg/simulator/js/app.js`
+- `firmware/ventiseg/controller/step_dir.cpp`
+- `firmware/ventiseg/controller/step_dir.h`
+- `firmware/ventiseg/tests/differential_stepdir_cxx_harness.cpp`
+- `firmware/ventiseg/tests/differential_stepdir_js_harness.js`
+- `firmware/ventiseg/tests/test_step_dir.py`
+- `firmware/ventiseg/tools/step_dir_ref.py`
+
 ### 2026-11-21 11:23 - docs(ventiseg): registra auditoria P1-P5 como aberta
 
 **Area:** ventiseg

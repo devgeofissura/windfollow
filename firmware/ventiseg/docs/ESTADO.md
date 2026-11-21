@@ -28,10 +28,11 @@ feita. A auditoria P1–P5 está documentada, mas **fisicamente aberta**.
   de terminal (`PUL±/DIR±/ENA±`, fases `A±/B±`, conversor 3,3→5 V, 24 V):
   **variante catodo comum desenhada**, validada pelo WireViz 0.4.1.
 - Núcleo TDD entregue: `tools/protocol_ref.py` → `controller/parser.cpp` →
-  52 vetores gerados → `autotest.h` → simulador, com **149 testes host
+  52 vetores gerados → `autotest.h` → simulador, com **156 testes host
   verdes** (113 protocolo + 28 simulador + 4 diferenciais de parser + 4
-  diferenciais de sessão). Watchdog renovado **somente** por `T` aceito no
-  firmware e no simulador (divergência corrigida).
+  diferenciais de sessão + 7 da camada STEP/DIR). Watchdog renovado
+  **somente** por `T` aceito no firmware e no simulador (divergência
+  corrigida).
 - Comportamento seguro pós-`Lnk` definido e aplicado nas três implementações:
   após o watchdog, `TRACK`/`MANUAL` são inibidos, `Lnk` domina `Range` e só um
   `T` aceito restaura o link — ainda em SAFE até um novo comando de movimento.
@@ -50,14 +51,22 @@ feita. A auditoria P1–P5 está documentada, mas **fisicamente aberta**.
   rejeição por faixa ligando `fault=Range` (antes só por injeção na UI).
   `PROTOCOLO.md` e o painel do simulador agora documentam a ordem completa
   `tamanho/codificação → formato → faixa → sequência → idade`.
-- Sketch compila na FQBN `ventiseg` (315.392 B no binário gravado), com
-  `VENTISEG_ENABLE_GPIO=0` e nenhuma chamada de GPIO/Wi-Fi.
+- Sketch compila na FQBN `ventiseg` (316.584 B no build de verificação), com
+  `VENTISEG_ENABLE_GPIO=0`, `VENTISEG_HW_AUDIT_OK=0` e nenhuma chamada
+  efetiva de GPIO/Wi-Fi (os blocos `pinMode`/`digitalWrite` e os callbacks
+  só existem sob os dois gates de compilação).
 - Autoteste validado na placa real em 21/11/2026: porta detectada na hora
   (COM4 · ESP32-S3 · flash 16 MB · MAC `dc:da:0c:28:25:30`), upload com hash
   verificado e boot capturado sem terminal. Log: `gpio_gate=0`,
   `AUTOTEST total=85 passed=85 failed=0`, `AUTOTEST PASS`, `ACK,-1,SAFE,None`
-  e heartbeat. Não existe chamada `pinMode`/`digitalWrite`/`ledc` no
-  controller: a placa permaneceu serial-only.
+  e heartbeat. A placa permaneceu serial-only: nenhum pino foi tocado.
+- Camada de saída STEP/DIR implementada em `controller/step_dir.{h,cpp}`:
+  um pulso por `update()`, rampa trapezoidal, `CFG,...` configurável pela
+  aba "Saída STEP/DIR" do simulador. Gate desligado por padrão; a web exige
+  modal de confirmação e o firmware recusa `CFG,GATE,1,CONFIRM` com
+  `REASON,gate` enquanto qualquer gate de compilação estiver em zero.
+  Python × JS × C++ concordam no roteiro determinístico. Nenhum pulso foi
+  medido e nenhum driver/motor foi energizado.
 
 ## Ainda não feito
 
@@ -75,9 +84,11 @@ feita. A auditoria P1–P5 está documentada, mas **fisicamente aberta**.
 | P4 | Acoplamento e limite por software | Sem acoplamento, home, batentes ou curso medidos; nenhum `kMaxTravel` validado | Movimento |
 | P5 | Pulso no boot/reset e travamento com carga desacoplada | Somente verificação lógica (`gpio_gate=0`, autoteste 85/85); sem medição elétrica | Habilitação de saída |
 
-Nenhuma P foi fechada fisicamente. Não habilitar GPIO, não energizar
-driver/motor e não avançar para a camada de saída STEP/DIR até P1–P5 serem
-conferidas no equipamento real. Detalhes em `HARDWARE-DECISIONS.md`.
+Nenhuma P foi fechada fisicamente. A camada STEP/DIR existe apenas em código
+e testes host; a liberação física continua bloqueada até P1–P5 serem
+conferidas no equipamento real. Não energizar driver/motor, não liberar os
+gates de compilação e não integrar captura de câmera/malha fechada antes
+disso. Detalhes em `HARDWARE-DECISIONS.md`.
 
 ## Regra de atualização
 

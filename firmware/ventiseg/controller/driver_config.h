@@ -31,6 +31,25 @@
 #define VENTISEG_ENABLE_GPIO 0
 #endif
 
+// Segundo gate: mesmo com VENTISEG_ENABLE_GPIO=1, nenhum pino e escrito ate
+// a auditoria eletrica P1-P5 fechar. Nao alterar sem evidencia fisica.
+#ifndef VENTISEG_HW_AUDIT_OK
+#define VENTISEG_HW_AUDIT_OK 0
+#endif
+
+// micros() do ESP32 e uint32_t e volta a zero a cada ~71,6 min. Mantem o
+// relogio monotonico da camada STEP/DIR pelo mesmo principio de unwrapMillis.
+constexpr int64_t unwrapMicros(uint32_t sample, int64_t previous) {
+  const uint32_t last = static_cast<uint32_t>(previous);
+  const uint32_t delta = sample - last;
+  return previous + static_cast<int64_t>(delta);
+}
+
+static_assert(unwrapMicros(1000u, 900LL) == 1000LL,
+              "incremento normal do micros divergente");
+static_assert(unwrapMicros(1100u, 4294967196LL) == 4294968396LL,
+              "wrap do micros divergente");
+
 // O nucleo do parser recebe int64_t. millis() do ESP32 e uint32_t e retorna
 // a zero a cada ~49,7 dias; esta funcao mantem o tempo monotonico para que
 // o watchdog de 1200 ms nao seja burlado por um wrap-around.

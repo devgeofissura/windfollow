@@ -239,11 +239,186 @@
     return true;
   }
 
+  // --------------------------------------------------- saida STEP/DIR ----
+  // Camada trivial e isolada: um pulso por update(), intervalo recalculado
+  // pela velocidade, rampa limitada por aceleracao e distancia de frenagem.
+  // Mesmo logica pura: nenhum pino e tocado ate `gate` ser verdadeiro.
+  const STEP_DIR = Object.freeze({
+    FULL_STEPS_PER_REV: 200,
+    STEP_PULSE_US: 10,
+    DIR_SETUP_US: 5,
+    DEFAULT_SPEED: 800,
+    DEFAULT_ACCEL: 4000,
+    SPEED_MAX: 10000,
+    ACCEL_MAX: 100000,
+  });
+
+  function createStepDir() {
+    return {
+      stepsPerRev: STEP_DIR.FULL_STEPS_PER_REV * 16,
+      speed: STEP_DIR.DEFAULT_SPEED,
+      accel: STEP_DIR.DEFAULT_ACCEL,
+      gate: false,
+      target: 0,
+      position: 0,
+      direction: 0,
+      pulses: 0,
+      velocity: 0,
+      started: false,
+      lastStepUs: 0,
+      lastUpdateUs: 0,
+      dirReadyUs: 0,
+      pulseUntilUs: 0,
+      stepLevel: false,
+      dirLevel: false,
+    };
+  }
+
+  function setStepDirTarget(d, target) {
+    d.target = target;
+  }
+
+  function setStepDirMicrostep(d, value) {
+    if (value !== 8 && value !== 16) return false;
+    if (d.velocity !== 0 || d.stepLevel) return false;
+    d.stepsPerRev = STEP_DIR.FULL_STEPS_PER_REV * value;
+    return true;
+  }
+
+  function setStepDirSpeed(d, value) {
+    if (!Number.isSafeInteger(value) || value < 1 ||
+        value > STEP_DIR.SPEED_MAX) return false;
+    d.speed = value;
+    return true;
+  }
+
+  function setStepDirAccel(d, value) {
+    if (!Number.isSafeInteger(value) || value < 1 ||
+        value > STEP_DIR.ACCEL_MAX) return false;
+    d.accel = value;
+    return true;
+  }
+
+  function setStepDirGate(d, value) {
+    if (d.gate === value) return;
+    d.gate = value;
+    if (!value) {
+      d.velocity = 0;
+      d.target = d.position;
+      d.stepLevel = false;
+    }
+  }
+
+  function stepDirUpdate(d, nowUs) {
+    if (!d.started) {
+      d.started = true;
+      d.lastUpdateUs = nowUs;
+      d.lastStepUs = nowUs;
+    }
+    if (d.stepLevel && nowUs >= d.pulseUntilUs) d.stepLevel = false;
+    if (!d.gate) {
+      d.velocity = 0;
+      d.lastUpdateUs = nowUs;
+      return 0;
+    }
+    const elapsed = nowUs - d.lastUpdateUs;
+    const dt = elapsed > 0 ? elapsed / 1e6 : 0;
+    d.lastUpdateUs = nowUs;
+
+    const remaining = d.target - d.position;
+    if (remaining === 0) {
+      d.velocity = 0;
+      return 0;
+    }
+    const sign = remaining > 0 ? 1 : -1;
+    if (sign !== d.direction) {
+      d.direction = sign;
+      d.dirLevel = sign > 0;
+      d.dirReadyUs = nowUs + STEP_DIR.DIR_SETUP_US;
+    }
+    if (nowUs < d.dirReadyUs) return 0;
+
+    const dist = Math.abs(remaining);
+    const vLimit = Math.sqrt(2 * d.accel * dist);
+    const wanted = sign * Math.min(d.speed, vLimit);
+    const delta = d.accel * dt;
+    if (wanted > d.velocity) {
+      d.velocity = Math.min(wanted, d.velocity + delta);
+    } else if (wanted < d.velocity) {
+      d.velocity = Math.max(wanted, d.velocity - delta);
+    }
+    const speedNow = Math.abs(d.velocity);
+    if (speedNow < 1e-9) return 0;
+    const interval = 1e6 / speedNow;
+    if (nowUs - d.lastStepUs < interval) return 0;
+
+    d.lastStepUs = nowUs;
+    d.position += sign;
+    d.pulses += 1;
+    d.stepLevel = true;
+    d.pulseUntilUs = nowUs + STEP_DIR.STEP_PULSE_US;
+    return 1;
+  }
+
+  function stepDirConfig(d, line) {
+    if (line === 'CFG,?') {
+      return 'CFG,steps=' + d.stepsPerRev + ',speed=' + d.speed +
+        ',accel=' + d.accel + ',gate=' + (d.gate ? 1 : 0);
+    }
+    if (line === 'CFG,GATE,0') {
+      setStepDirGate(d, false);
+      return 'CFG,GATE,0,OK';
+    }
+    if (line === 'CFG,GATE,1,CONFIRM') {
+      setStepDirGate(d, true);
+      return 'CFG,GATE,1,OK';
+    }
+    if (line.indexOf('CFG,GATE,') === 0) return 'REASON,format';
+
+    const keys = [
+      ['MICRO', 'CFG,MICRO,', setStepDirMicrostep],
+      ['SPEED', 'CFG,SPEED,', setStepDirSpeed],
+      ['ACCEL', 'CFG,ACCEL,', setStepDirAccel],
+    ];
+    for (let i = 0; i < keys.length; i += 1) {
+      const key = keys[i][0];
+      const prefix = keys[i][1];
+      const setter = keys[i][2];
+      if (line.indexOf(prefix) !== 0) continue;
+      const tail = line.slice(prefix.length);
+      if (!/^[0-9]+$/.test(tail)) return 'REASON,format';
+      const value = Number(tail);
+      if (key === 'MICRO' && value !== 8 && value !== 16) return 'REASON,range';
+      if (!setter(d, value)) {
+        return key === 'MICRO' ? 'REASON,busy' : 'REASON,range';
+      }
+      return 'CFG,' + key + ',' + value + ',OK';
+    }
+    return 'REASON,format';
+  }
+
+  function stepDirSnapshot(d) {
+    return {
+      steps_per_rev: d.stepsPerRev,
+      speed: d.speed,
+      accel: d.accel,
+      gate: d.gate,
+      target: d.target,
+      position: d.position,
+      direction: d.direction,
+      pulses: d.pulses,
+      step: d.stepLevel,
+      dir: d.dirLevel,
+    };
+  }
+
   const Core = Object.freeze({
     SIM, STATES, FAULTS, X_LIMIT,
     byteLength, clamp, trackSteps, createState, telemetry, linkExpired,
     feed, lastReason: lastReasonValue, parseDecision,
     checkWatchdog, relink, setSimFault,
+    STEP_DIR, createStepDir, setStepDirTarget, setStepDirGate,
+    stepDirUpdate, stepDirConfig, stepDirSnapshot,
   });
 
   global.VentisegCore = Core;
@@ -264,12 +439,23 @@
     btnTrack: $('btn-track'), btnLink: $('btn-link'), btnRange: $('btn-range'),
     btnReset: $('btn-reset'), form: $('inject-form'), cmd: $('cmd-line'),
     log: $('log'), constants: $('proto-constants'),
+    cfgForm: $('cfg-form'), cfgSpeed: $('cfg-speed'), cfgAccel: $('cfg-accel'),
+    cfgMicro: $('cfg-micro'), cfgQuery: $('cfg-query'), cfgReply: $('cfg-reply'),
+    outGate: $('out-gate'), outSource: $('out-source'), outSteps: $('out-steps'),
+    outVelocity: $('out-velocity'), outTarget: $('out-target'),
+    outPosition: $('out-position'), outPulses: $('out-pulses'),
+    outLevels: $('out-levels'), gateOpen: $('gate-open'), gateClose: $('gate-close'),
+    gateDialog: $('gate-dialog'), gateCancel: $('gate-dialog-cancel'),
+    gateConfirm: $('gate-dialog-confirm'),
   };
 
   let sim = Core.createState();
   let nextSeq = 0;
   let syntheticTarget = 0;
   let linkCut = false;
+  let stepDir = Core.createStepDir();
+  let gateSource = 'nenhuma';
+  let cfgReply = '—';
 
   function clock() {
     return typeof performance !== 'undefined' && performance.now
@@ -292,6 +478,58 @@
     el.log.appendChild(row);
     while (el.log.children.length > 80) el.log.removeChild(el.log.firstChild);
     el.log.scrollTop = el.log.scrollHeight;
+  }
+
+  function clockUs() {
+    return Math.round(clock() * 1000);
+  }
+
+  // Plano de bancada `CFG,...`: nao passa pelo parser validado do protocolo
+  // e nao altera estado/fault/sequencia da sessao.
+  function applyCfg(line, origin) {
+    addLog('tx', line + (origin ? ' [' + origin + ']' : ''));
+    cfgReply = Core.stepDirConfig(stepDir, line);
+    addLog('rx', cfgReply);
+    renderSaida();
+    return cfgReply;
+  }
+
+  function closeGate(origin) {
+    if (!stepDir.gate) return;
+    applyCfg('CFG,GATE,0', origin);
+    gateSource = 'nenhuma';
+  }
+
+  function openGate() {
+    if (linkCut || sim.linkLost || sim.fault !== 'None') {
+      addLog('evt', 'Gate recusado: link/falha ativa — restaure a sessão');
+      renderSaida();
+      return;
+    }
+    applyCfg('CFG,GATE,1,CONFIRM', 'WEB');
+    gateSource = stepDir.gate ? 'WEB' : 'nenhuma';
+    addLog('evt', stepDir.gate
+      ? 'Gate WEB aberto (somente lógico — nenhum GPIO tocado)'
+      : 'Gate WEB recusado pela camada de saída');
+    renderSaida();
+  }
+
+  function renderSaida() {
+    if (!el.outGate) return;
+    const snap = Core.stepDirSnapshot(stepDir);
+    el.outGate.textContent = stepDir.gate ? 'ON' : 'OFF';
+    el.outSource.textContent = gateSource;
+    el.outSteps.textContent = String(snap.steps_per_rev);
+    el.outVelocity.textContent = String(Math.round(Math.abs(stepDir.velocity)));
+    el.outTarget.textContent = String(snap.target);
+    el.outPosition.textContent = String(snap.position);
+    el.outPulses.textContent = String(snap.pulses);
+    el.outLevels.textContent = (snap.dir >= 0 ? '+' : '−') + ' / ' +
+      (snap.step ? 'alto' : 'baixo');
+    el.cfgReply.textContent = 'Última resposta: ' + cfgReply;
+    el.gateOpen.setAttribute('aria-pressed', String(stepDir.gate));
+    el.gateOpen.textContent = stepDir.gate
+      ? 'Saída liberada (WEB)' : 'Liberar saída (WEB)';
   }
 
   function render() {
@@ -317,6 +555,7 @@
     const faulted = sim.fault !== 'None';
     el.header.textContent = faulted ? 'Falha: ' + sim.fault : 'Simulação ativa';
     el.header.classList.toggle('is-fault', faulted);
+    renderSaida();
   }
 
   function send(line) {
@@ -340,8 +579,9 @@
   function toggleLink() {
     linkCut = !linkCut;
     if (linkCut) {
+      closeGate('link');
       addLog('evt', 'Link cortado (simulação) — watchdog em ' +
-        SIM.LINK_TIMEOUT_MS + ' ms');
+        SIM.LINK_TIMEOUT_MS + ' ms, gate fechado');
     } else {
       Core.relink(sim, clock());
       addLog('evt', 'Link restaurado (simulação)');
@@ -358,12 +598,16 @@
   }
 
   function reset() {
+    closeGate('reset');
     sim = Core.createState();
     sim.lastAcceptedMs = clock();
     nextSeq = 0;
     syntheticTarget = 0;
     linkCut = false;
-    addLog('evt', 'BOOT: SAFE, eixo parado, fault None');
+    stepDir = Core.createStepDir();
+    gateSource = 'nenhuma';
+    cfgReply = '—';
+    addLog('evt', 'BOOT: SAFE, eixo parado, fault None, gate OFF');
     addLog('rx', Core.telemetry(sim));
     render();
   }
@@ -372,8 +616,9 @@
   function tick() {
     const now = clock();
     if (Core.checkWatchdog(sim, now)) {
+      closeGate('watchdog');
       addLog('evt', 'WATCHDOG: sem comando aceito em ' + SIM.LINK_TIMEOUT_MS +
-        ' ms — SAFE, eixo parado');
+        ' ms — SAFE, eixo parado, gate fechado');
       addLog('rx', Core.telemetry(sim));
     }
     if (sim.mode === 'TRACK' && !linkCut) {
@@ -384,6 +629,11 @@
       send('T,' + seq + ',' + syntheticTarget + ',' + (valid ? 1 : 0));
       nextSeq = seq + 1;
     }
+
+    // O eixo comandado pela FSM e o alvo da camada de saida. Nenhum pino e
+    // escrito: tudo permanece no estado logico do navegador.
+    Core.setStepDirTarget(stepDir, sim.axis);
+    Core.stepDirUpdate(stepDir, clockUs());
     render();
   }
 
@@ -416,6 +666,11 @@
       ['MAX_TRAVEL', SIM.MAX_TRAVEL],
       ['TRACK_GAIN', SIM.TRACK_GAIN],
       ['CONTROL_PORT', SIM.CONTROL_PORT + ' (previsto, NAO CONFIRMADO)'],
+      ['FULL_STEPS_PER_REV', Core.STEP_DIR.FULL_STEPS_PER_REV],
+      ['STEP_PULSE_US', Core.STEP_DIR.STEP_PULSE_US],
+      ['DIR_SETUP_US', Core.STEP_DIR.DIR_SETUP_US],
+      ['SPEED_MAX', Core.STEP_DIR.SPEED_MAX],
+      ['ACCEL_MAX', Core.STEP_DIR.ACCEL_MAX],
     ];
     rows.forEach(([name, value]) => {
       const tr = document.createElement('tr');
@@ -449,6 +704,40 @@
       const line = el.cmd.value.trim();
       if (line) send(line);
     });
+
+    el.cfgForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const speed = Number(el.cfgSpeed.value);
+      const accel = Number(el.cfgAccel.value);
+      const micro = Number(el.cfgMicro.value);
+      if (!Number.isSafeInteger(speed) || speed < 1 || speed > Core.STEP_DIR.SPEED_MAX) {
+        addLog('evt', 'Velocidade fora de faixa (1..' + Core.STEP_DIR.SPEED_MAX + ')');
+        return;
+      }
+      if (!Number.isSafeInteger(accel) || accel < 1 || accel > Core.STEP_DIR.ACCEL_MAX) {
+        addLog('evt', 'Aceleração fora de faixa (1..' + Core.STEP_DIR.ACCEL_MAX + ')');
+        return;
+      }
+      const replies = [
+        applyCfg('CFG,SPEED,' + speed, 'UI'),
+        applyCfg('CFG,ACCEL,' + accel, 'UI'),
+        applyCfg('CFG,MICRO,' + micro, 'UI'),
+      ];
+      if (replies.some((reply) => reply.indexOf('REASON') === 0)) {
+        addLog('evt', 'Configuração parcialmente recusada — ver respostas acima');
+      }
+    });
+    el.cfgQuery.addEventListener('click', () => applyCfg('CFG,?', 'UI'));
+
+    el.gateOpen.addEventListener('click', () => {
+      el.gateDialog.showModal();
+    });
+    el.gateCancel.addEventListener('click', () => el.gateDialog.close());
+    el.gateConfirm.addEventListener('click', () => {
+      el.gateDialog.close();
+      openGate();
+    });
+    el.gateClose.addEventListener('click', () => closeGate('UI'));
   }
 
   function init() {

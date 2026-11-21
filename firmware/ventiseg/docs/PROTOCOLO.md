@@ -91,6 +91,31 @@ ACK,<seq>,<state>,<fault>
 Boot seguro: eixo parado, `state=SAFE`, `fault=None`, sem GPIO ativo enquanto
 `VENTISEG_ENABLE_GPIO=0`.
 
+### Plano de bancada `CFG,...` (fora do protocolo v0.1)
+
+A camada de saída STEP/DIR aceita comandos `CFG,...` **antes** do parser
+validado. Eles não alteram modo, eixo, sequência, fault nem watchdog e não
+produzem `ACK`; a resposta é o próprio `CFG,...` ou `REASON,...`:
+
+| Comando | Resposta | Efeito |
+|---|---|---|
+| `CFG,?` | `CFG,steps=…,speed=…,accel=…,gate=…` | Consulta somente leitura |
+| `CFG,SPEED,<1..10000>` | `CFG,SPEED,<n>,OK` | passos/s |
+| `CFG,ACCEL,<1..100000>` | `CFG,ACCEL,<n>,OK` | passos/s² |
+| `CFG,MICRO,<8\|16>` | `CFG,MICRO,<n>,OK` | 1600 ou 3200 passos/volta; só em repouso |
+| `CFG,GATE,0` | `CFG,GATE,0,OK` | Fecha o gate e estaciona |
+| `CFG,GATE,1,CONFIRM` | `CFG,GATE,1,OK` | Abre o gate de runtime |
+
+Rejeições: `REASON,format`, `REASON,range` (fora de faixa), `REASON,busy`
+(micropasso com eixo em movimento) e `REASON,gate` (liberação negada pelo
+firmware com `VENTISEG_ENABLE_GPIO=0` ou `VENTISEG_HW_AUDIT_OK=0`). Os dois
+gates de compilação são **necessários**: mesmo `CFG,GATE,1,CONFIRM` aceito
+pela camada lógica não escreve pino algum sem eles. O watchdog também fecha
+o gate de runtime ao forçar `SAFE`/`fault=Lnk`.
+
+No simulador os mesmos comandos são gerados pela aba "Saída STEP/DIR", com
+modal de confirmação; a liberação é estritamente lógica (nenhum hardware).
+
 ## Condições antes de habilitar GPIO (P1–P5)
 
 1. Conferir o manual/foto do DM556D Azaneli e a lógica PUL/DIR/ENA.

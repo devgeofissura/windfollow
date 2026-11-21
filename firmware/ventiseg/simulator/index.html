@@ -27,6 +27,8 @@
         <nav class="tabs" role="tablist" aria-label="Áreas do simulador">
             <button type="button" class="tab active" role="tab" id="tabbtn-painel"
                     aria-controls="tab-painel" aria-selected="true" data-tab="painel">Painel</button>
+            <button type="button" class="tab" role="tab" id="tabbtn-saida"
+                    aria-controls="tab-saida" aria-selected="false" data-tab="saida">Saída STEP/DIR</button>
             <button type="button" class="tab" role="tab" id="tabbtn-protocolo"
                     aria-controls="tab-protocolo" aria-selected="false" data-tab="protocolo">Protocolo</button>
             <button type="button" class="tab" role="tab" id="tabbtn-pinagem"
@@ -93,6 +95,105 @@
                 <article class="card">
                     <h2>Log do protocolo</h2>
                     <ol id="log" class="log" aria-live="polite" aria-label="Mensagens simuladas"></ol>
+                </article>
+            </section>
+
+            <!-- SAIDA STEP/DIR -->
+            <section id="tab-saida" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-saida" hidden>
+                <p class="safety-note" role="note">
+                    <strong>Antes de liberar:</strong> a verificação feita até aqui foi
+                    <strong>lógica</strong> (firmware e testes host). O firmware de bancada segue com
+                    <code>VENTISEG_ENABLE_GPIO = 0</code> e <code>VENTISEG_HW_AUDIT_OK = 0</code>.
+                    O gate desta aba controla <strong>somente a simulação</strong>. No hardware,
+                    a liberação exige os dois gates de compilação e a auditoria elétrica P1–P5.
+                </p>
+
+                <div class="grid-2">
+                    <article class="card">
+                        <h2>Parâmetros da saída</h2>
+                        <p class="hint">
+                            Mesmo algoritmo trivial das aplicações consagradas (AccelStepper):
+                            no máximo um pulso por <code>update()</code>, intervalo recalculado
+                            pela velocidade e rampa limitada por aceleração e distância de frenagem.
+                            Sem <code>delay()</code> e sem bibliotecas externas.
+                        </p>
+                        <form id="cfg-form" class="cfg-form">
+                            <div class="field">
+                                <label for="cfg-speed">Velocidade (passos/s)</label>
+                                <input type="number" id="cfg-speed" min="1" max="10000"
+                                       step="1" value="800" inputmode="numeric">
+                            </div>
+                            <div class="field">
+                                <label for="cfg-accel">Aceleração (passos/s²)</label>
+                                <input type="number" id="cfg-accel" min="1" max="100000"
+                                       step="1" value="4000" inputmode="numeric">
+                            </div>
+                            <div class="field">
+                                <label for="cfg-micro">Passos/volta e micropasso</label>
+                                <select id="cfg-micro">
+                                    <option value="8">8 — 1600 passos/volta</option>
+                                    <option value="16" selected>16 — 3200 passos/volta (provisório)</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <button type="submit" class="btn btn-primary">Aplicar configuração</button>
+                                <button type="button" class="btn btn-ghost" id="cfg-query">Consultar (CFG,?)</button>
+                            </div>
+                        </form>
+                        <p class="hint" id="cfg-reply">Última resposta: —</p>
+                    </article>
+
+                    <article class="card">
+                        <h2>Gate de saída (somente nesta simulação)</h2>
+                        <div class="status-grid" aria-live="polite">
+                            <div class="status-item"><span class="label">Gate</span><strong id="out-gate">OFF</strong></div>
+                            <div class="status-item"><span class="label">Origem</span><strong id="out-source">nenhuma</strong></div>
+                            <div class="status-item"><span class="label">Passos/volta</span><strong id="out-steps">3200</strong></div>
+                            <div class="status-item"><span class="label">Velocidade atual</span><strong id="out-velocity">0</strong></div>
+                            <div class="status-item"><span class="label">Alvo</span><strong id="out-target">0</strong></div>
+                            <div class="status-item"><span class="label">Posição</span><strong id="out-position">0</strong></div>
+                            <div class="status-item"><span class="label">Pulsos</span><strong id="out-pulses">0</strong></div>
+                            <div class="status-item"><span class="label">DIR / STEP</span><strong id="out-levels">+/baixo</strong></div>
+                        </div>
+                        <div class="control-group">
+                            <button type="button" class="btn btn-warn" id="gate-open"
+                                    aria-pressed="false">Liberar saída (WEB)</button>
+                            <button type="button" class="btn" id="gate-close">Desligar saída</button>
+                        </div>
+                        <p class="hint">
+                            O fechamento é automático em <code>fault=Lnk</code> (watchdog) e no
+                            reinício da simulação. Trocar micropasso só é aceito em repouso.
+                        </p>
+                    </article>
+                </div>
+
+                <article class="card">
+                    <h2>O que foi e o que não foi verificado</h2>
+                    <div class="grid-2">
+                        <div>
+                            <h3>Verificado (lógico)</h3>
+                            <ul>
+                                <li><code>VENTISEG_ENABLE_GPIO=0</code> e sketch serial-only, sem escrita de GPIO.</li>
+                                <li>Parser, simulador e camada STEP/DIR com testes host em Python × JS × C++.</li>
+                                <li>Autoteste na placa: estados, watchdog e limites lógicos.</li>
+                                <li>Watchdog leva a <code>SAFE</code> com <code>fault=Lnk</code> e fecha o gate.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3>Não verificado (físico)</h3>
+                            <ul>
+                                <li>Medir <code>STEP/PUL</code> ou <code>DIR</code> com osciloscópio.</li>
+                                <li>Observar <code>PUL+</code>/<code>DIR+</code> no lado de 5 V.</li>
+                                <li>Alimentar o DM556D ou testar boot/reset do driver.</li>
+                                <li>Confirmar ausência de pulso falso e comportamento com carga desacoplada.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p class="safety-note" role="note">
+                        <strong>Nenhum DM556D, motor ou carga foi energizado nesta entrega.</strong>
+                        Não há captura de câmera, detecção de pessoa, erro real de imagem,
+                        malha fechada ou compensação de movimento ativos. Firmware não foi gravado.
+                    </p>
                 </article>
             </section>
 
@@ -180,6 +281,30 @@
             </section>
         </main>
     </div>
+
+    <dialog id="gate-dialog" class="gate-dialog" aria-labelledby="gate-dialog-title">
+        <h2 id="gate-dialog-title">Confirmar liberação da saída</h2>
+        <p>
+            Isto libera apenas os pulsos <strong>dentro do simulador</strong>. Nenhum pino
+            físico, driver ou motor é acionado.
+        </p>
+        <p>
+            No firmware, o gate de runtime ainda depende de
+            <code>VENTISEG_ENABLE_GPIO=1</code>, <code>VENTISEG_HW_AUDIT_OK=1</code>
+            e da auditoria elétrica P1–P5. Sem isso, a placa responde
+            <code>REASON,gate</code>.
+        </p>
+        <p class="safety-note" role="note">
+            Entendo que a verificação foi lógica, que nenhum osciloscópio foi ligado
+            em <code>PUL+</code>/<code>DIR+</code> e que nenhum motor foi energizado.
+        </p>
+        <div class="control-group">
+            <button type="button" class="btn" id="gate-dialog-cancel">Cancelar</button>
+            <button type="button" class="btn btn-warn" id="gate-dialog-confirm">
+                Liberar (simulação)
+            </button>
+        </div>
+    </dialog>
 
     <script src="js/app.js"></script>
 </body>
