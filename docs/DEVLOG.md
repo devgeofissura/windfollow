@@ -11,6 +11,27 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-21 14:23 - feat(ventiseg): visualizacao sintetica da deteccao
+
+**Area:** ventiseg
+
+**Feito:**
+- aba Deteccao sintetica com quadro pessoa zona morta erro de posicao e alvo de pan -> geometria do laco fechado sem camera real GPIO ou motor
+- nucleo deterministico em JS com sliders de bearing e pan dropout e servo opcional -> 176 testes host verdes no Node
+- documentacao ESTADO e README atualizados -> nenhuma mudanca de protocolo nem regravacao de firmware
+
+**Dificuldades e solucoes:**
+- erro de posicao podia ser confundido com comando real de pan -> separei o alvo sintetico da camada STEP DIR e deixei explicito que nada e enviado ao firmware
+- convergencia da malha fechada precisava ser previsivel nos testes -> reutilizei trackSteps do contrato e fixei a sequencia em 399 499 524 passos dentro da zona morta
+
+**Arquivos:**
+- `firmware/ventiseg/docs/ESTADO.md`
+- `firmware/ventiseg/simulator/README.md`
+- `firmware/ventiseg/simulator/css/style.css`
+- `firmware/ventiseg/simulator/index.html`
+- `firmware/ventiseg/simulator/js/app.js`
+- `firmware/ventiseg/tests/test_simulator.py`
+
 ### 2026-11-21 12:45 - fix(ventiseg): unifica faixa e protege ensaio na saida
 
 **Area:** ventiseg

@@ -228,6 +228,97 @@ button:focus-visible {
     transition: left 0.15s linear;
 }
 
+/* --- Deteccao sintetica -------------------------------------------------- */
+.cam-frame {
+    position: relative;
+    width: 320px;
+    max-width: 100%;
+    aspect-ratio: 4 / 3;
+    background: linear-gradient(180deg, #1b2230 0%, #0d1017 70%, #232a35 100%);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.cam-center {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--color-primary);
+    opacity: 0.7;
+}
+
+/* Zona morta visual: ±32 px de 320 -> 20% da largura central. */
+.cam-band {
+    position: absolute;
+    left: 40%;
+    width: 20%;
+    top: 0;
+    bottom: 0;
+    background: var(--color-success);
+    opacity: 0.10;
+    border-left: 1px dashed var(--color-success);
+    border-right: 1px dashed var(--color-success);
+}
+
+.cam-person {
+    position: absolute;
+    top: 58%;
+    width: 18px;
+    height: 60px;
+    transform: translate(-50%, -50%);
+    transition: left 0.12s linear;
+}
+
+.cam-head {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--color-success);
+    transform: translateX(-50%);
+}
+
+.cam-body {
+    position: absolute;
+    left: 50%;
+    top: 16px;
+    bottom: 0;
+    width: 16px;
+    border-radius: 6px 6px 2px 2px;
+    background: var(--color-success);
+    opacity: 0.85;
+    transform: translateX(-50%);
+}
+
+.cam-lost {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-danger);
+    background: rgba(0, 0, 0, 0.45);
+    font-weight: 700;
+}
+
+.check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+input[type="range"] {
+    width: 100%;
+    accent-color: var(--color-primary);
+}
+
 /* --- Status e controles -------------------------------------------------- */
 .status-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .status-item {

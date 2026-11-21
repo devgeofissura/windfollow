@@ -480,6 +480,96 @@
     };
   }
 
+  // ------------------------------------------------ deteccao sintetica ----
+  // Geometria do laco fechado, somente logica: a pessoa tem um bearing no
+  // mundo, a camera gira junto com o duto (pan em passos) e o erro VISIVEL e
+  // a diferenca entre os dois. Nenhum quadro real e capturado: nao ha camera,
+  // GPIO, driver nem motor. O alvo de pan e apenas um numero para a UI.
+  const CAM = Object.freeze({
+    FRAME_W: 320,
+    FRAME_H: 240,
+    CENTER_BAND_PX: 32,
+    PAN_X_SCALE: X_LIMIT / SIM.MAX_TRAVEL,
+  });
+
+  function createDetection() {
+    const d = {
+      bearingX: 0,   // bearing da pessoa no mundo, em x do contrato
+      panSteps: 0,   // pan da camera (simulado), em passos do eixo
+      seen: true,    // flag sintetica de deteccao valida
+      view: null,
+    };
+    detectionUpdate(d);
+    return d;
+  }
+
+  function detectionSetBearing(d, x) {
+    if (!Number.isFinite(x)) return false;
+    d.bearingX = clamp(Math.round(x), X_LIMIT);
+    detectionUpdate(d);
+    return true;
+  }
+
+  function detectionSetPan(d, steps) {
+    if (!Number.isFinite(steps)) return false;
+    d.panSteps = clamp(Math.round(steps), SIM.MAX_TRAVEL);
+    detectionUpdate(d);
+    return true;
+  }
+
+  function detectionSetSeen(d, seen) {
+    d.seen = Boolean(seen);
+    detectionUpdate(d);
+    return true;
+  }
+
+  function detectionUpdate(d) {
+    const panX = clamp(Math.round(d.panSteps * CAM.PAN_X_SCALE), X_LIMIT);
+    const apparentRaw = d.bearingX - panX;
+    const detected = d.seen && Math.abs(apparentRaw) <= X_LIMIT;
+    const apparentX = clamp(apparentRaw, X_LIMIT);
+    const markerPx = Math.round(apparentX / X_LIMIT * (CAM.FRAME_W / 2));
+    const panErrorSteps = detected
+      ? trackSteps(apparentX, SIM.MAX_TRAVEL, SIM.TRACK_GAIN, SIM.DEAD_BAND)
+      : 0;
+    d.view = {
+      panX,
+      apparentX,
+      detected,
+      errorX: detected ? apparentX : 0,
+      errorPx: detected ? markerPx : 0,
+      panErrorSteps,
+      panTargetSteps: clamp(d.panSteps + panErrorSteps, SIM.MAX_TRAVEL),
+      pixelX: CAM.FRAME_W / 2 + markerPx,
+    };
+    return d.view;
+  }
+
+  // Servo sintetico: aplica o alvo de pan calculado. Nao escreve pino algum.
+  function detectionCloseLoop(d) {
+    const target = d.view.panTargetSteps;
+    if (target === d.panSteps) return false;
+    d.panSteps = target;
+    detectionUpdate(d);
+    return true;
+  }
+
+  function detectionSnapshot(d) {
+    return {
+      bearing_x: d.bearingX,
+      pan_steps: d.panSteps,
+      seen: d.seen,
+      pan_x: d.view.panX,
+      apparent_x: d.view.apparentX,
+      detected: d.view.detected,
+      error_x: d.view.errorX,
+      error_px: d.view.errorPx,
+      pan_error_steps: d.view.panErrorSteps,
+      pan_target_steps: d.view.panTargetSteps,
+      pixel_x: d.view.pixelX,
+    };
+  }
+
   const Core = Object.freeze({
     SIM, STATES, FAULTS, X_LIMIT,
     byteLength, clamp, trackSteps, createState, telemetry, linkExpired,
@@ -487,6 +577,9 @@
     checkWatchdog, relink, setSimFault,
     STEP_DIR, createStepDir, setStepDirTarget, setStepDirGate,
     stepDirTestPulse, stepDirUpdate, stepDirConfig, stepDirSnapshot,
+    CAM, createDetection, detectionSetBearing, detectionSetPan,
+    detectionSetSeen, detectionUpdate, detectionCloseLoop,
+    detectionSnapshot,
   });
 
   global.VentisegCore = Core;
@@ -517,6 +610,13 @@
     pulseForm: $('pulse-form'), pulseCount: $('pulse-count'), pulseDir: $('pulse-dir'),
     gateDialog: $('gate-dialog'), gateCancel: $('gate-dialog-cancel'),
     gateConfirm: $('gate-dialog-confirm'),
+    detPerson: $('cam-person'), detLost: $('cam-lost'),
+    detStatus: $('det-status'), detBearing: $('det-bearing'),
+    detPan: $('det-pan'), detPanX: $('det-pan-x'),
+    detApparent: $('det-apparent'), detError: $('det-error'),
+    detErrorPx: $('det-error-px'), detTarget: $('det-target'),
+    detBearingSlider: $('det-bearing-slider'), detPanSlider: $('det-pan-slider'),
+    detSeen: $('det-seen'), detClosedLoop: $('det-closed-loop'),
   };
 
   let sim = Core.createState();
@@ -526,6 +626,7 @@
   let stepDir = Core.createStepDir();
   let gateSource = 'nenhuma';
   let cfgReply = '—';
+  let detection = Core.createDetection();
 
   function clock() {
     return typeof performance !== 'undefined' && performance.now
@@ -604,6 +705,30 @@
       ? 'Saída liberada (WEB)' : 'Liberar saída (WEB)';
   }
 
+  function renderDeteccao() {
+    if (!el.detPerson) return;
+    const v = Core.detectionSnapshot(detection);
+    el.detPerson.style.left =
+      (v.pixel_x / CAM.FRAME_W * 100) + '%';
+    el.detPerson.hidden = !v.detected;
+    el.detLost.hidden = v.detected;
+    el.detStatus.textContent = v.detected ? 'detectada' : 'sem detecção';
+    el.detBearing.textContent = String(v.bearing_x);
+    el.detPan.textContent = String(v.pan_steps);
+    el.detPanX.textContent = String(v.pan_x);
+    el.detApparent.textContent = String(v.apparent_x);
+    el.detError.textContent = String(v.error_x);
+    el.detErrorPx.textContent = String(v.error_px);
+    el.detTarget.textContent = String(v.pan_target_steps);
+    if (el.detBearingSlider.value !== String(v.bearing_x)) {
+      el.detBearingSlider.value = String(v.bearing_x);
+    }
+    if (el.detPanSlider.value !== String(v.pan_steps)) {
+      el.detPanSlider.value = String(v.pan_steps);
+    }
+    el.detSeen.checked = v.seen;
+  }
+
   function render() {
     el.stState.textContent = sim.mode;
     el.stMotion.textContent = sim.moving ? 'em movimento' : 'parado';
@@ -628,6 +753,7 @@
     el.header.textContent = faulted ? 'Falha: ' + sim.fault : 'Simulação ativa';
     el.header.classList.toggle('is-fault', faulted);
     renderSaida();
+    renderDeteccao();
   }
 
   function send(line) {
@@ -679,6 +805,7 @@
     stepDir = Core.createStepDir();
     gateSource = 'nenhuma';
     cfgReply = '—';
+    detection = Core.createDetection();
     addLog('evt', 'BOOT: SAFE, eixo parado, fault None, gate OFF');
     addLog('rx', Core.telemetry(sim));
     render();
@@ -706,6 +833,10 @@
     // escrito: tudo permanece no estado logico do navegador.
     Core.setStepDirTarget(stepDir, sim.axis);
     Core.stepDirUpdate(stepDir, clockUs());
+    // Servo sintetico opcional: so aproxima o pan do alvo, sem tocar GPIO.
+    if (el.detClosedLoop && el.detClosedLoop.checked) {
+      Core.detectionCloseLoop(detection);
+    }
     render();
   }
 
@@ -831,6 +962,19 @@
       openGate();
     });
     el.gateClose.addEventListener('click', () => closeGate('UI'));
+
+    el.detBearingSlider.addEventListener('input', () => {
+      Core.detectionSetBearing(detection, Number(el.detBearingSlider.value));
+      renderDeteccao();
+    });
+    el.detPanSlider.addEventListener('input', () => {
+      Core.detectionSetPan(detection, Number(el.detPanSlider.value));
+      renderDeteccao();
+    });
+    el.detSeen.addEventListener('change', () => {
+      Core.detectionSetSeen(detection, el.detSeen.checked);
+      renderDeteccao();
+    });
   }
 
   function init() {

@@ -30,6 +30,12 @@ sem build e sem bibliotecas externas. Não é preciso instalar nada.
   e auditoria elétrica antes de qualquer saída física. O formulário de ensaio
   emite N pulsos exatos com prioridade sobre o alvo da FSM — ainda somente
   lógico, sem escrita de pino.
+- **Detecção (sintética):** quadro com a pessoa, zona morta central, erro de
+  posição (em x e em pixels) e alvo de pan. Sliders movem o bearing da pessoa e
+  o pan da câmera; o erro compensa o próprio movimento da câmera, que gira
+  junto com o duto. A malha fechada opcional apenas aproxima o pan sintético do
+  alvo. **Não há imagem, câmera real ou detecção de pessoa** — é geometria pura
+  no navegador, sem comandos de protocolo e sem tocar GPIO/driver/motor.
 - **Protocolo:** constantes e formatos do contrato v0.1, somente leitura.
 - **Pinagem:** conector `J_GPIO_LIVRES` (STEP=IO3, DIR=IO21, IO45/46
   reservados por strapping, GND, 3V3), lógica 3,3 V e driver DM556D Azaneli
@@ -68,6 +74,8 @@ estado**. Sem comando aceito em 1200 ms: watchdog força `SAFE`, eixo parado e
   osciloscópio em `PUL+`/`DIR+`, driver alimentado, teste de boot/reset nem
   carga desacoplada. O ensaio da UI não mede pulso elétrico algum.
 - Não há aquisição de câmera, rede, `localStorage` nem dependências externas.
+  A aba de detecção desenha um quadro sintético: nenhum sensor, captura ou
+  inferência é executada, e o alvo de pan mostrado não é enviado ao firmware.
 - As constantes exibidas espelham `docs/PROTOCOLO.md`; testes host barram
   divergência e exercitam a FSM em Node com tempo determinístico.
 - O roteiro de casos-limite compara as três implementações e contabiliza

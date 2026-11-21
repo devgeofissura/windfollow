@@ -28,8 +28,8 @@ feita. A auditoria P1–P5 está documentada, mas **fisicamente aberta**.
   de terminal (`PUL±/DIR±/ENA±`, fases `A±/B±`, conversor 3,3→5 V, 24 V):
   **variante catodo comum desenhada**, validada pelo WireViz 0.4.1.
 - Núcleo TDD entregue: `tools/protocol_ref.py` → `controller/parser.cpp` →
-  52 vetores gerados → `autotest.h` → simulador, com **164 testes host
-  verdes** (113 protocolo + 28 simulador + 4 diferenciais de parser + 4
+  52 vetores gerados → `autotest.h` → simulador, com **176 testes host
+  verdes** (113 protocolo + 40 simulador + 4 diferenciais de parser + 4
   diferenciais de sessão + 15 da camada STEP/DIR). Watchdog renovado
   **somente** por `T` aceito no firmware e no simulador (divergência
   corrigida).
@@ -78,6 +78,13 @@ feita. A auditoria P1–P5 está documentada, mas **fisicamente aberta**.
   `STEP`/`DIR` para provar que gate fechado não escreve pino e que fechar o
   gate com pulso em alto baixa o STEP. Firmware **não regravado** após essas
   correções; a placa segue com o build serial-only anterior.
+- Visualização **sintética** da detecção na aba "Detecção (sintética)":
+  quadro com pessoa, zona morta, erro de posição, erro em pixels e alvo de pan.
+  O núcleo em `simulator/js/app.js` é determinístico e espelha a geometria do
+  laço fechado (erro = bearing da pessoa − pan da câmera); a malha fechada é
+  opcional e apenas aproxima o pan sintético. **Não há captura de imagem,
+  câmera real, detecção de pessoa nem acionamento de motor/GPIO** — os testes
+  host exercitam o núcleo em Node com valores fixos.
 
 ## Ainda não feito
 

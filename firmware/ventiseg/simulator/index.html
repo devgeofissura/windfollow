@@ -29,6 +29,8 @@
                     aria-controls="tab-painel" aria-selected="true" data-tab="painel">Painel</button>
             <button type="button" class="tab" role="tab" id="tabbtn-saida"
                     aria-controls="tab-saida" aria-selected="false" data-tab="saida">Saída STEP/DIR</button>
+            <button type="button" class="tab" role="tab" id="tabbtn-deteccao"
+                    aria-controls="tab-deteccao" aria-selected="false" data-tab="deteccao">Detecção (sintética)</button>
             <button type="button" class="tab" role="tab" id="tabbtn-protocolo"
                     aria-controls="tab-protocolo" aria-selected="false" data-tab="protocolo">Protocolo</button>
             <button type="button" class="tab" role="tab" id="tabbtn-pinagem"
@@ -222,6 +224,76 @@
                         <strong>Nenhum DM556D, motor ou carga foi energizado nesta entrega.</strong>
                         Não há captura de câmera, detecção de pessoa, erro real de imagem,
                         malha fechada ou compensação de movimento ativos. Firmware não foi gravado.
+                    </p>
+                </article>
+            </section>
+
+            <!-- DETECÇÃO SINTÉTICA -->
+            <section id="tab-deteccao" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-deteccao" hidden>
+                <p class="safety-note" role="note">
+                    <strong>Quadro sintético:</strong> não há câmera real, captura de imagem
+                    nem detecção de pessoa. Os números abaixo são gerados no navegador
+                    apenas para visualizar a geometria do laço fechado. Nenhum GPIO,
+                    driver ou motor é acionado e nenhum comando de protocolo é enviado.
+                </p>
+
+                <div class="grid-2">
+                    <article class="card">
+                        <h2>Quadro sintético</h2>
+                        <div class="cam-frame" role="img"
+                             aria-label="Quadro sintético com a pessoa e a zona central">
+                            <div class="cam-band" aria-hidden="true"></div>
+                            <div class="cam-center" aria-hidden="true"></div>
+                            <div class="cam-person" id="cam-person" aria-hidden="true">
+                                <span class="cam-head"></span>
+                                <span class="cam-body"></span>
+                            </div>
+                            <div class="cam-lost" id="cam-lost" hidden>sem detecção</div>
+                        </div>
+                        <p class="hint" id="det-caption">
+                            Erro = posição da pessoa no mundo − pan da câmera. Como a
+                            câmera gira junto com o duto, o erro compensa o próprio
+                            movimento para manter a pessoa centralizada.
+                        </p>
+                    </article>
+
+                    <article class="card">
+                        <h2>Leitura da detecção</h2>
+                        <div class="status-grid" aria-live="polite">
+                            <div class="status-item"><span class="label">Detecção</span><strong id="det-status">detectada</strong></div>
+                            <div class="status-item"><span class="label">Pessoa no mundo (x)</span><strong id="det-bearing">0</strong></div>
+                            <div class="status-item"><span class="label">Pan da câmera (passos)</span><strong id="det-pan">0</strong></div>
+                            <div class="status-item"><span class="label">Pan convertido (x)</span><strong id="det-pan-x">0</strong></div>
+                            <div class="status-item"><span class="label">Pessoa no quadro (x)</span><strong id="det-apparent">0</strong></div>
+                            <div class="status-item"><span class="label">Erro de posição (x)</span><strong id="det-error">0</strong></div>
+                            <div class="status-item"><span class="label">Erro em pixels</span><strong id="det-error-px">0</strong></div>
+                            <div class="status-item"><span class="label">Alvo de pan (passos)</span><strong id="det-target">0</strong></div>
+                        </div>
+                    </article>
+                </div>
+
+                <article class="card">
+                    <h2>Controle sintético</h2>
+                    <div class="cfg-form">
+                        <div class="field">
+                            <label for="det-bearing-slider">Pessoa no mundo (x: −1000..1000)</label>
+                            <input type="range" id="det-bearing-slider" min="-1000" max="1000"
+                                   step="1" value="0">
+                        </div>
+                        <div class="field">
+                            <label for="det-pan-slider">Pan da câmera (passos: −533..533)</label>
+                            <input type="range" id="det-pan-slider" min="-533" max="533"
+                                   step="1" value="0">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="check"><input type="checkbox" id="det-seen" checked> detecção válida</label>
+                        <label class="check"><input type="checkbox" id="det-closed-loop"> malha fechada (simular servo)</label>
+                    </div>
+                    <p class="hint">
+                        Mova a pessoa e o pan para ver o erro e o alvo mudarem. Com a malha
+                        fechada ligada, o pan sintético persegue o alvo até a pessoa entrar
+                        na zona morta — é apenas geometria no navegador, sem motor real.
                     </p>
                 </article>
             </section>

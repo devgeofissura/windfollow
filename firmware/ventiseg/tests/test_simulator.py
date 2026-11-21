@@ -156,6 +156,58 @@ out.rangeFault = { fault: s.fault, telemetry: C.telemetry(s) };
 process.stdout.write(JSON.stringify(out));
 """
 
+# Nucleo de deteccao sintetica: mesmo padrao vm sem DOM da FSM acima.
+DETECTION_HARNESS = r"""
+const fs = require('fs');
+const vm = require('vm');
+const sandbox = { console };
+vm.createContext(sandbox);
+vm.runInContext(fs.readFileSync(process.argv[1], 'utf8'), sandbox,
+                 { filename: 'app.js' });
+const C = sandbox.VentisegCore;
+const out = { constants: C.CAM };
+
+let d = C.createDetection();
+out.boot = C.detectionSnapshot(d);
+
+C.detectionSetBearing(d, 1000);
+out.right = C.detectionSnapshot(d);
+
+C.detectionSetPan(d, 399);
+out.compensated = C.detectionSnapshot(d);
+
+C.detectionSetBearing(d, 50);
+C.detectionSetPan(d, 0);
+out.dead = C.detectionSnapshot(d);
+
+C.detectionSetBearing(d, 1000);
+C.detectionSetPan(d, -533);
+out.offframe = C.detectionSnapshot(d);
+
+C.detectionSetBearing(d, 0);
+C.detectionSetPan(d, 0);
+C.detectionSetSeen(d, false);
+out.dropout = C.detectionSnapshot(d);
+
+d = C.createDetection();
+C.detectionSetBearing(d, 1000);
+out.closed = [];
+for (let i = 0; i < 6; i += 1) {
+  C.detectionCloseLoop(d);
+  const v = C.detectionSnapshot(d);
+  out.closed.push({ pan: v.pan_steps, apparent: v.apparent_x,
+                    error: v.error_x, target: v.pan_target_steps });
+}
+
+d = C.createDetection();
+C.detectionSetBearing(d, 5000);
+out.clampBearing = C.detectionSnapshot(d).bearing_x;
+C.detectionSetPan(d, -9999);
+out.clampPan = C.detectionSnapshot(d).pan_steps;
+
+process.stdout.write(JSON.stringify(out));
+"""
+
 
 class Estrutura(unittest.TestCase):
     def test_arquivos_da_pagina_existem(self) -> None:
@@ -475,6 +527,143 @@ class PinagemSomenteLeitura(unittest.TestCase):
         for nome in re.findall(r'data-tab="([^"]+)"', self.html):
             with self.subTest(aba=nome):
                 self.assertIn(f'id="tab-{nome}"', self.html)
+
+
+class DeteccaoSintetica(unittest.TestCase):
+    """Geometria da deteccao sintetica executada no nucleo real do app.js."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        if shutil.which("node") is None:
+            raise unittest.SkipTest("node indisponível para executar a deteccao JS")
+        resultado = subprocess.run(
+            ["node", "-e", DETECTION_HARNESS, str(JS)],
+            capture_output=True, text=True, check=True,
+        )
+        cls.out = json.loads(resultado.stdout)
+
+    def test_constantes_do_quadro(self) -> None:
+        c = self.out["constants"]
+        self.assertEqual(c["FRAME_W"], 320)
+        self.assertEqual(c["FRAME_H"], 240)
+        self.assertEqual(c["CENTER_BAND_PX"], 32)
+        self.assertAlmostEqual(c["PAN_X_SCALE"], 1000 / 533)
+
+    def test_boot_centralizado(self) -> None:
+        v = self.out["boot"]
+        self.assertEqual(v["bearing_x"], 0)
+        self.assertEqual(v["pan_steps"], 0)
+        self.assertTrue(v["seen"])
+        self.assertEqual(v["apparent_x"], 0)
+        self.assertTrue(v["detected"])
+        self.assertEqual(v["error_x"], 0)
+        self.assertEqual(v["error_px"], 0)
+        self.assertEqual(v["pan_error_steps"], 0)
+        self.assertEqual(v["pan_target_steps"], 0)
+        self.assertEqual(v["pixel_x"], 160)
+
+    def test_pessoa_a_direita_gera_erro_e_alvo(self) -> None:
+        v = self.out["right"]
+        self.assertEqual(v["pan_x"], 0)
+        self.assertEqual(v["apparent_x"], 1000)
+        self.assertTrue(v["detected"])
+        self.assertEqual(v["error_x"], 1000)
+        self.assertEqual(v["error_px"], 160)
+        self.assertEqual(v["pan_error_steps"], 399)
+        self.assertEqual(v["pan_target_steps"], 399)
+        self.assertEqual(v["pixel_x"], 320)
+
+    def test_pan_reduz_o_erro_por_compensacao(self) -> None:
+        v = self.out["compensated"]
+        self.assertEqual(v["pan_steps"], 399)
+        self.assertEqual(v["pan_x"], 749)
+        self.assertEqual(v["apparent_x"], 251)
+        self.assertEqual(v["error_x"], 251)
+        self.assertEqual(v["pan_error_steps"], 100)
+        self.assertEqual(v["pan_target_steps"], 499)
+        self.assertEqual(v["pixel_x"], 200)
+
+    def test_zona_morta_nao_gera_alvo(self) -> None:
+        v = self.out["dead"]
+        self.assertEqual(v["apparent_x"], 50)
+        self.assertEqual(v["error_x"], 50)  # erro e medido, alvo e zero
+        self.assertEqual(v["pan_error_steps"], 0)
+        self.assertEqual(v["pan_target_steps"], 0)
+
+    def test_pessoa_fora_do_quadro_perde_deteccao(self) -> None:
+        v = self.out["offframe"]
+        self.assertEqual(v["pan_x"], -1000)
+        self.assertEqual(v["apparent_x"], 1000)
+        self.assertFalse(v["detected"])
+        self.assertEqual(v["error_x"], 0)
+        self.assertEqual(v["pan_error_steps"], 0)
+        self.assertEqual(v["pan_target_steps"], -533)
+
+    def test_queda_de_deteccao_zerra_erro_e_alvo(self) -> None:
+        v = self.out["dropout"]
+        self.assertFalse(v["seen"])
+        self.assertFalse(v["detected"])
+        self.assertEqual(v["error_x"], 0)
+        self.assertEqual(v["error_px"], 0)
+        self.assertEqual(v["pan_target_steps"], 0)
+
+    def test_malha_fechada_converge_na_zona_morta(self) -> None:
+        passos = self.out["closed"]
+        self.assertEqual(len(passos), 6)
+        self.assertEqual(passos[0]["pan"], 399)
+        self.assertEqual(passos[1]["pan"], 499)
+        self.assertEqual(passos[2]["pan"], 524)
+        self.assertEqual(passos[2]["apparent"], 17)
+        self.assertLessEqual(abs(passos[2]["apparent"]), 55)
+        for ultimo in passos[3:]:
+            self.assertEqual(ultimo["pan"], 524)
+            self.assertEqual(ultimo["target"], 524)
+
+    def test_limites_de_bearing_e_pan(self) -> None:
+        self.assertEqual(self.out["clampBearing"], 1000)
+        self.assertEqual(self.out["clampPan"], -533)
+
+
+class EstruturaDeteccao(unittest.TestCase):
+    """A aba de deteccao existe, e rotulada e nao toca hardware real."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.html = HTML.read_text(encoding="utf-8") if HTML.is_file() else ""
+        cls.css = CSS.read_text(encoding="utf-8") if CSS.is_file() else ""
+        cls.js = JS.read_text(encoding="utf-8") if JS.is_file() else ""
+        inicio = cls.html.find('<section id="tab-deteccao"')
+        fim = cls.html.find("</section>", inicio) if inicio >= 0 else -1
+        cls.painel = cls.html[inicio:fim] if fim > inicio else ""
+
+    def test_aba_existe_e_e_sintetica(self) -> None:
+        self.assertIn('data-tab="deteccao"', self.html)
+        self.assertIn('id="tabbtn-deteccao"', self.html)
+        self.assertTrue(self.painel, "painel de deteccao ausente ou vazio")
+        self.assertIn("sintético", self.painel)
+        self.assertIn("não há câmera real", self.painel)
+
+    def test_ids_e_estilos_presentes(self) -> None:
+        ids = (
+            "cam-person", "cam-lost", "det-status", "det-bearing",
+            "det-pan", "det-pan-x", "det-apparent", "det-error",
+            "det-error-px", "det-target", "det-bearing-slider",
+            "det-pan-slider", "det-seen", "det-closed-loop",
+        )
+        for ident in ids:
+            with self.subTest(id=ident):
+                self.assertIn(f'id="{ident}"', self.html)
+                self.assertIn(ident, self.js)
+        for classe in ("cam-frame", "cam-person", "cam-lost", "cam-band"):
+            with self.subTest(classe=classe):
+                self.assertIn("." + classe, self.css)
+
+    def test_sem_captura_real_nem_hardware(self) -> None:
+        for proibido in ("getUserMedia", "ImageCapture", "pinMode",
+                         "digitalWrite", "fetch(", "localStorage"):
+            with self.subTest(proibido=proibido):
+                self.assertNotIn(proibido, self.painel)
+        self.assertIn("Nenhum GPIO", self.painel)
 
 
 if __name__ == "__main__":
