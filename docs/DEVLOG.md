@@ -11,6 +11,28 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-21 10:46 - fix(ventiseg): alinha simulador a faixa seq e idade
+
+**Area:** ventiseg
+
+**Feito:**
+- teto de seq INT32_MAX e zeros a esquerda aceitos
+- idade rx_ms/now_ms aplicada a qualquer comando
+- rejeicao por faixa passa a ligar fault=Range
+- PROTOCOLO.md ESTADO.md e painel do simulador atualizados
+
+**Dificuldades e solucoes:**
+- ageRejected retornava false ao rejeitar -> invertido para true
+- harness comparava o estado inteiro -> passou a comparar o nucleo sem fault
+- 139 testes host verdes apos a correcao
+
+**Arquivos:**
+- `firmware/ventiseg/docs/ESTADO.md`
+- `firmware/ventiseg/docs/PROTOCOLO.md`
+- `firmware/ventiseg/simulator/index.html`
+- `firmware/ventiseg/simulator/js/app.js`
+- `firmware/ventiseg/tests/test_simulator.py`
+
 ### 2026-11-21 10:27 - docs: versiona plano Wi-Fi laserseg e archive wireviz ventiseg
 
 **Area:** laserseg, ventiseg

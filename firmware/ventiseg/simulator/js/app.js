@@ -11,6 +11,7 @@
   const SIM = Object.freeze({
     MAX_DATAGRAM_BYTES: 96,
     LINK_TIMEOUT_MS: 1200,
+    INT32_MAX: 2147483647,
     DEAD_BAND: 55,
     MANUAL_STEP: 80,
     MAX_TRAVEL: 533,
@@ -68,27 +69,72 @@
     return nowMs - s.lastAcceptedMs > SIM.LINK_TIMEOUT_MS;
   }
 
+  let lastReason = '';
+
+  // Motivo da ultima decisao, observavel sem alterar o estado da FSM.
+  function lastReasonValue() {
+    return lastReason;
+  }
+
+  function fail(s, reason) {
+    lastReason = reason;
+    // Rejeicao por faixa e diagnostico, como em protocol_ref.py e parser.cpp.
+    if (reason === 'range') s.fault = 'Range';
+    return false;
+  }
+
+  function ageRejected(s, nowMs, rxMs) {
+    const age = nowMs - rxMs;
+    if (!Number.isFinite(age) || age < 0 || age > SIM.LINK_TIMEOUT_MS) {
+      fail(s, 'age');
+      return true;
+    }
+    return false;
+  }
+
   /*
    * feed(): unica porta de entrada do protocolo.
-   * Retorna true se aceito. Comando invalido NAO altera estado.
-   * Toda validacao acontece antes de qualquer atribuicao em `s`.
+   * Ordem: tamanho/codificacao -> formato -> faixa -> sequencia (so em T) ->
+   * idade (qualquer comando, por ultimo). `rxMs` e separado de `nowMs` para
+   * representar atraso de fila; quando omitido, rxMs = nowMs.
+   * Retorna true se aceito. Comando rejeitado nao altera modo/eixo/seq/relogio;
+   * apenas uma rejeicao por faixa reporta fault=Range.
    * Apenas T aceito renova o watchdog e limpa fault=Lnk (contrato v0.1).
    */
-  function feed(s, line, nowMs) {
-    if (typeof line !== 'string') return false;
-    if (byteLength(line) > SIM.MAX_DATAGRAM_BYTES) return false;
+  function feed(s, line, nowMs, rxMs) {
+    if (rxMs === undefined) rxMs = nowMs;
+    if (nowMs === undefined) nowMs = rxMs;
+    if (typeof line !== 'string') return fail(s, 'encoding');
+    if (line.length === 0) return fail(s, 'length');
+    if (byteLength(line) > SIM.MAX_DATAGRAM_BYTES) return fail(s, 'length');
+    for (let i = 0; i < line.length; i += 1) {
+      const code = line.codePointAt(i);
+      if (code === 0 || code > 0x7f) return fail(s, 'encoding');
+    }
 
-    const track = /^TRACK,([01])$/.exec(line);
+    const track = /^TRACK,(-?[0-9]+)$/.exec(line);
     if (track) {
-      s.mode = track[1] === '1' ? 'TRACK' : 'SAFE';
+      const value = Number(track[1]);
+      if (!Number.isSafeInteger(value) || (value !== 0 && value !== 1)) {
+        return fail(s, 'range');
+      }
+      if (ageRejected(s, nowMs, rxMs)) return false;
+      lastReason = '';
+      s.mode = value === 1 ? 'TRACK' : 'SAFE';
       s.moving = s.mode === 'TRACK';
       if (!s.linkLost) s.fault = 'None';  // TRACK NAO renova watchdog
       return true;
     }
 
-    const manual = /^MANUAL,(-1|0|1)$/.exec(line);
+    const manual = /^MANUAL,(-?[0-9]+)$/.exec(line);
     if (manual) {
       const direction = Number(manual[1]);
+      if (!Number.isSafeInteger(direction) ||
+          (direction !== -1 && direction !== 0 && direction !== 1)) {
+        return fail(s, 'range');
+      }
+      if (ageRejected(s, nowMs, rxMs)) return false;
+      lastReason = '';
       if (direction === 0) {
         s.mode = 'SAFE';
         s.moving = false;
@@ -101,18 +147,28 @@
       return true;
     }
 
-    const sample = /^T,(-?\d+),(-?\d+),([01])$/.exec(line);
+    const sample = /^T,(-?[0-9]+),(-?[0-9]+),(-?[0-9]+)$/.exec(line);
     if (sample) {
       const seq = Number(sample[1]);
       const x = Number(sample[2]);
-      const valid = sample[3] === '1';
-      if (!Number.isSafeInteger(seq) || seq <= s.seq) return false;
-      if (!Number.isFinite(x) || x < -X_LIMIT || x > X_LIMIT) return false;
+      const valid = Number(sample[3]);
+      if (!Number.isSafeInteger(seq) || !Number.isSafeInteger(x) ||
+          !Number.isSafeInteger(valid)) {
+        return fail(s, 'range');
+      }
+      if (seq < 0 || seq > SIM.INT32_MAX ||
+          x < -X_LIMIT || x > X_LIMIT ||
+          (valid !== 0 && valid !== 1)) {
+        return fail(s, 'range');
+      }
+      if (seq <= s.seq) return fail(s, 'sequence');
+      if (ageRejected(s, nowMs, rxMs)) return false;
 
+      lastReason = '';
       s.seq = seq;
       s.targetX = x;
-      s.valid = valid;
-      if (valid) {
+      s.valid = valid === 1;
+      if (s.valid) {
         s.axis = trackSteps(x, SIM.MAX_TRAVEL, SIM.TRACK_GAIN, SIM.DEAD_BAND);
         s.moving = s.mode === 'TRACK';
       } else {
@@ -120,12 +176,12 @@
         s.moving = false;
       }
       s.fault = 'None';
-      s.lastAcceptedMs = nowMs;
+      s.lastAcceptedMs = rxMs;  // watchdog conta do recebimento, nao da consulta
       s.linkLost = false;
       return true;
     }
 
-    return false;
+    return fail(s, 'format');
   }
 
   // Watchdog: sem comando aceito em 1200 ms -> SAFE, eixo parado, fault=Lnk.
@@ -157,7 +213,7 @@
   const Core = Object.freeze({
     SIM, STATES, FAULTS, X_LIMIT,
     byteLength, clamp, trackSteps, createState, telemetry, linkExpired,
-    feed, checkWatchdog, relink, setSimFault,
+    feed, lastReason: lastReasonValue, checkWatchdog, relink, setSimFault,
   });
 
   global.VentisegCore = Core;
@@ -239,7 +295,8 @@
     if (accepted) {
       addLog('rx', Core.telemetry(sim));
     } else {
-      addLog('evt', 'REJEITADO: ' + line + ' — estado inalterado');
+      addLog('evt', 'REJEITADO: ' + line + ' — ' + Core.lastReason() +
+        (Core.lastReason() === 'range' ? ' (fault=Range)' : ''));
     }
     render();
     return accepted;
@@ -323,6 +380,7 @@
     const rows = [
       ['MAX_DATAGRAM_BYTES', SIM.MAX_DATAGRAM_BYTES],
       ['LINK_TIMEOUT_MS', SIM.LINK_TIMEOUT_MS],
+      ['INT32_MAX', SIM.INT32_MAX],
       ['DEAD_BAND', SIM.DEAD_BAND],
       ['MANUAL_STEP', SIM.MANUAL_STEP],
       ['MAX_TRAVEL', SIM.MAX_TRAVEL],

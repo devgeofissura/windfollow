@@ -1,6 +1,6 @@
 # Estado do ventiseg
 
-Atualizado em 20/11/2026.
+Atualizado em 21/11/2026.
 
 ## Fase atual
 
@@ -28,9 +28,15 @@ feita.
   de terminal (`PUL±/DIR±/ENA±`, fases `A±/B±`, conversor 3,3→5 V, 24 V):
   **variante catodo comum desenhada**, validada pelo WireViz 0.4.1.
 - Núcleo TDD entregue: `tools/protocol_ref.py` → `controller/parser.cpp` →
-  52 vetores gerados → `autotest.h` → simulador, com **135 testes host
-  verdes** (111 protocolo + 24 simulador). Watchdog renovado **somente** por
+  52 vetores gerados → `autotest.h` → simulador, com **139 testes host
+  verdes** (111 protocolo + 28 simulador). Watchdog renovado **somente** por
   `T` aceito no firmware e no simulador (divergência corrigida).
+- Divergências do simulador corrigidas em 21/11/2026 para espelhar Python/C++:
+  teto de `seq` = `INT32_MAX` (antes aceitava até 2^53), idade `rx_ms`/`now_ms`
+  aplicada a qualquer comando (antes inexistente), zeros à esquerda aceitos e
+  rejeição por faixa ligando `fault=Range` (antes só por injeção na UI).
+  `PROTOCOLO.md` e o painel do simulador agora documentam a ordem completa
+  `tamanho/codificação → formato → faixa → sequência → idade`.
 - Sketch compila na FQBN `ventiseg` (313.540 B flash / 22.960 B RAM), com
   `VENTISEG_ENABLE_GPIO=0` e nenhuma chamada de GPIO/Wi-Fi.
 

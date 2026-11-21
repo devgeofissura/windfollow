@@ -34,9 +34,16 @@ const vm = require('vm');
 const sandbox = { console };
 vm.createContext(sandbox);
 vm.runInContext(fs.readFileSync(process.argv[1], 'utf8'), sandbox,
-                { filename: 'app.js' });
+                 { filename: 'app.js' });
 const C = sandbox.VentisegCore;
 const out = { constants: C.SIM };
+
+// Estado "nucleo": exclui fault, que muda em rejeicao por faixa.
+function core(s) {
+  return JSON.stringify({ mode: s.mode, seq: s.seq, axis: s.axis,
+    valid: s.valid, moving: s.moving, lastAcceptedMs: s.lastAcceptedMs,
+    linkLost: s.linkLost });
+}
 
 let s = C.createState();
 out.boot = { mode: s.mode, fault: s.fault, seq: s.seq, axis: s.axis,
@@ -48,15 +55,56 @@ out.seqBeforeSample = { seq: s.seq };
 
 out.sample = { ok: C.feed(s, 'T,0,1000,1', 20), seq: s.seq, axis: s.axis,
                telemetry: C.telemetry(s) };
-const congelado = JSON.stringify(s);
+const congelado = core(s);
 out.stale = { ok: C.feed(s, 'T,0,0,1', 30),
-              unchanged: JSON.stringify(s) === congelado };
+              coreUnchanged: core(s) === congelado,
+              reason: C.lastReason(), fault: s.fault };
 out.outOfRange = { ok: C.feed(s, 'T,1,1001,1', 30),
-                   unchanged: JSON.stringify(s) === congelado };
+                   coreUnchanged: core(s) === congelado,
+                   reason: C.lastReason(), fault: s.fault };
 out.badTrack = { ok: C.feed(s, 'TRACK,2', 30),
-                 unchanged: JSON.stringify(s) === congelado };
+                 coreUnchanged: core(s) === congelado,
+                 reason: C.lastReason(), fault: s.fault };
 out.badManual = { ok: C.feed(s, 'MANUAL,2', 30),
-                  unchanged: JSON.stringify(s) === congelado };
+                  coreUnchanged: core(s) === congelado,
+                  reason: C.lastReason(), fault: s.fault };
+
+s = C.createState();
+out.seqCeiling = { ok: C.feed(s, 'T,2147483648,0,1', 0),
+                   reason: C.lastReason(), fault: s.fault, seq: s.seq };
+s = C.createState();
+out.seqMax = { ok: C.feed(s, 'T,2147483647,0,1', 0),
+               reason: C.lastReason(), seq: s.seq };
+
+s = C.createState();
+out.leadingZeros = {
+  track: C.feed(s, 'TRACK,01', 0), trackMode: s.mode,
+  manual: C.feed(s, 'MANUAL,01', 10), manualMode: s.mode, manualAxis: s.axis,
+  sample: C.feed(s, 'T,007,-01,01', 20), sampleSeq: s.seq,
+  sampleX: s.targetX, reason: C.lastReason(),
+};
+
+s = C.createState();
+out.ageExact = { ok: C.feed(s, 'TRACK,1', 2200, 1000),
+                 reason: C.lastReason(), mode: s.mode };
+s = C.createState();
+out.agePast = { ok: C.feed(s, 'TRACK,1', 2201, 1000),
+                reason: C.lastReason(), mode: s.mode, fault: s.fault };
+s = C.createState();
+out.ageNegative = { ok: C.feed(s, 'MANUAL,1', 999, 1000),
+                    reason: C.lastReason(), mode: s.mode, axis: s.axis };
+s = C.createState();
+out.ageSample = { ok: C.feed(s, 'T,0,0,1', 5000, 1000),
+                  reason: C.lastReason(), seq: s.seq,
+                  lastAcceptedMs: s.lastAcceptedMs };
+s = C.createState();
+out.ageRenew = { ok: C.feed(s, 'T,0,0,1', 2000, 1000),
+                 lastAcceptedMs: s.lastAcceptedMs,
+                 beforeLimit: C.checkWatchdog(s, 2200),
+                 pastLimit: C.checkWatchdog(s, 2201) };
+s = C.createState();
+out.ageValidManual = { ok: C.feed(s, 'MANUAL,1', 2200, 1000),
+                       reason: C.lastReason(), axis: s.axis };
 
 s = C.createState();
 C.feed(s, 'TRACK,1', 0);
@@ -229,7 +277,61 @@ class MaquinaDeEstadosDeterministica(unittest.TestCase):
             with self.subTest(caso=nome):
                 caso = self.out[nome]
                 self.assertFalse(caso["ok"])
-                self.assertTrue(caso["unchanged"])
+                self.assertTrue(caso["coreUnchanged"])
+        self.assertEqual(self.out["stale"]["reason"], "sequence")
+        self.assertEqual(self.out["stale"]["fault"], "None")
+        for nome in ("outOfRange", "badTrack", "badManual"):
+            with self.subTest(caso=nome):
+                self.assertEqual(self.out[nome]["reason"], "range")
+                self.assertEqual(self.out[nome]["fault"], "Range")
+
+    def test_teto_de_seq_e_int32_max(self) -> None:
+        ceiling = self.out["seqCeiling"]
+        self.assertFalse(ceiling["ok"])
+        self.assertEqual(ceiling["reason"], "range")
+        self.assertEqual(ceiling["fault"], "Range")
+        self.assertEqual(ceiling["seq"], -1)
+        maximo = self.out["seqMax"]
+        self.assertTrue(maximo["ok"])
+        self.assertEqual(maximo["seq"], 2147483647)
+
+    def test_zeros_a_esquerda_sao_aceitos(self) -> None:
+        zeros = self.out["leadingZeros"]
+        self.assertTrue(zeros["track"])
+        self.assertEqual(zeros["trackMode"], "TRACK")
+        self.assertTrue(zeros["manual"])
+        self.assertEqual(zeros["manualMode"], "MANUAL")
+        self.assertEqual(zeros["manualAxis"], 80)
+        self.assertTrue(zeros["sample"])
+        self.assertEqual(zeros["sampleSeq"], 7)
+        self.assertEqual(zeros["sampleX"], -1)
+
+    def test_idade_da_mensagem(self) -> None:
+        self.assertTrue(self.out["ageExact"]["ok"])          # 1200 ms
+        self.assertEqual(self.out["ageExact"]["mode"], "TRACK")
+        past = self.out["agePast"]                            # 1201 ms
+        self.assertFalse(past["ok"])
+        self.assertEqual(past["reason"], "age")
+        self.assertEqual(past["mode"], "SAFE")
+        self.assertEqual(past["fault"], "None")
+        negative = self.out["ageNegative"]
+        self.assertFalse(negative["ok"])
+        self.assertEqual(negative["reason"], "age")
+        self.assertEqual(negative["axis"], 0)
+        stale_sample = self.out["ageSample"]
+        self.assertFalse(stale_sample["ok"])
+        self.assertEqual(stale_sample["reason"], "age")
+        self.assertEqual(stale_sample["seq"], -1)
+        self.assertIsNone(stale_sample["lastAcceptedMs"])
+        self.assertTrue(self.out["ageValidManual"]["ok"])
+        self.assertEqual(self.out["ageValidManual"]["axis"], 80)
+
+    def test_watchdog_renova_com_rx_ms(self) -> None:
+        renew = self.out["ageRenew"]
+        self.assertTrue(renew["ok"])
+        self.assertEqual(renew["lastAcceptedMs"], 1000)
+        self.assertFalse(renew["beforeLimit"])
+        self.assertTrue(renew["pastLimit"])
 
     def test_zona_morta_e_ganho(self) -> None:
         self.assertEqual(self.out["deadBand"]["axis"], 0)   # x = 55

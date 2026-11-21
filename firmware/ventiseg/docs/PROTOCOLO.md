@@ -23,16 +23,30 @@ Formato de comando (ASCII, uma linha, sem espaços):
 | Manual | `MANUAL,<-1\|0\|1>` | Passo manual para trás/parar/frente |
 | Alvo | `T,<seq>,<x>,<valid>` | `x` em `[-1000,1000]`, `valid` é `0` ou `1` |
 
-Regras de validação (idênticas em espírito ao laserseg, sem os campos de luz/tilt):
+Regras de validação (mesma ordem em Python, C++ e no simulador JS; sem os
+campos de luz/tilt do laserseg):
 
-- Linha com mais de 96 bytes é rejeitada.
-- Sequência `seq` só aceita se for maior que a última aceita.
-- `TRACK`/`MANUAL` com valores fora do conjunto são rejeitados.
-- Datagrama inválido **não altera estado**.
-- Watchdog de **1200 ms**: sem comando `T` aceito nesse prazo, o eixo para e
-  `fault=Lnk`.
-- `now_ms` de campo deve vir da mesma origem monotônica usada no `feed()`.
-  Nunca enviar `now_ms=-1` em operação real.
+1. Tamanho/codificação: linha vazia ou com mais de 96 bytes → `length`;
+   byte não-ASCII ou NUL → `encoding`.
+2. Formato: decimal estrito com sinal `-` opcional; zeros à esquerda são
+   aceitos (`TRACK,01`, `MANUAL,01`, `T,007,-01,01`).
+3. Faixa: `TRACK` só `0/1`, `MANUAL` só `-1/0/1`, `x` em `[-1000,1000]`,
+   `valid` só `0/1` e `seq` em `[0, 2147483647]` (`INT32_MAX`). Fora disso →
+   `range`.
+4. Sequência (somente em `T`): `seq` deve ser maior que a última aceita →
+   senão `sequence`.
+5. Idade (qualquer comando, por último): `age = now_ms - rx_ms` deve estar em
+   `[0, 1200]` ms → senão `age`.
+
+Datagrama rejeitado **não altera** modo, eixo, sequência nem relógio do link;
+uma rejeição por `range` liga `fault=Range` como diagnóstico. O motivo é
+observável na serial como `REASON,<reason>` (`length`, `encoding`, `format`,
+`range`, `sequence`, `age`).
+
+Watchdog de **1200 ms**: sem comando `T` aceito nesse prazo, o eixo para e
+`fault=Lnk`. O relógio do link é `rx_ms` (recebimento), não o instante da
+consulta `now_ms`. `now_ms` deve vir da mesma origem monotônica usada no
+`feed()`. Nunca enviar `now_ms=-1` em operação real.
 
 Constants provisionais (reaproveitadas do laserseg, a calibrar com a mecânica):
 
@@ -41,6 +55,8 @@ kDeadBand   = 55
 kTrackGain  = 0.75
 kMaxTravel  = 533        # passos (provisório)
 kLinkTimeoutMs = 1200
+kXLimit     = 1000
+kInt32Max   = 2147483647
 ```
 
 Telemetria de resposta:
