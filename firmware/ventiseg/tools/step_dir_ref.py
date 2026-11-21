@@ -21,6 +21,7 @@ DEFAULT_SPEED = 800
 DEFAULT_ACCEL = 4000
 SPEED_MAX = 10000
 ACCEL_MAX = 100000
+PULSE_TEST_MAX = 1000
 
 
 @dataclass
@@ -43,6 +44,13 @@ class StepDir:
     pulse_until_us: int = 0
     step_level: bool = False
     dir_level: bool = False
+    test_mode: bool = False
+
+    @property
+    def test_remaining(self) -> int:
+        if not self.test_mode:
+            return 0
+        return abs(self.target - self.position)
 
     def set_microstep(self, value: int) -> bool:
         if value not in (8, 16):
@@ -70,12 +78,32 @@ class StepDir:
         self.gate = value
         if not value:
             self.velocity = 0.0
+            self.test_mode = False
             self.target = self.position
             self.step_level = False
         return True
 
     def set_target(self, target: int) -> None:
+        if self.test_mode:
+            return
         self.target = target
+
+    def test_pulse(self, steps: int, direction: int) -> bool:
+        if steps < 1 or steps > PULSE_TEST_MAX:
+            return False
+        if direction not in (1, -1):
+            return False
+        if not self.gate or self.test_mode or self.velocity != 0.0:
+            return False
+        if self.step_level:
+            return False
+        destination = self.position + steps * direction
+        if destination < -(2**31) or destination > 2**31 - 1:
+            return False
+        self.target = destination
+        self.test_mode = True
+        self.velocity = 0.0
+        return True
 
     def update(self, now_us: int) -> int:
         if not self.started:
@@ -98,6 +126,9 @@ class StepDir:
         remaining = self.target - self.position
         if remaining == 0:
             self.velocity = 0.0
+            if self.test_mode:
+                self.test_mode = False
+                self.target = self.position
             return 0
 
         sign = 1 if remaining > 0 else -1
@@ -136,7 +167,8 @@ class StepDir:
         if line == "CFG,?":
             return (
                 f"CFG,steps={self.steps_per_rev},speed={self.speed},"
-                f"accel={self.accel},gate={int(self.gate)}"
+                f"accel={self.accel},gate={int(self.gate)},"
+                f"test={self.test_remaining}"
             )
         if line == "CFG,GATE,0":
             self.set_gate(False)
@@ -146,6 +178,31 @@ class StepDir:
             return "CFG,GATE,1,OK"
         if line.startswith("CFG,GATE,"):
             return "REASON,format"
+
+        if line.startswith("CFG,PULSE,"):
+            parts = line.split(",")
+            if len(parts) != 4 or not parts[2].isdigit():
+                return "REASON,format"
+            direction_text = parts[3]
+            if direction_text.startswith("-"):
+                direction = -1
+                digits = direction_text[1:]
+            elif direction_text.startswith("+"):
+                direction = 1
+                digits = direction_text[1:]
+            else:
+                direction = 1
+                digits = direction_text
+            if digits != "1":
+                return "REASON,format"
+            steps = int(parts[2])
+            if steps < 1 or steps > PULSE_TEST_MAX:
+                return "REASON,format"
+            if not self.gate:
+                return "REASON,gate"
+            if not self.test_pulse(steps, direction):
+                return "REASON,busy"
+            return f"CFG,PULSE,{steps},{direction},OK"
 
         for key, prefix, setter in (
             ("MICRO", "CFG,MICRO,", self.set_microstep),
@@ -176,6 +233,8 @@ class StepDir:
             "pulses": self.pulses,
             "step": self.step_level,
             "dir": self.dir_level,
+            "test": self.test_mode,
+            "test_remaining": self.test_remaining,
         }
 
 
@@ -209,6 +268,25 @@ SCENARIO += [
     ("cfg", "CFG,MQC,1"),         # formato invalido
     ("target", 120),
     ("update", 504000),
+    # Ensaio determinista: o alvo da FSM eh ignorado enquanto ele dura.
+    ("target", 0),                # estaciona com gate fechado
+    ("cfg", "CFG,GATE,1,CONFIRM"),
+    ("update", 505000),
+    ("cfg", "CFG,PULSE,25,-1"),
+    ("cfg", "CFG,PULSE,10,1"),    # ocupado: ja ha um ensaio em curso
+    ("target", 999),              # ignorado pelo ensaio
+    ("cfg", "CFG,?"),             # test=25
+]
+SCENARIO += [("update", 506000 + i * 1000) for i in range(120)]
+SCENARIO += [
+    ("cfg", "CFG,?"),             # ensaio concluido, alvo devolvido
+    ("cfg", "CFG,PULSE,0,1"),     # formato: zero pulsos
+    ("cfg", "CFG,PULSE,1001,1"),  # formato: acima do teto
+    ("cfg", "CFG,PULSE,5,2"),     # formato: direcao invalida
+    ("cfg", "CFG,PULSE,5"),       # formato: sem direcao
+    ("cfg", "CFG,GATE,0"),
+    ("cfg", "CFG,PULSE,5,-1"),    # gate fechado
+    ("update", 700000),
 ]
 
 

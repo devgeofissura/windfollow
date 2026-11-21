@@ -1,6 +1,6 @@
 // Harness diferencial da camada STEP/DIR em C++.
 // Entrada: uma operacao por linha -> indice|kind|valor
-// Saida:   indice|kind|reply|steps|speed|accel|gate|target|pos|dir|pulses|step|dirlevel
+// Saida:   indice|kind|reply|steps|speed|accel|gate|target|pos|dir|pulses|step|dirlevel|test|remaining
 #include "step_dir.cpp"
 
 #include <cstdint>
@@ -49,12 +49,13 @@ int main() {
       std::cerr << "kind desconhecido: " << kind << '\n';
       return 2;
     }
-    std::printf("%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d\n",
+    std::printf("%s|%s|%s|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d\n",
                 index.c_str(), kind.c_str(), reply.c_str(),
                 driver.stepsPerRev(), driver.speed(), driver.accel(),
                 driver.gate() ? 1 : 0, driver.target(), driver.position(),
                 driver.direction(), driver.pulses(),
-                driver.stepLevel() ? 1 : 0, driver.dirLevel() ? 1 : 0);
+                driver.stepLevel() ? 1 : 0, driver.dirLevel() ? 1 : 0,
+                driver.testMode() ? 1 : 0, driver.testRemaining());
   }
   return 0;
 }

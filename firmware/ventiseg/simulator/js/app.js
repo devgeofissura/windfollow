@@ -251,6 +251,7 @@
     DEFAULT_ACCEL: 4000,
     SPEED_MAX: 10000,
     ACCEL_MAX: 100000,
+    PULSE_TEST_MAX: 1000,
   });
 
   function createStepDir() {
@@ -271,10 +272,16 @@
       pulseUntilUs: 0,
       stepLevel: false,
       dirLevel: false,
+      testMode: false,
     };
   }
 
+  function stepDirTestRemaining(d) {
+    return d.testMode ? Math.abs(d.target - d.position) : 0;
+  }
+
   function setStepDirTarget(d, target) {
+    if (d.testMode) return;  // o ensaio tem prioridade sobre a FSM
     d.target = target;
   }
 
@@ -304,9 +311,24 @@
     d.gate = value;
     if (!value) {
       d.velocity = 0;
+      d.testMode = false;  // fechar gate aborta qualquer ensaio em curso
       d.target = d.position;
       d.stepLevel = false;
     }
+  }
+
+  // N pulsos em uma direcao; exige gate aberto e eixo em repouso.
+  function stepDirTestPulse(d, steps, direction) {
+    if (!Number.isSafeInteger(steps) || steps < 1 ||
+        steps > STEP_DIR.PULSE_TEST_MAX) return false;
+    if (direction !== 1 && direction !== -1) return false;
+    if (!d.gate || d.testMode || d.velocity !== 0 || d.stepLevel) return false;
+    const destination = d.position + steps * direction;
+    if (destination < -2147483648 || destination > 2147483647) return false;
+    d.target = destination;
+    d.testMode = true;
+    d.velocity = 0;
+    return true;
   }
 
   function stepDirUpdate(d, nowUs) {
@@ -328,6 +350,10 @@
     const remaining = d.target - d.position;
     if (remaining === 0) {
       d.velocity = 0;
+      if (d.testMode) {
+        d.testMode = false;
+        d.target = d.position;  // devolve o alvo a quem manda depois do ensaio
+      }
       return 0;
     }
     const sign = remaining > 0 ? 1 : -1;
@@ -363,7 +389,8 @@
   function stepDirConfig(d, line) {
     if (line === 'CFG,?') {
       return 'CFG,steps=' + d.stepsPerRev + ',speed=' + d.speed +
-        ',accel=' + d.accel + ',gate=' + (d.gate ? 1 : 0);
+        ',accel=' + d.accel + ',gate=' + (d.gate ? 1 : 0) +
+        ',test=' + stepDirTestRemaining(d);
     }
     if (line === 'CFG,GATE,0') {
       setStepDirGate(d, false);
@@ -374,6 +401,18 @@
       return 'CFG,GATE,1,OK';
     }
     if (line.indexOf('CFG,GATE,') === 0) return 'REASON,format';
+
+    if (line.indexOf('CFG,PULSE,') === 0) {
+      const match = /^([0-9]+),([+-]?)1$/.exec(line.slice(10));
+      if (!match) return 'REASON,format';
+      const steps = Number(match[1]);
+      if (steps < 1 || steps > STEP_DIR.PULSE_TEST_MAX) return 'REASON,format';
+      const direction = match[2] === '-' ? -1 : 1;
+      if (!d.gate) return 'REASON,gate';
+      if (!stepDirTestPulse(d, steps, direction)) return 'REASON,busy';
+      return 'CFG,PULSE,' + steps + ',' + direction + ',OK';
+    }
+    if (line.indexOf('CFG,PULSE') === 0) return 'REASON,format';
 
     const keys = [
       ['MICRO', 'CFG,MICRO,', setStepDirMicrostep],
@@ -409,6 +448,8 @@
       pulses: d.pulses,
       step: d.stepLevel,
       dir: d.dirLevel,
+      test: d.testMode,
+      test_remaining: stepDirTestRemaining(d),
     };
   }
 
@@ -418,7 +459,7 @@
     feed, lastReason: lastReasonValue, parseDecision,
     checkWatchdog, relink, setSimFault,
     STEP_DIR, createStepDir, setStepDirTarget, setStepDirGate,
-    stepDirUpdate, stepDirConfig, stepDirSnapshot,
+    stepDirTestPulse, stepDirUpdate, stepDirConfig, stepDirSnapshot,
   });
 
   global.VentisegCore = Core;
@@ -444,7 +485,9 @@
     outGate: $('out-gate'), outSource: $('out-source'), outSteps: $('out-steps'),
     outVelocity: $('out-velocity'), outTarget: $('out-target'),
     outPosition: $('out-position'), outPulses: $('out-pulses'),
-    outLevels: $('out-levels'), gateOpen: $('gate-open'), gateClose: $('gate-close'),
+    outLevels: $('out-levels'), outTest: $('out-test'),
+    gateOpen: $('gate-open'), gateClose: $('gate-close'),
+    pulseForm: $('pulse-form'), pulseCount: $('pulse-count'), pulseDir: $('pulse-dir'),
     gateDialog: $('gate-dialog'), gateCancel: $('gate-dialog-cancel'),
     gateConfirm: $('gate-dialog-confirm'),
   };
@@ -526,6 +569,8 @@
     el.outPulses.textContent = String(snap.pulses);
     el.outLevels.textContent = (snap.dir >= 0 ? '+' : '−') + ' / ' +
       (snap.step ? 'alto' : 'baixo');
+    el.outTest.textContent = snap.test
+      ? 'ativo (' + snap.test_remaining + ')' : '—';
     el.cfgReply.textContent = 'Última resposta: ' + cfgReply;
     el.gateOpen.setAttribute('aria-pressed', String(stepDir.gate));
     el.gateOpen.textContent = stepDir.gate
@@ -728,6 +773,27 @@
       }
     });
     el.cfgQuery.addEventListener('click', () => applyCfg('CFG,?', 'UI'));
+
+    el.pulseForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const count = Number(el.pulseCount.value);
+      const direction = Number(el.pulseDir.value);
+      if (!Number.isSafeInteger(count) || count < 1 ||
+          count > Core.STEP_DIR.PULSE_TEST_MAX) {
+        addLog('evt', 'Ensaio fora de faixa (1..' +
+          Core.STEP_DIR.PULSE_TEST_MAX + ' pulsos)');
+        return;
+      }
+      if (direction !== 1 && direction !== -1) {
+        addLog('evt', 'Direção de ensaio inválida');
+        return;
+      }
+      if (!stepDir.gate) {
+        addLog('evt', 'Ensaio recusado: abra o gate com confirmação primeiro');
+        return;
+      }
+      applyCfg('CFG,PULSE,' + count + ',' + direction, 'UI');
+    });
 
     el.gateOpen.addEventListener('click', () => {
       el.gateDialog.showModal();

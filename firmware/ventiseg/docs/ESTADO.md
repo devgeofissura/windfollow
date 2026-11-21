@@ -28,9 +28,9 @@ feita. A auditoria P1–P5 está documentada, mas **fisicamente aberta**.
   de terminal (`PUL±/DIR±/ENA±`, fases `A±/B±`, conversor 3,3→5 V, 24 V):
   **variante catodo comum desenhada**, validada pelo WireViz 0.4.1.
 - Núcleo TDD entregue: `tools/protocol_ref.py` → `controller/parser.cpp` →
-  52 vetores gerados → `autotest.h` → simulador, com **156 testes host
+  52 vetores gerados → `autotest.h` → simulador, com **159 testes host
   verdes** (113 protocolo + 28 simulador + 4 diferenciais de parser + 4
-  diferenciais de sessão + 7 da camada STEP/DIR). Watchdog renovado
+  diferenciais de sessão + 10 da camada STEP/DIR). Watchdog renovado
   **somente** por `T` aceito no firmware e no simulador (divergência
   corrigida).
 - Comportamento seguro pós-`Lnk` definido e aplicado nas três implementações:
@@ -51,7 +51,7 @@ feita. A auditoria P1–P5 está documentada, mas **fisicamente aberta**.
   rejeição por faixa ligando `fault=Range` (antes só por injeção na UI).
   `PROTOCOLO.md` e o painel do simulador agora documentam a ordem completa
   `tamanho/codificação → formato → faixa → sequência → idade`.
-- Sketch compila na FQBN `ventiseg` (316.584 B no build de verificação), com
+- Sketch compila na FQBN `ventiseg` (317.104 B no build de verificação), com
   `VENTISEG_ENABLE_GPIO=0`, `VENTISEG_HW_AUDIT_OK=0` e nenhuma chamada
   efetiva de GPIO/Wi-Fi (os blocos `pinMode`/`digitalWrite` e os callbacks
   só existem sob os dois gates de compilação).
@@ -67,6 +67,11 @@ feita. A auditoria P1–P5 está documentada, mas **fisicamente aberta**.
   `REASON,gate` enquanto qualquer gate de compilação estiver em zero.
   Python × JS × C++ concordam no roteiro determinístico. Nenhum pulso foi
   medido e nenhum driver/motor foi energizado.
+- Ensaio determinístico `CFG,PULSE,<n>,<dir>` implementado nas três
+  implementações e na aba "Saída STEP/DIR": N pulsos exatos, prioridade sobre
+  o alvo da FSM, rejeição com gate fechado ou eixo em movimento e consulta
+  `CFG,?` com `test=<restante>`. É o roteiro que servirá de referência para a
+  contagem física com motor desacoplado — ainda sem medição elétrica.
 
 ## Ainda não feito
 

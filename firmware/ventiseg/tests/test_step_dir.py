@@ -33,7 +33,7 @@ import step_dir_ref as reference  # noqa: E402
 
 KEYS = (
     "steps_per_rev", "speed", "accel", "gate", "target", "position",
-    "direction", "pulses", "step", "dir",
+    "direction", "pulses", "step", "dir", "test", "test_remaining",
 )
 
 
@@ -98,7 +98,7 @@ def cxx_rows(ops: list[tuple[str, object]], workdir: pathlib.Path) -> list[dict]
     rows = []
     for line in proc.stdout.splitlines():
         fields = line.split("|")
-        if len(fields) != 13:
+        if len(fields) != 15:
             raise RuntimeError(f"linha inesperada do harness C++: {line}")
         rows.append({
             "index": int(fields[0]),
@@ -114,6 +114,8 @@ def cxx_rows(ops: list[tuple[str, object]], workdir: pathlib.Path) -> list[dict]
             "pulses": int(fields[10]),
             "step": fields[11] == "1",
             "dir": fields[12] == "1",
+            "test": fields[13] == "1",
+            "test_remaining": int(fields[14]),
         })
     return rows
 
@@ -172,6 +174,72 @@ class DifferentialStepDir(unittest.TestCase):
         self.assertIn("REASON,busy", replies)
         self.assertIn("REASON,range", replies)
         self.assertIn("REASON,format", replies)
+
+    def cfg_replies(self) -> dict[str, str]:
+        return {
+            str(self.ops[row["index"]][1]): row["reply"]
+            for row in self.expected
+            if row["op"] == "cfg"
+        }
+
+    def test_ensaio_de_pulsos_e_deterministico(self) -> None:
+        started = next(
+            row for row in self.expected
+            if row["reply"] == "CFG,PULSE,25,-1,OK"
+        )
+        self.assertTrue(started["test"])
+        self.assertEqual(started["test_remaining"], 25)
+        self.assertEqual(started["target"], started["position"] - 25)
+
+        # O alvo enviado pela FSM durante o ensaio nao pode substitui-lo.
+        after_target = next(
+            row for row in self.expected
+            if row["index"] > started["index"] and row["op"] == "target"
+        )
+        self.assertEqual(after_target["target"], started["target"])
+
+        ended = self.expected[-1]
+        self.assertFalse(ended["test"])
+        self.assertEqual(ended["test_remaining"], 0)
+        self.assertEqual(ended["target"], ended["position"])
+        self.assertEqual(ended["pulses"] - started["pulses"], 25)
+        self.assertEqual(ended["position"] - started["position"], -25)
+
+        # Cada implementacao deve terminar no mesmo trace.
+        for actual, label in ((self.javascript, "JavaScript"), (self.cpp, "C++")):
+            if actual is None:
+                continue
+            with self.subTest(impl=label):
+                final = actual[-1]
+                self.assertEqual(final["pulses"], ended["pulses"])
+                self.assertEqual(final["position"], ended["position"])
+                self.assertFalse(final["test"])
+
+    def test_cfg_query_informa_ensaio_em_curso(self) -> None:
+        started = next(
+            row for row in self.expected
+            if row["reply"] == "CFG,PULSE,25,-1,OK"
+        )
+        query = next(
+            row for row in self.expected
+            if row["index"] > started["index"]
+            and row["reply"].startswith("CFG,steps=")
+        )
+        self.assertTrue(query["reply"].endswith(",test=25"))
+
+    def test_ensaio_exige_gate_e_formato_valido(self) -> None:
+        replies = self.cfg_replies()
+        self.assertEqual(replies["CFG,PULSE,25,-1"], "CFG,PULSE,25,-1,OK")
+        self.assertEqual(replies["CFG,PULSE,10,1"], "REASON,busy")
+        self.assertEqual(replies["CFG,PULSE,5,-1"], "REASON,gate")
+        for command in (
+            "CFG,PULSE,0,1",
+            "CFG,PULSE,1001,1",
+            "CFG,PULSE,5,2",
+            "CFG,PULSE,5",
+        ):
+            with self.subTest(cmd=command):
+                self.assertEqual(replies[command], "REASON,format")
 
 
 class GateDeCompilacao(unittest.TestCase):

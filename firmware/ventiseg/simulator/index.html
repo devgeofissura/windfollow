@@ -154,6 +154,7 @@
                             <div class="status-item"><span class="label">Posição</span><strong id="out-position">0</strong></div>
                             <div class="status-item"><span class="label">Pulsos</span><strong id="out-pulses">0</strong></div>
                             <div class="status-item"><span class="label">DIR / STEP</span><strong id="out-levels">+/baixo</strong></div>
+                            <div class="status-item"><span class="label">Ensaio</span><strong id="out-test">—</strong></div>
                         </div>
                         <div class="control-group">
                             <button type="button" class="btn btn-warn" id="gate-open"
@@ -164,6 +165,34 @@
                             O fechamento é automático em <code>fault=Lnk</code> (watchdog) e no
                             reinício da simulação. Trocar micropasso só é aceito em repouso.
                         </p>
+                    </article>
+
+                    <article class="card">
+                        <h2>Ensaio de pulsos (somente lógico)</h2>
+                        <p class="hint">
+                            Emite uma quantidade exata de pulsos no algoritmo da saída, com
+                            prioridade sobre o alvo do rastreamento até terminar. Exige gate
+                            aberto (com confirmação) e eixo em repouso. É o mesmo roteiro
+                            determinístico usado nos testes Python × JS × C++ —
+                            <strong>nenhum pino é escrito</strong>.
+                        </p>
+                        <form id="pulse-form" class="cfg-form">
+                            <div class="field">
+                                <label for="pulse-count">Pulsos (1–1000)</label>
+                                <input type="number" id="pulse-count" min="1" max="1000"
+                                       step="1" value="25" inputmode="numeric">
+                            </div>
+                            <div class="field">
+                                <label for="pulse-dir">Direção</label>
+                                <select id="pulse-dir">
+                                    <option value="-1">− (regressivo)</option>
+                                    <option value="1">+ (progressivo)</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <button type="submit" class="btn btn-primary">Emitir pulsos (lógico)</button>
+                            </div>
+                        </form>
                     </article>
                 </div>
 

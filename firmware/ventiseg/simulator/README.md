@@ -27,7 +27,9 @@ sem build e sem bibliotecas externas. Não é preciso instalar nada.
   (alvo, posição, pulsos, DIR/STEP). Algoritmo não bloqueante: no máximo um
   pulso por `update()`, rampa limitada por aceleração e distância de frenagem.
   A liberação é **somente na simulação**; o firmware exige gates de compilação
-  e auditoria elétrica antes de qualquer saída física.
+  e auditoria elétrica antes de qualquer saída física. O formulário de ensaio
+  emite N pulsos exatos com prioridade sobre o alvo da FSM — ainda somente
+  lógico, sem escrita de pino.
 - **Protocolo:** constantes e formatos do contrato v0.1, somente leitura.
 - **Pinagem:** conector `J_GPIO_LIVRES` (STEP=IO3, DIR=IO21, IO45/46
   reservados por strapping, GND, 3V3), lógica 3,3 V e driver DM556D Azaneli
@@ -43,9 +45,10 @@ sem build e sem bibliotecas externas. Não é preciso instalar nada.
 | Telemetria | `ACK,<seq>,<state>,<fault>` |
 
 Plano de bancada da saída (fora do parser validado): `CFG,?`,
-`CFG,SPEED,<n>`, `CFG,ACCEL,<n>`, `CFG,MICRO,<8|16>`, `CFG,GATE,0` e
-`CFG,GATE,1,CONFIRM`. Respostas `CFG,...,OK` ou `REASON,...`; não geram
-`ACK` e não mudam estado/fault/sequência.
+`CFG,SPEED,<n>`, `CFG,ACCEL,<n>`, `CFG,MICRO,<8|16>`, `CFG,GATE,0`,
+`CFG,GATE,1,CONFIRM` e `CFG,PULSE,<1..1000>,<+|-1>`. Respostas `CFG,...,OK` ou
+`REASON,...`; não geram `ACK` e não mudam estado/fault/sequência. `CFG,?`
+também informa `test=<pulsos restantes>`.
 
 Constantes: `kMaxDatagramBytes=96`, `kDeadBand=55`, `kManualStep=80`,
 `MAX_TRAVEL=533`, `TRACK_GAIN=0.75`, `kLinkTimeoutMs=1200`.
@@ -61,8 +64,9 @@ estado**. Sem comando aceito em 1200 ms: watchdog força `SAFE`, eixo parado e
 - `VENTISEG_ENABLE_GPIO = 0` e `VENTISEG_HW_AUDIT_OK = 0`: nenhuma escrita em
   GPIO, nenhum motor energizado. Mesmo o gate da web não altera isso.
 - A verificação foi **lógica** (firmware e testes host): parser, autoteste,
-  watchdog e camada STEP/DIR em Python × JS × C++. Não houve osciloscópio em
-  `PUL+`/`DIR+`, driver alimentado, teste de boot/reset nem carga desacoplada.
+  watchdog, camada STEP/DIR e ensaio de pulsos em Python × JS × C++. Não houve
+  osciloscópio em `PUL+`/`DIR+`, driver alimentado, teste de boot/reset nem
+  carga desacoplada. O ensaio da UI não mede pulso elétrico algum.
 - Não há aquisição de câmera, rede, `localStorage` nem dependências externas.
 - As constantes exibidas espelham `docs/PROTOCOLO.md`; testes host barram
   divergência e exercitam a FSM em Node com tempo determinístico.

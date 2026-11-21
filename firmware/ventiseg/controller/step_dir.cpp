@@ -21,6 +21,38 @@ bool parseTailInt(const char* text, int32_t* out) {
   return true;
 }
 
+// `CFG,PULSE,<n>,<dir>`: dois campos decimais estritos; dir e +1 ou -1.
+bool parsePulseArgs(const char* text, int32_t* steps, int8_t* direction) {
+  if (text == nullptr) return false;
+  const char* comma = strchr(text, ',');
+  if (comma == nullptr || comma == text || *(comma + 1) == '\0' ||
+      strchr(comma + 1, ',') != nullptr) {
+    return false;
+  }
+
+  int64_t value = 0;
+  for (const char* p = text; p != comma; ++p) {
+    if (*p < '0' || *p > '9') return false;
+    value = value * 10 + (*p - '0');
+    if (value > kPulseTestMax) return false;
+  }
+  if (value < 1) return false;
+
+  const char* sign = comma + 1;
+  int8_t dir = 1;
+  if (*sign == '-') {
+    dir = -1;
+    ++sign;
+  } else if (*sign == '+') {
+    ++sign;
+  }
+  if (*sign == '\0' || strcmp(sign, "1") != 0) return false;
+
+  *steps = static_cast<int32_t>(value);
+  *direction = dir;
+  return true;
+}
+
 }  // namespace
 
 StepDir::StepDir(WritePin write_step, WritePin write_dir)
@@ -50,6 +82,7 @@ bool StepDir::setGate(bool value) {
   gate_ = value;
   if (!gate_) {
     velocity_ = 0.0;
+    test_mode_ = false;   // fechar gate aborta qualquer ensaio em curso
     target_ = position_;  // desabilitar estaciona; nao retoma movimento antigo
     if (step_level_) {
       step_level_ = false;
@@ -60,8 +93,22 @@ bool StepDir::setGate(bool value) {
 }
 
 void StepDir::setTarget(int32_t target) {
+  if (test_mode_) return;  // o ensaio tem prioridade sobre a FSM
   if (target == target_) return;
   target_ = target;  // nao zerar velocidade: AccelStepper moveTo() faz o mesmo
+}
+
+bool StepDir::testPulse(int32_t steps, int8_t direction) {
+  if (steps < 1 || steps > kPulseTestMax) return false;
+  if (direction != 1 && direction != -1) return false;
+  if (!gate_ || test_mode_ || velocity_ != 0.0 || step_level_) return false;
+  const int64_t destination = static_cast<int64_t>(position_) +
+                              static_cast<int64_t>(steps) * direction;
+  if (destination < INT32_MIN || destination > INT32_MAX) return false;
+  target_ = static_cast<int32_t>(destination);
+  test_mode_ = true;
+  velocity_ = 0.0;
+  return true;
 }
 
 const char* StepDir::config(const char* line) {
@@ -70,8 +117,8 @@ const char* StepDir::config(const char* line) {
 
   if (strcmp(line, "CFG,?") == 0) {
     snprintf(reply, sizeof(reply),
-             "CFG,steps=%d,speed=%d,accel=%d,gate=%d",
-             steps_per_rev_, speed_, accel_, gate_ ? 1 : 0);
+             "CFG,steps=%d,speed=%d,accel=%d,gate=%d,test=%d",
+             steps_per_rev_, speed_, accel_, gate_ ? 1 : 0, testRemaining());
     return reply;
   }
   if (strcmp(line, "CFG,GATE,0") == 0) {
@@ -83,6 +130,17 @@ const char* StepDir::config(const char* line) {
     return "CFG,GATE,1,OK";
   }
   if (strncmp(line, "CFG,GATE,", 9) == 0) return "REASON,format";
+
+  if (strncmp(line, "CFG,PULSE,", 10) == 0) {
+    int32_t steps = 0;
+    int8_t direction = 0;
+    if (!parsePulseArgs(line + 10, &steps, &direction)) return "REASON,format";
+    if (!gate_) return "REASON,gate";
+    if (!testPulse(steps, direction)) return "REASON,busy";
+    snprintf(reply, sizeof(reply), "CFG,PULSE,%d,%d,OK", steps, direction);
+    return reply;
+  }
+  if (strncmp(line, "CFG,PULSE", 9) == 0) return "REASON,format";
 
   int32_t value = 0;
   if (strncmp(line, "CFG,MICRO,", 10) == 0) {
@@ -132,6 +190,10 @@ int StepDir::update(int64_t now_us) {
   const int64_t remaining = static_cast<int64_t>(target_) - position_;
   if (remaining == 0) {
     velocity_ = 0.0;
+    if (test_mode_) {
+      test_mode_ = false;
+      target_ = position_;  // devolve o alvo a quem manda depois do ensaio
+    }
     return 0;
   }
 

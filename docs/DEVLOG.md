@@ -11,6 +11,32 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-21 12:22 - feat(ventiseg): ensaio de pulsos deterministico na saida
+
+**Area:** ventiseg
+
+**Feito:**
+- comando CFG,PULSE com N pulsos exatos e prioridade sobre o alvo da FSM -> exige gate aberto e eixo em repouso e aborta no watchdog
+- formulario na aba Saida STEP/DIR com telemetria test= em CFG,? -> mesma verificacao logica sem escrita de GPIO
+- roteiro diferencial ampliado em Python JS e C++ -> 159 testes verdes e sketch compila em 317104 bytes
+
+**Dificuldades e solucoes:**
+- 25 pulsos nao cabiam em 40 janelas de 1 ms -> rampa de 8000 passos/s so permitia 6
+- estendi o roteiro para 120 janelas
+- formato do CFG,PULSE podia divergir entre linguagens -> validei sinal e teto antes do setter e espelhei as respostas REASON,gate e REASON,format
+
+**Arquivos:**
+- `firmware/ventiseg/controller/step_dir.cpp`
+- `firmware/ventiseg/controller/step_dir.h`
+- `firmware/ventiseg/docs/ESTADO.md`
+- `firmware/ventiseg/docs/PROTOCOLO.md`
+- `firmware/ventiseg/simulator/README.md`
+- `firmware/ventiseg/simulator/index.html`
+- `firmware/ventiseg/simulator/js/app.js`
+- `firmware/ventiseg/tests/differential_stepdir_cxx_harness.cpp`
+- `firmware/ventiseg/tests/test_step_dir.py`
+- `firmware/ventiseg/tools/step_dir_ref.py`
+
 ### 2026-11-21 11:47 - feat(ventiseg): camada step/dir configuravel pela web
 
 **Area:** ventiseg

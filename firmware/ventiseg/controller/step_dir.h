@@ -27,6 +27,7 @@ constexpr int32_t kDefaultSpeed = 800;      // passos/s
 constexpr int32_t kDefaultAccel = 4000;     // passos/s^2
 constexpr int32_t kSpeedMax = 10000;
 constexpr int32_t kAccelMax = 100000;
+constexpr int32_t kPulseTestMax = 1000;  // teto do ensaio determinístico
 
 // Um driver de saida por eixo. Os callbacks podem ser nullptr (bancada logica).
 class StepDir {
@@ -44,6 +45,10 @@ class StepDir {
 
   void setTarget(int32_t target);
 
+  // Ensaio de bancada: N pulsos em uma direção, com prioridade sobre o alvo
+  // da FSM até terminar. Exige gate aberto e eixo em repouso.
+  bool testPulse(int32_t steps, int8_t direction);
+
   // Comando de bancada `CFG,...` (plano de configuracao, fora do parser
   // validado do protocolo). Retorna a resposta pronta para a serial.
   const char* config(const char* line);
@@ -59,6 +64,14 @@ class StepDir {
   int32_t position() const { return position_; }
   int32_t direction() const { return direction_; }
   int32_t pulses() const { return pulses_; }
+  bool testMode() const { return test_mode_; }
+  int32_t testRemaining() const {
+    return test_mode_ ? static_cast<int32_t>(
+                            static_cast<int64_t>(target_) - position_ < 0
+                                ? position_ - static_cast<int64_t>(target_)
+                                : static_cast<int64_t>(target_) - position_)
+                      : 0;
+  }
   bool stepLevel() const { return step_level_; }
   bool dirLevel() const { return dir_level_; }
   double velocity() const { return velocity_; }
@@ -82,6 +95,7 @@ class StepDir {
   int64_t pulse_until_us_ = 0;
   bool step_level_ = false;
   bool dir_level_ = false;
+  bool test_mode_ = false;
 };
 
 }  // namespace ventiseg
