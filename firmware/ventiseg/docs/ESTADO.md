@@ -28,8 +28,8 @@ feita. A auditoria P1–P5 está documentada, mas **fisicamente aberta**.
   de terminal (`PUL±/DIR±/ENA±`, fases `A±/B±`, conversor 3,3→5 V, 24 V):
   **variante catodo comum desenhada**, validada pelo WireViz 0.4.1.
 - Núcleo TDD entregue: `tools/protocol_ref.py` → `controller/parser.cpp` →
-  52 vetores gerados → `autotest.h` → simulador, com **176 testes host
-  verdes** (113 protocolo + 40 simulador + 4 diferenciais de parser + 4
+  52 vetores gerados → `autotest.h` → simulador, com **179 testes host
+  verdes** (113 protocolo + 43 simulador + 4 diferenciais de parser + 4
   diferenciais de sessão + 15 da camada STEP/DIR). Watchdog renovado
   **somente** por `T` aceito no firmware e no simulador (divergência
   corrigida).
@@ -85,6 +85,11 @@ feita. A auditoria P1–P5 está documentada, mas **fisicamente aberta**.
   opcional e apenas aproxima o pan sintético. **Não há captura de imagem,
   câmera real, detecção de pessoa nem acionamento de motor/GPIO** — os testes
   host exercitam o núcleo em Node com valores fixos.
+- Simulador reforçado em 21/11/2026: abas com *roving tabindex* e setas
+  `←`/`→`/`Home`/`End`, *skip link*, foco devolvido ao botão após o modal,
+  valores dos sliders visíveis, tabelas roláveis e tokens de contraste próprios
+  para texto nos temas claro e escuro. Nenhuma mudança de protocolo, GPIO ou
+  telemetria; continua funcionando em `file://` sem dependências.
 
 ## Ainda não feito
 

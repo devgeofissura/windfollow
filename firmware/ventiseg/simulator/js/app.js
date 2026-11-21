@@ -616,6 +616,7 @@
     detApparent: $('det-apparent'), detError: $('det-error'),
     detErrorPx: $('det-error-px'), detTarget: $('det-target'),
     detBearingSlider: $('det-bearing-slider'), detPanSlider: $('det-pan-slider'),
+    detBearingValue: $('det-bearing-value'), detPanValue: $('det-pan-value'),
     detSeen: $('det-seen'), detClosedLoop: $('det-closed-loop'),
   };
 
@@ -720,6 +721,8 @@
     el.detError.textContent = String(v.error_x);
     el.detErrorPx.textContent = String(v.error_px);
     el.detTarget.textContent = String(v.pan_target_steps);
+    if (el.detBearingValue) el.detBearingValue.textContent = String(v.bearing_x);
+    if (el.detPanValue) el.detPanValue.textContent = String(v.pan_steps);
     if (el.detBearingSlider.value !== String(v.bearing_x)) {
       el.detBearingSlider.value = String(v.bearing_x);
     }
@@ -840,11 +843,13 @@
     render();
   }
 
-  function switchTab(name) {
+  function switchTab(name, focus) {
     el.tabs.forEach((tab) => {
       const active = tab.dataset.tab === name;
       tab.classList.toggle('active', active);
       tab.setAttribute('aria-selected', String(active));
+      tab.tabIndex = active ? 0 : -1;
+      if (active && focus) tab.focus();
     });
     el.panels.forEach((panel) => {
       const active = panel.id === 'tab-' + name;
@@ -889,7 +894,23 @@
 
   function bind() {
     el.tabs.forEach((tab) => {
-      tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+      tab.addEventListener('click', () => switchTab(tab.dataset.tab, true));
+    });
+    const tablist = document.querySelector('[role="tablist"]');
+    tablist.addEventListener('keydown', (event) => {
+      if (['ArrowRight', 'ArrowLeft', 'Home', 'End'].indexOf(event.key) < 0) {
+        return;
+      }
+      event.preventDefault();
+      const current = Math.max(0, el.tabs.indexOf(document.activeElement));
+      let next = current;
+      if (event.key === 'ArrowRight') next = (current + 1) % el.tabs.length;
+      if (event.key === 'ArrowLeft') {
+        next = (current - 1 + el.tabs.length) % el.tabs.length;
+      }
+      if (event.key === 'Home') next = 0;
+      if (event.key === 'End') next = el.tabs.length - 1;
+      switchTab(el.tabs[next].dataset.tab, true);
     });
     el.theme.addEventListener('click', () => {
       const root = document.documentElement;
@@ -953,8 +974,15 @@
       applyCfg('CFG,PULSE,' + count + ',' + direction, 'UI');
     });
 
+    let gateOpener = null;
     el.gateOpen.addEventListener('click', () => {
+      gateOpener = document.activeElement;
       el.gateDialog.showModal();
+      el.gateCancel.focus();
+    });
+    el.gateDialog.addEventListener('close', () => {
+      if (gateOpener && gateOpener.isConnected) gateOpener.focus();
+      gateOpener = null;
     });
     el.gateCancel.addEventListener('click', () => el.gateDialog.close());
     el.gateConfirm.addEventListener('click', () => {

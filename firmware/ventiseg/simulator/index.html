@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+
     <div class="simulator-badge" role="note">
         SIMULADOR — nenhum GPIO, motor ou iluminador real é acionado. Comandos ficam neste navegador.
     </div>
@@ -24,20 +26,30 @@
             </div>
         </header>
 
-        <nav class="tabs" role="tablist" aria-label="Áreas do simulador">
+        <nav class="tabs" role="tablist" aria-label="Áreas do simulador"
+             aria-describedby="tabs-help">
             <button type="button" class="tab active" role="tab" id="tabbtn-painel"
-                    aria-controls="tab-painel" aria-selected="true" data-tab="painel">Painel</button>
+                    aria-controls="tab-painel" aria-selected="true" tabindex="0"
+                    data-tab="painel">Painel</button>
             <button type="button" class="tab" role="tab" id="tabbtn-saida"
-                    aria-controls="tab-saida" aria-selected="false" data-tab="saida">Saída STEP/DIR</button>
+                    aria-controls="tab-saida" aria-selected="false" tabindex="-1"
+                    data-tab="saida">Saída STEP/DIR</button>
             <button type="button" class="tab" role="tab" id="tabbtn-deteccao"
-                    aria-controls="tab-deteccao" aria-selected="false" data-tab="deteccao">Detecção (sintética)</button>
+                    aria-controls="tab-deteccao" aria-selected="false" tabindex="-1"
+                    data-tab="deteccao">Detecção (sintética)</button>
             <button type="button" class="tab" role="tab" id="tabbtn-protocolo"
-                    aria-controls="tab-protocolo" aria-selected="false" data-tab="protocolo">Protocolo</button>
+                    aria-controls="tab-protocolo" aria-selected="false" tabindex="-1"
+                    data-tab="protocolo">Protocolo</button>
             <button type="button" class="tab" role="tab" id="tabbtn-pinagem"
-                    aria-controls="tab-pinagem" aria-selected="false" data-tab="pinagem">Pinagem</button>
+                    aria-controls="tab-pinagem" aria-selected="false" tabindex="-1"
+                    data-tab="pinagem">Pinagem</button>
         </nav>
+        <p id="tabs-help" class="visually-hidden">
+            Use as setas esquerda e direita para alternar entre abas, ou Home e
+            End para ir à primeira e à última.
+        </p>
 
-        <main>
+        <main id="conteudo">
             <!-- PAINEL -->
             <section id="tab-painel" class="tab-panel active" role="tabpanel" aria-labelledby="tabbtn-painel">
                 <p class="safety-note" role="note">
@@ -96,7 +108,8 @@
 
                 <article class="card">
                     <h2>Log do protocolo</h2>
-                    <ol id="log" class="log" aria-live="polite" aria-label="Mensagens simuladas"></ol>
+                    <ol id="log" class="log" role="log" aria-live="polite"
+                        aria-relevant="additions" aria-label="Mensagens simuladas"></ol>
                 </article>
             </section>
 
@@ -277,13 +290,19 @@
                     <div class="cfg-form">
                         <div class="field">
                             <label for="det-bearing-slider">Pessoa no mundo (x: −1000..1000)</label>
-                            <input type="range" id="det-bearing-slider" min="-1000" max="1000"
-                                   step="1" value="0">
+                            <div class="range-row">
+                                <input type="range" id="det-bearing-slider" min="-1000" max="1000"
+                                       step="1" value="0">
+                                <output id="det-bearing-value" for="det-bearing-slider">0</output>
+                            </div>
                         </div>
                         <div class="field">
                             <label for="det-pan-slider">Pan da câmera (passos: −533..533)</label>
-                            <input type="range" id="det-pan-slider" min="-533" max="533"
-                                   step="1" value="0">
+                            <div class="range-row">
+                                <input type="range" id="det-pan-slider" min="-533" max="533"
+                                       step="1" value="0">
+                                <output id="det-pan-value" for="det-pan-slider">0</output>
+                            </div>
                         </div>
                     </div>
                     <div class="control-group">
@@ -306,19 +325,22 @@
                         Fonte da verdade: <code>docs/PROTOCOLO.md</code>. O simulador replica as
                         constantes para validar a experiência, não para substituir o firmware.
                     </p>
-                    <table class="data-table">
-                        <thead><tr><th>Constante</th><th>Valor</th></tr></thead>
-                        <tbody id="proto-constants"></tbody>
-                    </table>
-                    <table class="data-table">
-                        <thead><tr><th>Mensagem</th><th>Formato</th></tr></thead>
-                        <tbody>
-                            <tr><td>Seguir alvo</td><td><code>TRACK,&lt;0|1&gt;</code></td></tr>
-                            <tr><td>Manual</td><td><code>MANUAL,&lt;-1|0|1&gt;</code></td></tr>
-                            <tr><td>Alvo</td><td><code>T,&lt;seq&gt;,&lt;x&gt;,&lt;valid&gt;</code></td></tr>
-                            <tr><td>Telemetria</td><td><code>ACK,&lt;seq&gt;,&lt;state&gt;,&lt;fault&gt;</code></td></tr>
-                        </tbody>
-                    </table>
+                    <div class="table-scroll" role="region"
+                         aria-label="Tabelas do contrato v0.1" tabindex="0">
+                        <table class="data-table">
+                            <thead><tr><th>Constante</th><th>Valor</th></tr></thead>
+                            <tbody id="proto-constants"></tbody>
+                        </table>
+                        <table class="data-table">
+                            <thead><tr><th>Mensagem</th><th>Formato</th></tr></thead>
+                            <tbody>
+                                <tr><td>Seguir alvo</td><td><code>TRACK,&lt;0|1&gt;</code></td></tr>
+                                <tr><td>Manual</td><td><code>MANUAL,&lt;-1|0|1&gt;</code></td></tr>
+                                <tr><td>Alvo</td><td><code>T,&lt;seq&gt;,&lt;x&gt;,&lt;valid&gt;</code></td></tr>
+                                <tr><td>Telemetria</td><td><code>ACK,&lt;seq&gt;,&lt;state&gt;,&lt;fault&gt;</code></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                     <p class="hint">
                         Validação: tamanho (≤ 96 bytes) → formato → faixa (<code>x</code> em
                         [−1000, 1000], <code>seq</code> em [0, 2147483647]) → sequência (só
@@ -349,17 +371,20 @@
 
                 <article class="card">
                     <h2>J_GPIO_LIVRES — conector preto (6 pinos)</h2>
-                    <table class="data-table">
-                        <thead><tr><th>Contato</th><th>Sinal</th><th>Uso no ventiseg</th><th>Ressalva</th></tr></thead>
-                        <tbody>
-                            <tr><td>1</td><td>IO3 / GPIO3</td><td><strong>STEP (PUL)</strong></td><td>ADC de bateria não usado</td></tr>
-                            <tr><td>2</td><td>IO46 / GPIO46</td><td>reservado</td><td><strong>strapping</strong>: não puxar HIGH no boot</td></tr>
-                            <tr><td>3</td><td>IO45 / GPIO45</td><td>reservado</td><td><strong>strapping</strong>: define tensão da Flash no boot</td></tr>
-                            <tr><td>4</td><td>IO21 / GPIO21</td><td><strong>DIR</strong></td><td>digital/PWM/I2C</td></tr>
-                            <tr><td>5</td><td>GND</td><td>referência</td><td>comum com o driver</td></tr>
-                            <tr><td>6</td><td>3V3</td><td>referência</td><td>lógica 3,3 V; nunca aplicar 5 V nos sinais</td></tr>
-                        </tbody>
-                    </table>
+                    <div class="table-scroll" role="region"
+                         aria-label="Pinagem do conector J_GPIO_LIVRES" tabindex="0">
+                        <table class="data-table">
+                            <thead><tr><th>Contato</th><th>Sinal</th><th>Uso no ventiseg</th><th>Ressalva</th></tr></thead>
+                            <tbody>
+                                <tr><td>1</td><td>IO3 / GPIO3</td><td><strong>STEP (PUL)</strong></td><td>ADC de bateria não usado</td></tr>
+                                <tr><td>2</td><td>IO46 / GPIO46</td><td>reservado</td><td><strong>strapping</strong>: não puxar HIGH no boot</td></tr>
+                                <tr><td>3</td><td>IO45 / GPIO45</td><td>reservado</td><td><strong>strapping</strong>: define tensão da Flash no boot</td></tr>
+                                <tr><td>4</td><td>IO21 / GPIO21</td><td><strong>DIR</strong></td><td>digital/PWM/I2C</td></tr>
+                                <tr><td>5</td><td>GND</td><td>referência</td><td>comum com o driver</td></tr>
+                                <tr><td>6</td><td>3V3</td><td>referência</td><td>lógica 3,3 V; nunca aplicar 5 V nos sinais</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                     <p class="hint">
                         Driver <strong>DM556D (Azaneli)</strong> alimentado com <strong>24 VDC</strong>.
                         Nível lógico da placa: <strong>3,3 V</strong>. Um único motor gira o
@@ -383,7 +408,8 @@
         </main>
     </div>
 
-    <dialog id="gate-dialog" class="gate-dialog" aria-labelledby="gate-dialog-title">
+    <dialog id="gate-dialog" class="gate-dialog" aria-labelledby="gate-dialog-title"
+            aria-describedby="gate-dialog-note">
         <h2 id="gate-dialog-title">Confirmar liberação da saída</h2>
         <p>
             Isto libera apenas os pulsos <strong>dentro do simulador</strong>. Nenhum pino
@@ -395,7 +421,7 @@
             e da auditoria elétrica P1–P5. Sem isso, a placa responde
             <code>REASON,gate</code>.
         </p>
-        <p class="safety-note" role="note">
+        <p class="safety-note" id="gate-dialog-note" role="note">
             Entendo que a verificação foi lógica, que nenhum osciloscópio foi ligado
             em <code>PUL+</code>/<code>DIR+</code> e que nenhum motor foi energizado.
         </p>

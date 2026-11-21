@@ -11,6 +11,27 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-21 15:14 - feat(ventiseg): reforca acessibilidade do simulador
+
+**Area:** ventiseg
+
+**Feito:**
+- abas com roving tabindex setas e Home End e skip link para o conteudo
+- foco devolvido ao botao apos o modal e valores dos sliders visíveis
+- tabelas rolaveis e tokens de contraste proprioios para texto nos dois temas
+- README e ESTADO atualizados com 179 testes host verdes
+
+**Dificuldades e solucoes:**
+- painel de abas so respondia a clique e o modal nao devolvia o foco -> adicionei roving tabindex navegacao por teclado e restauracao de foco no evento close
+
+**Arquivos:**
+- `firmware/ventiseg/docs/ESTADO.md`
+- `firmware/ventiseg/simulator/README.md`
+- `firmware/ventiseg/simulator/css/style.css`
+- `firmware/ventiseg/simulator/index.html`
+- `firmware/ventiseg/simulator/js/app.js`
+- `firmware/ventiseg/tests/test_simulator.py`
+
 ### 2026-11-21 14:23 - feat(ventiseg): visualizacao sintetica da deteccao
 
 **Area:** ventiseg

@@ -13,6 +13,19 @@ Não há Wi-Fi, luz, laser, relé, tilt nem fim de curso neste projeto.
 Duplo clique em `index.html` — funciona em `file://`, sem servidor, sem rede,
 sem build e sem bibliotecas externas. Não é preciso instalar nada.
 
+## Navegação e acessibilidade
+
+- `Tab` / `Shift+Tab` percorrem os controles; um *skip link* no topo leva
+  direto ao conteúdo.
+- nas abas, `←`/`→` alternam, e `Home`/`End` vão à primeira/última; a aba ativa
+  é a única alcançável por `Tab` (padrão *roving tabindex*).
+- `Esc` fecha o modal de confirmação e o foco volta ao botão que o abriu; o
+  diálogo também descreve o risco elétrico para leitores de tela.
+- os sliders de detecção mostram o valor ao lado, e as tabelas rolam
+  horizontalmente em telas estreitas sem quebrar o layout.
+- os dois temas usam tokens de texto com contraste separados dos tokens de
+  fundo; nenhuma informação depende só de cor.
+
 ## O que simula
 
 - **Painel:** eixo único (pan do fluxo de ar) com posição comandada em passos,

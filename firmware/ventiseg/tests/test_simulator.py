@@ -666,5 +666,44 @@ class EstruturaDeteccao(unittest.TestCase):
         self.assertIn("Nenhum GPIO", self.painel)
 
 
+class ReforcoDaInterface(unittest.TestCase):
+    """Navegacao por teclado, foco e contraste nos dois temas."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.html = HTML.read_text(encoding="utf-8") if HTML.is_file() else ""
+        cls.css = CSS.read_text(encoding="utf-8") if CSS.is_file() else ""
+        cls.js = JS.read_text(encoding="utf-8") if JS.is_file() else ""
+
+    def test_tabs_navegaveis_por_teclado(self) -> None:
+        self.assertIn('aria-describedby="tabs-help"', self.html)
+        self.assertIn('id="tabs-help" class="visually-hidden"', self.html)
+        self.assertGreaterEqual(self.html.count('tabindex="-1"'), 4)
+        self.assertIn('tabindex="0"', self.html)
+        for token in ("ArrowRight", "ArrowLeft", "Home", "End", "tabIndex"):
+            with self.subTest(token=token):
+                self.assertIn(token, self.js)
+
+    def test_skip_link_e_regioes_rolaveis(self) -> None:
+        self.assertIn('class="skip-link" href="#conteudo"', self.html)
+        self.assertIn('<main id="conteudo">', self.html)
+        self.assertIn('role="log"', self.html)
+        self.assertIn('class="table-scroll"', self.html)
+        for classe in ("visually-hidden", "skip-link", "table-scroll"):
+            with self.subTest(classe=classe):
+                self.assertIn("." + classe, self.css)
+
+    def test_valores_dos_sliders_e_foco_do_dialogo(self) -> None:
+        for ident in ("det-bearing-value", "det-pan-value"):
+            with self.subTest(id=ident):
+                self.assertIn(f'id="{ident}"', self.html)
+                self.assertIn(ident, self.js)
+        self.assertIn('aria-describedby="gate-dialog-note"', self.html)
+        self.assertIn("addEventListener('close'", self.js)
+        for token in ("--color-warning-text", "--color-success-text"):
+            with self.subTest(token=token):
+                self.assertGreaterEqual(self.css.count(token), 3)
+
+
 if __name__ == "__main__":
     unittest.main()
