@@ -152,7 +152,8 @@ def find_cxx() -> list[str] | None:
     return None
 
 
-def cxx_results(cases: list[Case], workdir: pathlib.Path) -> list[dict] | None:
+def compile_cxx_harness(workdir: pathlib.Path) -> pathlib.Path | None:
+    """Compila o harness C++ uma vez; None se nao ha compilador host."""
     compiler = find_cxx()
     if compiler is None:
         return None
@@ -175,6 +176,13 @@ def cxx_results(cases: list[Case], workdir: pathlib.Path) -> list[dict] | None:
             + build.stdout
             + build.stderr
         )
+    return exe
+
+
+def cxx_results(cases: list[Case], workdir: pathlib.Path) -> list[dict] | None:
+    exe = compile_cxx_harness(workdir)
+    if exe is None:
+        return None
     lines = []
     for name, data, rx_ms, now_ms, last_seq in cases:
         now = -1 if now_ms is None else now_ms

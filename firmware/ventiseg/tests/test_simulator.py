@@ -129,9 +129,14 @@ out.watchdog = { tripped: C.checkWatchdog(s, 1301), mode: s.mode,
                  fault: s.fault, moving: s.moving,
                  telemetry: C.telemetry(s) };
 out.noRecoverTrack = { ok: C.feed(s, 'TRACK,1', 1350), fault: s.fault,
-                       linkLost: s.linkLost };
+                       linkLost: s.linkLost, mode: s.mode,
+                       moving: s.moving, telemetry: C.telemetry(s) };
+out.rangeWhileLost = { ok: C.feed(s, 'TRACK,2', 1360), fault: s.fault };
 out.recovery = { ok: C.feed(s, 'T,1,0,1', 1400), fault: s.fault,
-                 linkLost: s.linkLost, telemetry: C.telemetry(s) };
+                 linkLost: s.linkLost, mode: s.mode, moving: s.moving,
+                 telemetry: C.telemetry(s) };
+out.retrack = { ok: C.feed(s, 'TRACK,1', 1410), mode: s.mode,
+                moving: s.moving, telemetry: C.telemetry(s) };
 
 s = C.createState();
 C.feed(s, 'T,0,0,1', 0);
@@ -352,16 +357,27 @@ class MaquinaDeEstadosDeterministica(unittest.TestCase):
         self.assertEqual(watchdog["fault"], "Lnk")
         self.assertFalse(watchdog["moving"])
         self.assertEqual(watchdog["telemetry"], "ACK,0,SAFE,Lnk")
-        # TRACK nao limpa fault=Lnk: so T aceito recupera o link.
+        # TRACK e valido, mas inibido: nenhum movimento enquanto Lnk.
         noRecover = self.out["noRecoverTrack"]
         self.assertTrue(noRecover["ok"])
         self.assertEqual(noRecover["fault"], "Lnk")
         self.assertTrue(noRecover["linkLost"])
+        self.assertEqual(noRecover["mode"], "SAFE")
+        self.assertFalse(noRecover["moving"])
+        self.assertEqual(noRecover["telemetry"], "ACK,0,SAFE,Lnk")
+        # Range posterior nao apaga Lnk.
+        self.assertFalse(self.out["rangeWhileLost"]["ok"])
+        self.assertEqual(self.out["rangeWhileLost"]["fault"], "Lnk")
+        # So T aceito recupera o link, e ainda exige novo comando de movimento.
         recuperou = self.out["recovery"]
         self.assertTrue(recuperou["ok"])
         self.assertEqual(recuperou["fault"], "None")
         self.assertFalse(recuperou["linkLost"])
-        self.assertEqual(recuperou["telemetry"], "ACK,1,TRACK,None")
+        self.assertEqual(recuperou["mode"], "SAFE")
+        self.assertFalse(recuperou["moving"])
+        self.assertEqual(recuperou["telemetry"], "ACK,1,SAFE,None")
+        self.assertEqual(self.out["retrack"]["telemetry"],
+                         "ACK,1,TRACK,None")
 
     def test_track_e_manual_nao_renovam_watchdog(self) -> None:
         noRenew = self.out["noRenew"]

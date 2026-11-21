@@ -231,8 +231,15 @@ class Session:
             datagram, rx_ms=rx_ms, now_ms=now_ms, last_seq=last_seq
         )
         if not result.accepted:
-            if result.reason == "range":
+            # Lnk e dominante: um Range posterior nao apaga a perda de link.
+            if result.reason == "range" and not self.link_lost:
                 self.fault = FAULT_RANGE
+            return result
+
+        # Seguranca pos-Lnk: TRACK/MANUAL continuam sendo comandos validos,
+        # mas sao inibidos. so T aceito restaura o link e o eixo so volta a
+        # se mover apos um novo TRACK/MANUAL.
+        if self.link_lost and result.kind != "sample":
             return result
 
         if result.kind == "track":

@@ -104,8 +104,8 @@
 
   function fail(s, reason) {
     lastReason = reason;
-    // Rejeicao por faixa e diagnostico, como em protocol_ref.py e parser.cpp.
-    if (reason === 'range') s.fault = 'Range';
+    // Rejeicao por faixa e diagnostico; Lnk e dominante ate T aceito.
+    if (reason === 'range' && !s.linkLost) s.fault = 'Range';
     return false;
   }
 
@@ -146,6 +146,7 @@
       }
       if (ageRejected(s, nowMs, rxMs)) return false;
       lastReason = '';
+      if (s.linkLost) return true;  // valido, mas inibido ate T aceito
       s.mode = value === 1 ? 'TRACK' : 'SAFE';
       s.moving = s.mode === 'TRACK';
       if (!s.linkLost) s.fault = 'None';  // TRACK NAO renova watchdog
@@ -162,6 +163,7 @@
       if (ageRejected(s, nowMs, rxMs)) return false;
       lastReason = '';
       lastDirection = direction;
+      if (s.linkLost) return true;  // valido, mas inibido ate T aceito
       if (direction === 0) {
         s.mode = 'SAFE';
         s.moving = false;

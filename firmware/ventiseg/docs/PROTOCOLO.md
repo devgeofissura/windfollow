@@ -48,6 +48,25 @@ Watchdog de **1200 ms**: sem comando `T` aceito nesse prazo, o eixo para e
 consulta `now_ms`. `now_ms` deve vir da mesma origem monotônica usada no
 `feed()`. Nunca enviar `now_ms=-1` em operação real.
 
+### Comportamento seguro depois de `fault=Lnk`
+
+1. O watchdog força `state=SAFE`, eixo parado, `fault=Lnk` e link perdido.
+2. Enquanto o link estiver perdido, `TRACK` e `MANUAL` **continuam sendo
+   comandos válidos no parser, mas são inibidos pela sessão**: não mudam modo,
+   não movem o eixo, não renovam o watchdog e a telemetria permanece
+   `ACK,<seq>,SAFE,Lnk`. Assim nenhum comando de movimento pode rearmar o eixo
+   sem uma amostra de visão fresca.
+3. `Lnk` é dominante sobre `Range`: uma rejeição por faixa posterior não apaga
+   a perda de link.
+4. Somente um `T` aceito (idade válida e `seq` maior) restaura o link: limpa
+   `fault`, renova o watchdog e **mantém o eixo em SAFE**. Para voltar a
+   comandar movimento é necessário um novo `TRACK` ou `MANUAL` depois do `T`.
+5. A camada de saída STEP/DIR permanece desabilitada por padrão; nenhuma
+   transição acima gera pulso enquanto `VENTISEG_ENABLE_GPIO=0`.
+
+Esse comportamento é verificado por `tests/test_safe_state.py`, que executa o
+mesmo roteiro em Python, JavaScript e C++ e exige traces idênticos.
+
 Constants provisionais (reaproveitadas do laserseg, a calibrar com a mecânica):
 
 ```

@@ -125,7 +125,9 @@
                         nem relógio; rejeição por faixa liga <code>fault=Range</code>. Estado
                         <code>SAFE | TRACK | MANUAL</code>; falha <code>None | Lnk | Range</code>.
                         <code>seq = -1</code> antes da primeira amostra aceita. Watchdog de
-                        1200 ms força SAFE, eixo parado e <code>fault=Lnk</code>.
+                        1200 ms força SAFE, eixo parado e <code>fault=Lnk</code>; enquanto
+                        o link estiver perdido, TRACK/MANUAL são inibidos e só um
+                        <code>T</code> aceito restaura o link (ainda em SAFE).
                     </p>
                 </article>
             </section>

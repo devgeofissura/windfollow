@@ -28,10 +28,14 @@ feita.
   de terminal (`PUL±/DIR±/ENA±`, fases `A±/B±`, conversor 3,3→5 V, 24 V):
   **variante catodo comum desenhada**, validada pelo WireViz 0.4.1.
 - Núcleo TDD entregue: `tools/protocol_ref.py` → `controller/parser.cpp` →
-  52 vetores gerados → `autotest.h` → simulador, com **143 testes host
-  verdes** (111 protocolo + 28 simulador + 4 diferenciais). Watchdog renovado
-  **somente** por `T` aceito no firmware e no simulador (divergência
-  corrigida).
+  52 vetores gerados → `autotest.h` → simulador, com **149 testes host
+  verdes** (113 protocolo + 28 simulador + 4 diferenciais de parser + 4
+  diferenciais de sessão). Watchdog renovado **somente** por `T` aceito no
+  firmware e no simulador (divergência corrigida).
+- Comportamento seguro pós-`Lnk` definido e aplicado nas três implementações:
+  após o watchdog, `TRACK`/`MANUAL` são inibidos, `Lnk` domina `Range` e só um
+  `T` aceito restaura o link — ainda em SAFE até um novo comando de movimento.
+  Contrato em `PROTOCOLO.md`, verificação em `tests/test_safe_state.py`.
 - Testes diferenciais Python × JavaScript × C++: 60 datagramas (52 vetores do
   autoteste + 8 casos de divergência) alimentam as três implementações e
   comparam `kind`, `reason`, `accepted`, `seq`, `x`, `valid`, `enabled` e

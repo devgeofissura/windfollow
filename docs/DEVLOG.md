@@ -11,6 +11,35 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-21 11:03 - feat(ventiseg): define comportamento seguro apos fault Lnk
+
+**Area:** ventiseg
+
+**Feito:**
+- apos watchdog TRACK e MANUAL ficam inibidos e Lnk domina Range
+- somente T aceito restaura o link e ainda exige novo comando de movimento
+- contrato documentado em PROTOCOLO.md e painel do simulador
+- diferencial de sessao Python JS C++ com traces identicos
+
+**Dificuldades e solucoes:**
+- testes antigos esperavam modo TRACK/MANUAL apos Lnk -> reescritos para o novo contrato
+- harness JS passava now=null para feed e isso vazava como idade negativa -> convertido para undefined
+- 149 testes host verdes e sketch compila na FQBN ventiseg
+
+**Arquivos:**
+- `firmware/ventiseg/controller/parser.cpp`
+- `firmware/ventiseg/docs/ESTADO.md`
+- `firmware/ventiseg/docs/PROTOCOLO.md`
+- `firmware/ventiseg/simulator/index.html`
+- `firmware/ventiseg/simulator/js/app.js`
+- `firmware/ventiseg/tests/differential_cxx_harness.cpp`
+- `firmware/ventiseg/tests/differential_js_harness.js`
+- `firmware/ventiseg/tests/test_differential.py`
+- `firmware/ventiseg/tests/test_protocol.py`
+- `firmware/ventiseg/tests/test_simulator.py`
+- `firmware/ventiseg/tools/protocol_ref.py`
+- `firmware/ventiseg/tests/test_safe_state.py`
+
 ### 2026-11-21 10:58 - test(ventiseg): adiciona diferencial Python x JS x C++
 
 **Area:** ventiseg

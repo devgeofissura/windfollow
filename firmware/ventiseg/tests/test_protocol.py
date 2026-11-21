@@ -584,17 +584,48 @@ class SessionWatchdog(unittest.TestCase):
         session = p.Session()
         session.feed(b"T,1,100,1", rx_ms=10)
         session.poll(now_ms=1300)
-        session.feed(b"TRACK,1", rx_ms=1400)
-        self.assertEqual(session.mode, "TRACK")
+        result = session.feed(b"TRACK,1", rx_ms=1400)
+        self.assertTrue(result.accepted)  # parser valida, sessao inibe
+        self.assertEqual(session.mode, "SAFE")
+        self.assertFalse(session.moving)
         self.assertEqual(session.fault, "Lnk")
+        self.assertEqual(p.format_telemetry(session), "ACK,1,SAFE,Lnk")
 
     def test_manual_command_does_not_clear_link_fault(self) -> None:
         session = p.Session()
         session.feed(b"T,1,100,1", rx_ms=10)
         session.poll(now_ms=1300)
-        session.feed(b"MANUAL,1", rx_ms=1400)
-        self.assertEqual(session.mode, "MANUAL")
+        axis_before = session.axis
+        result = session.feed(b"MANUAL,1", rx_ms=1400)
+        self.assertTrue(result.accepted)
+        self.assertEqual(session.mode, "SAFE")
+        self.assertEqual(session.axis, axis_before)
         self.assertEqual(session.fault, "Lnk")
+        self.assertEqual(p.format_telemetry(session), "ACK,1,SAFE,Lnk")
+
+    def test_range_does_not_override_link_fault(self) -> None:
+        session = p.Session()
+        session.feed(b"T,1,0,1", rx_ms=10)
+        session.poll(now_ms=1300)
+        result = session.feed(b"TRACK,2", rx_ms=1400)
+        self.assertEqual(result.reason, "range")
+        self.assertEqual(session.fault, "Lnk")
+
+    def test_recovery_requires_new_track_command(self) -> None:
+        session = p.Session()
+        session.feed(b"TRACK,1", rx_ms=10)
+        session.feed(b"T,1,0,1", rx_ms=11)
+        session.poll(now_ms=1300)
+        self.assertEqual(session.mode, "SAFE")
+        session.feed(b"T,2,0,1", rx_ms=1400)
+        self.assertEqual(session.fault, "None")
+        self.assertEqual(session.mode, "SAFE")
+        self.assertFalse(session.moving)
+        self.assertEqual(p.format_telemetry(session), "ACK,2,SAFE,None")
+        session.feed(b"TRACK,1", rx_ms=1410)
+        self.assertEqual(session.mode, "TRACK")
+        self.assertTrue(session.moving)
+        self.assertEqual(p.format_telemetry(session), "ACK,2,TRACK,None")
 
     def test_watchdog_does_not_accept_stale_sample(self) -> None:
         session = p.Session()

@@ -243,11 +243,18 @@ Result Session::feed(const uint8_t* bytes, size_t len, int64_t rx_ms,
   const Result result =
       parse(bytes, len, rx_ms, now_ms, has_last_seq_, seq_);
   if (!result.accepted) {
-    // Diagnostico: somente faixa fora do contrato reporta Range. Estado de
-    // controle (modo/eixo/sequencia/relogio) permanece intacto.
-    if (result.reason == Reason::kRange) fault_ = Fault::kRange;
+    // Diagnostico: somente faixa fora do contrato reporta Range, e Lnk e
+    // dominante. Estado de controle (modo/eixo/sequencia/relogio) intacto.
+    if (result.reason == Reason::kRange && !link_lost_) {
+      fault_ = Fault::kRange;
+    }
     return result;
   }
+
+  // Seguranca pos-Lnk: TRACK/MANUAL sao comandos validos, mas inibidos.
+  // Somente T aceito restaura o link; o eixo so volta a se mover apos um
+  // novo TRACK/MANUAL.
+  if (link_lost_ && result.kind != Kind::kSample) return result;
 
   if (result.kind == Kind::kTrack) {
     mode_ = result.enabled ? State::kTrack : State::kSafe;
