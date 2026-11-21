@@ -70,10 +70,36 @@
   }
 
   let lastReason = '';
+  let lastDirection = 0;
 
   // Motivo da ultima decisao, observavel sem alterar o estado da FSM.
   function lastReasonValue() {
     return lastReason;
+  }
+
+  // Decision isolada para testes diferenciais (nao muda a UI).
+  function parseDecision(line, rxMs, nowMs, lastSeq) {
+    const s = createState();
+    if (lastSeq !== null && lastSeq !== undefined) s.seq = lastSeq;
+    lastDirection = 0;
+    const ok = feed(s, line,
+      nowMs === null || nowMs === undefined ? rxMs : nowMs, rxMs);
+    let kind = 'rejected';
+    if (ok) {
+      if (line.indexOf('TRACK,') === 0) kind = 'track';
+      else if (line.indexOf('MANUAL,') === 0) kind = 'manual';
+      else kind = 'sample';
+    }
+    return {
+      kind,
+      reason: ok ? '' : lastReason,
+      accepted: ok,
+      seq: s.seq,
+      x: s.targetX,
+      valid: kind === 'sample' ? s.valid : false,
+      enabled: kind === 'track' ? s.mode === 'TRACK' : false,
+      direction: kind === 'manual' ? lastDirection : 0,
+    };
   }
 
   function fail(s, reason) {
@@ -135,6 +161,7 @@
       }
       if (ageRejected(s, nowMs, rxMs)) return false;
       lastReason = '';
+      lastDirection = direction;
       if (direction === 0) {
         s.mode = 'SAFE';
         s.moving = false;
@@ -213,7 +240,8 @@
   const Core = Object.freeze({
     SIM, STATES, FAULTS, X_LIMIT,
     byteLength, clamp, trackSteps, createState, telemetry, linkExpired,
-    feed, lastReason: lastReasonValue, checkWatchdog, relink, setSimFault,
+    feed, lastReason: lastReasonValue, parseDecision,
+    checkWatchdog, relink, setSimFault,
   });
 
   global.VentisegCore = Core;

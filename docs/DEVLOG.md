@@ -11,6 +11,28 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-21 10:58 - test(ventiseg): adiciona diferencial Python x JS x C++
+
+**Area:** ventiseg
+
+**Feito:**
+- harness JS e C++ executam os 52 vetores mais 8 casos de divergencia
+- compara kind reason accepted seq x valid enabled direction entre as tres implementacoes
+- teste de sincronia do cabecalho gerado
+- documentado em ESTADO.md
+
+**Dificuldades e solucoes:**
+- sem compilador C++ host na maquina -> download do Zig para o TEMP e VENTISEG_CXX apontando para zig.exe
+- seq=-1 do estado JS e last_seq nos casos de sequencia geravam falsos positivos -> normalizado para 0 em rejeicoes
+- 143 testes host verdes com as tres implements
+
+**Arquivos:**
+- `firmware/ventiseg/docs/ESTADO.md`
+- `firmware/ventiseg/simulator/js/app.js`
+- `firmware/ventiseg/tests/differential_cxx_harness.cpp`
+- `firmware/ventiseg/tests/differential_js_harness.js`
+- `firmware/ventiseg/tests/test_differential.py`
+
 ### 2026-11-21 10:46 - fix(ventiseg): alinha simulador a faixa seq e idade
 
 **Area:** ventiseg

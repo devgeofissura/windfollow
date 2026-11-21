@@ -28,9 +28,18 @@ feita.
   de terminal (`PUL±/DIR±/ENA±`, fases `A±/B±`, conversor 3,3→5 V, 24 V):
   **variante catodo comum desenhada**, validada pelo WireViz 0.4.1.
 - Núcleo TDD entregue: `tools/protocol_ref.py` → `controller/parser.cpp` →
-  52 vetores gerados → `autotest.h` → simulador, com **139 testes host
-  verdes** (111 protocolo + 28 simulador). Watchdog renovado **somente** por
-  `T` aceito no firmware e no simulador (divergência corrigida).
+  52 vetores gerados → `autotest.h` → simulador, com **143 testes host
+  verdes** (111 protocolo + 28 simulador + 4 diferenciais). Watchdog renovado
+  **somente** por `T` aceito no firmware e no simulador (divergência
+  corrigida).
+- Testes diferenciais Python × JavaScript × C++: 60 datagramas (52 vetores do
+  autoteste + 8 casos de divergência) alimentam as três implementações e
+  comparam `kind`, `reason`, `accepted`, `seq`, `x`, `valid`, `enabled` e
+  `direction`. O harness C++ compila `controller/parser.cpp` no host e o
+  resultado só é considerado verde quando as três assinaturas batem; sem
+  compilador host o teste é pulado com aviso (o autoteste em placa cobre o
+  C++). Defina `VENTISEG_CXX` para apontar para `g++`, `clang++`, `c++` ou
+  `zig.exe` (que usa o subcomando `c++`).
 - Divergências do simulador corrigidas em 21/11/2026 para espelhar Python/C++:
   teto de `seq` = `INT32_MAX` (antes aceitava até 2^53), idade `rx_ms`/`now_ms`
   aplicada a qualquer comando (antes inexistente), zeros à esquerda aceitos e
