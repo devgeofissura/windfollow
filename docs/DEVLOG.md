@@ -11,6 +11,30 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-21 12:45 - fix(ventiseg): unifica faixa e protege ensaio na saida
+
+**Area:** ventiseg
+
+**Feito:**
+- inteiro decimal grande passa a responder REASON range no C++ como em Python e JS -> antes era REASON format
+- CFG MICRO recusado com busy durante ensaio -> evita trocar escala no meio da contagem
+- harnesses contabilizam escritas de STEP e DIR com roteiro de casos limite -> 164 testes verdes e sketch compila em 317124 bytes
+
+**Dificuldades e solucoes:**
+- divergencia de faixa entre C++ e Python JS descoberta pelo roteiro de borda -> saturei o parser em 1e9 para devolver range sem overflow
+- micropasso podia mudar durante ensaio -> inclui test_mode na condicao de repouso nas tres implementacoes
+- era preciso provar ausencia de escrita de pino -> adicionei callbacks contadores nos harnesses e espelhei nos snapshots
+
+**Arquivos:**
+- `firmware/ventiseg/controller/step_dir.cpp`
+- `firmware/ventiseg/docs/ESTADO.md`
+- `firmware/ventiseg/docs/PROTOCOLO.md`
+- `firmware/ventiseg/simulator/README.md`
+- `firmware/ventiseg/simulator/js/app.js`
+- `firmware/ventiseg/tests/differential_stepdir_cxx_harness.cpp`
+- `firmware/ventiseg/tests/test_step_dir.py`
+- `firmware/ventiseg/tools/step_dir_ref.py`
+
 ### 2026-11-21 12:22 - feat(ventiseg): ensaio de pulsos deterministico na saida
 
 **Area:** ventiseg

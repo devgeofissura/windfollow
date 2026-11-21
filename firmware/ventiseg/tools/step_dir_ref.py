@@ -45,6 +45,17 @@ class StepDir:
     step_level: bool = False
     dir_level: bool = False
     test_mode: bool = False
+    step_writes: int = 0
+    dir_writes: int = 0
+    step_high_writes: int = 0
+
+    def write_step(self, level: bool) -> None:
+        self.step_writes += 1
+        if level:
+            self.step_high_writes += 1
+
+    def write_dir(self, level: bool) -> None:
+        self.dir_writes += 1
 
     @property
     def test_remaining(self) -> int:
@@ -55,7 +66,7 @@ class StepDir:
     def set_microstep(self, value: int) -> bool:
         if value not in (8, 16):
             return False
-        if self.velocity != 0.0 or self.step_level:
+        if self.velocity != 0.0 or self.step_level or self.test_mode:
             return False
         self.steps_per_rev = FULL_STEPS_PER_REV * value
         return True
@@ -80,7 +91,9 @@ class StepDir:
             self.velocity = 0.0
             self.test_mode = False
             self.target = self.position
-            self.step_level = False
+            if self.step_level:
+                self.step_level = False
+                self.write_step(False)
         return True
 
     def set_target(self, target: int) -> None:
@@ -113,6 +126,7 @@ class StepDir:
 
         if self.step_level and now_us >= self.pulse_until_us:
             self.step_level = False
+            self.write_step(False)
 
         if not self.gate:
             self.velocity = 0.0
@@ -136,6 +150,7 @@ class StepDir:
             self.direction = sign
             self.dir_level = sign > 0
             self.dir_ready_us = now_us + DIR_SETUP_US
+            self.write_dir(self.dir_level)
 
         if now_us < self.dir_ready_us:
             return 0
@@ -161,6 +176,7 @@ class StepDir:
         self.pulses += 1
         self.step_level = True
         self.pulse_until_us = now_us + STEP_PULSE_US
+        self.write_step(True)
         return 1
 
     def config(self, line: str) -> str:
@@ -235,6 +251,9 @@ class StepDir:
             "dir": self.dir_level,
             "test": self.test_mode,
             "test_remaining": self.test_remaining,
+            "step_writes": self.step_writes,
+            "dir_writes": self.dir_writes,
+            "step_high_writes": self.step_high_writes,
         }
 
 
@@ -287,6 +306,42 @@ SCENARIO += [
     ("cfg", "CFG,GATE,0"),
     ("cfg", "CFG,PULSE,5,-1"),    # gate fechado
     ("update", 700000),
+]
+
+# Casos-limite de contrato e de rastreio de escrita de pino.
+EDGE_SCENARIO: list[tuple[str, object]] = [
+    ("cfg", "CFG,?"),
+    ("update", 0),
+    ("update", 1000),
+    ("update", 2000),
+    # Decimal decodificado fora da faixa deve ser `range`, nunca `format`.
+    ("cfg", "CFG,SPEED,1000001"),
+    ("cfg", "CFG,ACCEL,1000001"),
+    ("cfg", "CFG,MICRO,1000001"),
+    ("cfg", "CFG,SPEED,999999999999999999999"),
+    ("cfg", "CFG,SPEED,0000000000000000000000001"),
+    ("cfg", "CFG,SPEED,800"),
+    ("cfg", "CFG,ACCEL,4000"),
+    # Formato estrito do ensaio, com gate fechado.
+    ("cfg", "CFG,PULSE,25,1"),
+    ("cfg", "CFG,PULSE,024,+1"),
+    ("cfg", "CFG,PULSE,25,-01"),
+    ("cfg", "CFG,GATE,1"),
+    ("cfg", "CFG,GATE,1,CONFIRM"),
+    ("update", 3000),
+    ("cfg", "CFG,PULSE,025,+1"),
+    ("target", 999),              # ignorado pelo ensaio
+    ("cfg", "CFG,MICRO,8"),       # recusado: ensaio em curso
+    ("cfg", "CFG,?"),             # test=25
+]
+EDGE_SCENARIO += [("update", 4000 + i * 1000) for i in range(130)]
+EDGE_SCENARIO += [
+    ("cfg", "CFG,?"),             # ensaio concluido
+    ("cfg", "CFG,PULSE,1,-1"),
+    ("update", 180000),           # salto de tempo emite o pulso
+    ("cfg", "CFG,GATE,0"),        # fecha com STEP em alto
+    ("update", 181000),
+    ("cfg", "CFG,?"),
 ]
 
 

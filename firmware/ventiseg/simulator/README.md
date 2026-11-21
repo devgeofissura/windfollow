@@ -70,6 +70,10 @@ estado**. Sem comando aceito em 1200 ms: watchdog força `SAFE`, eixo parado e
 - Não há aquisição de câmera, rede, `localStorage` nem dependências externas.
 - As constantes exibidas espelham `docs/PROTOCOLO.md`; testes host barram
   divergência e exercitam a FSM em Node com tempo determinístico.
+- O roteiro de casos-limite compara as três implementações e contabiliza
+  escritas de `STEP`/`DIR`: com gate fechado não há escrita alguma, e fechar o
+  gate com pulso em alto baixa o STEP. Inteiro decimal fora da faixa responde
+  `REASON,range`; `CFG,MICRO` é recusado com `busy` durante um ensaio.
 
 ## Validação
 

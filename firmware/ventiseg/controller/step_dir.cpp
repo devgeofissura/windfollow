@@ -8,14 +8,20 @@ namespace ventiseg {
 
 namespace {
 
+// Acima disso o numero so pode ser fora de faixa; saturar evita overflow e
+// mantem a mesma resposta `range` de Python/JS (nao vira `format`).
+constexpr int64_t kParseClamp = 1000000000LL;
+
 // Decimal estrito no final do comando: sem sinal, espacos ou lixo.
 bool parseTailInt(const char* text, int32_t* out) {
   if (text == nullptr || *text == '\0') return false;
   int64_t value = 0;
   for (const char* p = text; *p != '\0'; ++p) {
     if (*p < '0' || *p > '9') return false;
-    value = value * 10 + (*p - '0');
-    if (value > 1000000) return false;
+    if (value < kParseClamp) {
+      value = value * 10 + (*p - '0');
+      if (value > kParseClamp) value = kParseClamp;
+    }
   }
   *out = static_cast<int32_t>(value);
   return true;
@@ -60,7 +66,9 @@ StepDir::StepDir(WritePin write_step, WritePin write_dir)
 
 bool StepDir::setMicrostep(int value) {
   if (value != 8 && value != 16) return false;
-  if (velocity_ != 0.0 || step_level_) return false;  // so em repouso
+  if (velocity_ != 0.0 || step_level_ || test_mode_) {
+    return false;  // so em repouso, fora de qualquer ensaio
+  }
   steps_per_rev_ = kFullStepsPerRev * value;
   return true;
 }

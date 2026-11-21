@@ -107,8 +107,11 @@ produzem `ACK`; a resposta é o próprio `CFG,...` ou `REASON,...`:
 | `CFG,GATE,1,CONFIRM` | `CFG,GATE,1,OK` | Abre o gate de runtime |
 | `CFG,PULSE,<1..1000>,<+\|-1>` | `CFG,PULSE,<n>,<dir>,OK` | Ensaio com N pulsos; exige gate aberto e eixo em repouso |
 
-Rejeições: `REASON,format`, `REASON,range` (fora de faixa), `REASON,busy`
-(micropasso com eixo em movimento ou ensaio já em curso) e `REASON,gate`
+Rejeições: `REASON,format` (decimal inválido ou comando mal formado),
+`REASON,range` (decimal válido fora da faixa — inclusive inteiros muito
+grandes, saturados sem estouro para não virarem `format`), `REASON,busy`
+(micropasso com eixo em movimento ou ensaio em curso, ou segundo ensaio
+iniciado antes do primeiro terminar) e `REASON,gate`
 (liberação negada pelo firmware com `VENTISEG_ENABLE_GPIO=0` ou
 `VENTISEG_HW_AUDIT_OK=0`, ou ensaio com gate fechado). Os dois gates de
 compilação são **necessários**: mesmo `CFG,GATE,1,CONFIRM` aceito pela camada
@@ -118,8 +121,10 @@ runtime ao forçar `SAFE`/`fault=Lnk` e aborta qualquer ensaio em curso.
 O ensaio `CFG,PULSE` tem prioridade sobre o alvo da FSM enquanto dura: um
 `T`/alvo recebido nesse intervalo é ignorado pelo eixo; ao terminar, o alvo
 volta para a posição atingida. Fechar o gate interrompe o ensaio imediatamente.
-Ele existe para padronizar a futura contagem de pulsos com motor desacoplado —
-hoje é apenas lógico e não substitui osciloscópio nem medição elétrica.
+Trocar o micropasso durante o ensaio também é recusado com `busy`, para não
+alterar a escala no meio da contagem. Ele existe para padronizar a futura
+contagem de pulsos com motor desacoplado — hoje é apenas lógico e não
+substitui osciloscópio nem medição elétrica.
 
 No simulador os mesmos comandos são gerados pela aba "Saída STEP/DIR", com
 modal de confirmação para a liberação e um formulário de ensaio; tudo é

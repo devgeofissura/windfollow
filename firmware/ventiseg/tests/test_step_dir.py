@@ -34,6 +34,7 @@ import step_dir_ref as reference  # noqa: E402
 KEYS = (
     "steps_per_rev", "speed", "accel", "gate", "target", "position",
     "direction", "pulses", "step", "dir", "test", "test_remaining",
+    "step_writes", "dir_writes", "step_high_writes",
 )
 
 
@@ -98,7 +99,7 @@ def cxx_rows(ops: list[tuple[str, object]], workdir: pathlib.Path) -> list[dict]
     rows = []
     for line in proc.stdout.splitlines():
         fields = line.split("|")
-        if len(fields) != 15:
+        if len(fields) != 18:
             raise RuntimeError(f"linha inesperada do harness C++: {line}")
         rows.append({
             "index": int(fields[0]),
@@ -116,6 +117,9 @@ def cxx_rows(ops: list[tuple[str, object]], workdir: pathlib.Path) -> list[dict]
             "dir": fields[12] == "1",
             "test": fields[13] == "1",
             "test_remaining": int(fields[14]),
+            "step_writes": int(fields[15]),
+            "dir_writes": int(fields[16]),
+            "step_high_writes": int(fields[17]),
         })
     return rows
 
@@ -259,6 +263,92 @@ class GateDeCompilacao(unittest.TestCase):
             re.search(r"\bdelay\s*\(\s*[^)]+\s*\)", text),
             "delay() bloqueante nao permitido na camada de saida",
         )
+
+
+class CasosLimite(unittest.TestCase):
+    """Contrato de borda e rastreio de escrita de pino nas tres linguagens."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.ops = reference.EDGE_SCENARIO
+        cls.expected = python_rows(cls.ops)
+        cls.javascript = js_rows(cls.ops)
+        cls.temp = tempfile.TemporaryDirectory(prefix="ventiseg-edgecases-")
+        try:
+            cls.cpp = cxx_rows(cls.ops, pathlib.Path(cls.temp.name))
+        except Exception:
+            cls.temp.cleanup()
+            raise
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.temp.cleanup()
+
+    def assert_same(self, actual: list[dict], label: str) -> None:
+        self.assertEqual(len(actual), len(self.expected))
+        for want, got in zip(self.expected, actual):
+            with self.subTest(indice=want["index"], impl=label):
+                for key in ("reply",) + KEYS:
+                    self.assertEqual(got[key], want[key], key)
+
+    def row_for(self, kind: str, value: object) -> dict:
+        matches = [
+            row for row in self.expected
+            if row["op"] == kind and self.ops[row["index"]][1] == value
+        ]
+        self.assertEqual(len(matches), 1, (kind, value))
+        return matches[0]
+
+    def test_as_tres_implementacoes_concordam(self) -> None:
+        self.assert_same(self.javascript, "JavaScript")
+        if self.cpp is not None:
+            self.assert_same(self.cpp, "C++")
+
+    def test_gate_fechado_nao_escreve_pino(self) -> None:
+        for row in self.expected[:4]:
+            with self.subTest(indice=row["index"]):
+                self.assertEqual(row["pulses"], 0)
+                self.assertEqual(row["step_writes"], 0)
+                self.assertEqual(row["dir_writes"], 0)
+
+    def test_decimal_fora_da_faixa_e_range(self) -> None:
+        commands = {
+            "CFG,SPEED,1000001": "REASON,range",
+            "CFG,ACCEL,1000001": "REASON,range",
+            "CFG,MICRO,1000001": "REASON,range",
+            "CFG,SPEED,999999999999999999999": "REASON,range",
+            "CFG,SPEED,0000000000000000000000001": "CFG,SPEED,1,OK",
+        }
+        for command, reply in commands.items():
+            with self.subTest(cmd=command):
+                self.assertEqual(self.row_for("cfg", command)["reply"], reply)
+
+    def test_formatos_do_ensaio_sao_iguais_nas_tres(self) -> None:
+        replies = {
+            command: self.row_for("cfg", command)["reply"]
+            for command in (
+                "CFG,PULSE,25,1", "CFG,PULSE,024,+1", "CFG,PULSE,25,-01",
+                "CFG,GATE,1",
+            )
+        }
+        self.assertEqual(replies["CFG,PULSE,25,1"], "REASON,gate")
+        self.assertEqual(replies["CFG,PULSE,024,+1"], "REASON,gate")
+        self.assertEqual(replies["CFG,PULSE,25,-01"], "REASON,format")
+        self.assertEqual(replies["CFG,GATE,1"], "REASON,format")
+        started = self.row_for("cfg", "CFG,PULSE,025,+1")
+        self.assertEqual(started["reply"], "CFG,PULSE,25,1,OK")
+        self.assertEqual(
+            self.row_for("cfg", "CFG,MICRO,8")["reply"], "REASON,busy"
+        )
+
+    def test_fechamento_interrompe_pulso_alto(self) -> None:
+        pulse = self.row_for("update", 180000)
+        self.assertTrue(pulse["step"])
+        closed = self.row_for("cfg", "CFG,GATE,0")
+        self.assertFalse(closed["step"])
+        self.assertEqual(closed["step_writes"] - pulse["step_writes"], 1)
+        self.assertEqual(closed["step_high_writes"], pulse["step_high_writes"])
+        self.assertEqual(closed["dir_writes"], pulse["dir_writes"])
 
 
 if __name__ == "__main__":

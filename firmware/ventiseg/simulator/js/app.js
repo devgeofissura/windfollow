@@ -254,8 +254,13 @@
     PULSE_TEST_MAX: 1000,
   });
 
-  function createStepDir() {
+  function createStepDir(onStep, onDir) {
     return {
+      onStep: onStep || null,
+      onDir: onDir || null,
+      stepWrites: 0,
+      dirWrites: 0,
+      stepHighWrites: 0,
       stepsPerRev: STEP_DIR.FULL_STEPS_PER_REV * 16,
       speed: STEP_DIR.DEFAULT_SPEED,
       accel: STEP_DIR.DEFAULT_ACCEL,
@@ -276,6 +281,17 @@
     };
   }
 
+  function writeStep(d, level) {
+    d.stepWrites += 1;
+    if (level) d.stepHighWrites += 1;
+    if (d.onStep) d.onStep(level);
+  }
+
+  function writeDir(d, level) {
+    d.dirWrites += 1;
+    if (d.onDir) d.onDir(level);
+  }
+
   function stepDirTestRemaining(d) {
     return d.testMode ? Math.abs(d.target - d.position) : 0;
   }
@@ -287,7 +303,7 @@
 
   function setStepDirMicrostep(d, value) {
     if (value !== 8 && value !== 16) return false;
-    if (d.velocity !== 0 || d.stepLevel) return false;
+    if (d.velocity !== 0 || d.stepLevel || d.testMode) return false;
     d.stepsPerRev = STEP_DIR.FULL_STEPS_PER_REV * value;
     return true;
   }
@@ -313,7 +329,10 @@
       d.velocity = 0;
       d.testMode = false;  // fechar gate aborta qualquer ensaio em curso
       d.target = d.position;
-      d.stepLevel = false;
+      if (d.stepLevel) {
+        d.stepLevel = false;
+        writeStep(d, false);
+      }
     }
   }
 
@@ -337,7 +356,10 @@
       d.lastUpdateUs = nowUs;
       d.lastStepUs = nowUs;
     }
-    if (d.stepLevel && nowUs >= d.pulseUntilUs) d.stepLevel = false;
+    if (d.stepLevel && nowUs >= d.pulseUntilUs) {
+      d.stepLevel = false;
+      writeStep(d, false);
+    }
     if (!d.gate) {
       d.velocity = 0;
       d.lastUpdateUs = nowUs;
@@ -361,6 +383,7 @@
       d.direction = sign;
       d.dirLevel = sign > 0;
       d.dirReadyUs = nowUs + STEP_DIR.DIR_SETUP_US;
+      writeDir(d, d.dirLevel);
     }
     if (nowUs < d.dirReadyUs) return 0;
 
@@ -383,6 +406,7 @@
     d.pulses += 1;
     d.stepLevel = true;
     d.pulseUntilUs = nowUs + STEP_DIR.STEP_PULSE_US;
+    writeStep(d, true);
     return 1;
   }
 
@@ -450,6 +474,9 @@
       dir: d.dirLevel,
       test: d.testMode,
       test_remaining: stepDirTestRemaining(d),
+      step_writes: d.stepWrites,
+      dir_writes: d.dirWrites,
+      step_high_writes: d.stepHighWrites,
     };
   }
 
