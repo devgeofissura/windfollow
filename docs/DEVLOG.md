@@ -11,6 +11,25 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-21 11:23 - docs(ventiseg): registra auditoria P1-P5 como aberta
+
+**Area:** ventiseg
+
+**Feito:**
+- documentacao de referencia Policomp e Tecmaf com corrente de opto 8 a 20 mA e obrigatoriedade de 5 V externo
+- tabela de micropasso 1600 igual ON OFF ON ON
+- proposta de dimensionamento P3 e status formal P1 a P5 em ESTADO HARDWARE-DECISIONS LIGACOES e todo
+
+**Dificuldades e solucoes:**
+- respostas continham propostas e verificacao logica e nao medicoes -> nada foi marcado como confirmado e todas as P seguem formalmente abertas
+- risco de trocar 3200 por 1600 sem ler a carcaca e sem regenerar vetores foi evitado
+
+**Arquivos:**
+- `firmware/ventiseg/docs/ESTADO.md`
+- `firmware/ventiseg/docs/HARDWARE-DECISIONS.md`
+- `firmware/ventiseg/docs/LIGACOES.md`
+- `firmware/ventiseg/tasks/todo.md`
+
 ### 2026-11-21 11:08 - test(ventiseg): valida autoteste na placa COM4
 
 **Area:** ventiseg

@@ -41,13 +41,33 @@ montagem.
 - Um único motor de passo aciona esse conjunto, via DM556D.
 - Não existem fim de curso, módulo relé, laser nem luz neste projeto.
 
+## Documentação de referência consultada em 21/11/2026
+
+Isso **não** substitui a etiqueta/revisão do exemplar instalado nem medição:
+
+- Policomp DM556D: 24–50 VDC, 2,1–5,6 A, 16 micropassos, entrada de comando
+  5–24 VDC e resistor série de **2,2 kΩ** indicado pelo fabricante.
+- Tecmaf TMA.DMP.556D: nível alto lógico **4–5 V**, baixo **0–0,5 V**,
+  alimentação 24–50 VDC. O manual **não** documenta terminal auxiliar de 5 V;
+  portanto o 5 V do conversor de nível deve ser **externo**.
+- Corrente dos optos `PUL`/`DIR` na documentação do DM556D consultada:
+  **8 mA mínimo / 10 mA típico / 20 mA máximo por entrada**. Pior caso com
+  `PUL` e `DIR` ativos: ~40 mA. O manual do DM556 original (Leadshine) dá
+  7/10/16 mA; não transferir esse número entre variantes. Projeto usa
+  ~10 mA/canal e faixa 8–20 mA até conferir o exemplar.
+- Micropasso (tabelas Policomp e Tecmaf): **1600 pulsos/volta = SW5 ON,
+  SW6 OFF, SW7 ON, SW8 ON**; 3200 = `OFF/OFF/ON/ON`. O firmware segue 3200
+  provisório; trocar exige regenerar vetores e rodar a suíte no mesmo commit.
+
 ## NAO CONFIRMADO (não montar sem verificar)
 
-- Corrente do LED dos optos e pulso mínimo aceitável no **exemplar** do DM556D.
-- Origem do **5 V** do conversor (regulador 24 V→5 V ou saída auxiliar do driver).
-- Posições exatas de **SW5–SW8** para 1/8 de passo: conferir a tabela impressa
-  na carcaça. O firmware mantém 3200 pulsos/volta provisórios; 1600 é o alvo.
-- Tensão/potência exata da fonte 24 V, fusível, bitolas e dissipação.
+- Corrente do LED dos optos e pulso mínimo aceitável no **exemplar** do DM556D
+  (documentação de referência: 8–20 mA, típ. 10 mA; valor real pendente).
+- Origem do **5 V** do conversor: nenhuma saída auxiliar documentada; DC-DC
+  externo 24 V→5 V é a proposta, mas conversor e tensão medida pendem.
+- Posições reais de **SW5–SW8** no exemplar: a tabela é conhecida
+  (1600 = `ON/OFF/ON/ON`), mas falta ler a carcaça. Firmware segue 3200.
+- Componentes reais de fonte/fusível/bitolas/dissipação (proposta em P3).
 - Acoplamento mecânico motor↔ventilador, curso útil em passos e batentes.
 - Montagem mecânica da SIMCAM no conjunto girante: suporte, folga do cabo de
   alimentação/serial e raio de rotação sem trancar ou puxar conector.
@@ -56,7 +76,22 @@ montagem.
   entre `x ∈ [-1000,1000]` e graus de pan: `NAO CONFIRMADO`.
 - Revisão física da T-SIMCAM (V1.3 microfone I2S x V1.4 PDM) — irrelevante
   para STEP/DIR, mas registrada para não virar "fato".
-- Comportamento dos pinos durante boot/reset do driver (pulso falso no motor).
+- Comportamento **elétrico** dos pinos durante boot/reset do driver: apenas
+  verificação lógica foi feita, sem osciloscópio nem carga desacoplada.
+
+## Auditoria P1–P5 — status em 21/11/2026
+
+| ID | Situação | Evidência / próximo passo |
+|---|---|---|
+| P1 | **Aberta** | Documentação de referência fecha corrente (8–20 mA, típ. 10 mA), entrada 5–24 V e necessidade de **DC-DC externo 24 V → 5 V** (≥100 mA, margem de 200 mA). Faltam foto da etiqueta/revisão do DM556D, datasheet do conversor 3,3↔5 V instalado, capacidade do DC-DC e **5 V medido antes de ligar PUL+/DIR+**. |
+| P2 | **Parcial** | Tabela de micropasso conhecida (1600 = `ON/OFF/ON/ON`), mas posição real no exemplar não foi lida. Curso útil, batentes e acoplamento **não medidos**. `kMaxTravel=533` é provisório; com 1600 pulsos/volta, 533 ≈ 120° por lado e 267 ≈ 60° apenas como hipótese 1:1. Não adotar nenhum sem medição. |
+| P3 | **Aberta** | Proposta de dimensionamento: fonte 24 VDC regulada **6,25 A / 150 W** exclusiva, fusível DC **7,5 A retardado**, 1,5 mm² fonte→driver, 1,0–1,5 mm² driver→motor, par trançado blindado 0,22–0,34 mm² para sinal e **star ground** único (PE só no chassi). Valores **não conferidos**: comprimentos, corrente real da fonte, curva do fusível, queda de tensão, dissipação e continuidade do terra. |
+| P4 | **Aberta** | Sem acoplamento definido, sem referência/home, sem batentes documentados e sem curso medido. Limite por software só depois de medir a distância do home ao batente com margem de segurança. Nenhum `kMaxTravel` validado. |
+| P5 | **Aberta** | "Sem pulso e trava ok" existiu apenas no **nível lógico** (`gpio_gate=0`, autoteste 85/85, nenhuma chamada de GPIO). Não houve osciloscópio em `PUL+`/`DIR+`, nem ensaio com motor desacoplado, nem observação de boot/reset do driver. |
+
+Consequência: **nenhuma P foi fechada fisicamente**. Enquanto isso, o firmware
+continua em `VENTISEG_ENABLE_GPIO=0`, serial-only, sem STEP/DIR, sem motor
+energizado e sem câmera ativa.
 
 ## Contradições conhecidas
 

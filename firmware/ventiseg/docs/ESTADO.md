@@ -6,7 +6,7 @@ Atualizado em 21/11/2026.
 
 **Bancada de lógica — sem energizar motor.** O firmware é serial-only por
 construção (`VENTISEG_ENABLE_GPIO=0`). Nenhuma gravação com GPIO ativo foi
-feita.
+feita. A auditoria P1–P5 está documentada, mas **fisicamente aberta**.
 
 ## Confirmado nesta entrega
 
@@ -67,13 +67,17 @@ feita.
 
 ## Pendências antes de qualquer ensaio com motor
 
-| ID | Pendência | Bloqueia |
-|---|---|---|
-| P1 | Corrente do opto, pulso mínimo e origem do 5 V do conversor (topologia e ENA já fechados) | Energização do sinal |
-| P2 | Posições exatas de SW5–SW8 e curso útil/batentes (modelo, fios e corrente já fechados) | Movimento |
-| P3 | Conferir potência da fonte, fusível, bitolas e aterramento | Energização |
-| P4 | Acoplamento motor↔duto e limite por software | Movimento |
-| P5 | Observar pulso no boot/reset e travamento com carga desacoplada | Segurança |
+| ID | Pendência | Situação em 21/11/2026 | Bloqueia |
+|---|---|---|---|
+| P1 | Corrente do opto, pulso mínimo e origem do 5 V | Documentação: 8–20 mA (típ. 10), entrada 5–24 V, resistor 2,2 kΩ; **5 V externo obrigatório**. Etiqueta, conversor e 5 V medido: pendentes | Energização do sinal |
+| P2 | SW5–SW8 e curso útil/batentes | Tabela conhecida: 1600 = `ON/OFF/ON/ON` (firmware segue 3200). Curso, batentes e acoplamento: não medidos; 533 é provisório | Movimento |
+| P3 | Fonte, fusível, bitolas e aterramento | Proposta: 24 V/6,25 A/150 W, fusível DC 7,5 A retardado, 1,5 mm² potência, 1,0–1,5 mm² motor, 0,22–0,34 mm² sinal blindado, star ground. Componentes reais: não conferidos | Energização |
+| P4 | Acoplamento e limite por software | Sem acoplamento, home, batentes ou curso medidos; nenhum `kMaxTravel` validado | Movimento |
+| P5 | Pulso no boot/reset e travamento com carga desacoplada | Somente verificação lógica (`gpio_gate=0`, autoteste 85/85); sem medição elétrica | Habilitação de saída |
+
+Nenhuma P foi fechada fisicamente. Não habilitar GPIO, não energizar
+driver/motor e não avançar para a camada de saída STEP/DIR até P1–P5 serem
+conferidas no equipamento real. Detalhes em `HARDWARE-DECISIONS.md`.
 
 ## Regra de atualização
 

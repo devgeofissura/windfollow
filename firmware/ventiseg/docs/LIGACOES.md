@@ -58,10 +58,13 @@ bidirecional de 2 canais (3,3 V ↔ 5 V) ou driver de linha equivalente:
 | HV (5 V) | `VCC_5V` | fonte 5 V — origem a confirmar (P1) |
 | HV (5 V) | `GND_HV` | mesmo ponto estrela dos demais GND |
 
-- O 5 V **não** pode sair do `3V3` da SIMCAM. Pode vir de um regulador
-  24 V → 5 V ou de uma saída auxiliar do driver, **se o seu exemplar tiver**.
-- `NAO CONFIRMADO` e obrigatório antes de soldar: origem do 5 V, corrente do
-  LED do opto e pulso mínimo do DM556D. Não inventar esses valores.
+- O 5 V **não** pode sair do `3V3` da SIMCAM. A documentação Policomp/Tecmaf
+  consultada **não** mostra saída auxiliar de 5 V no DM556D: use **DC-DC
+  externo 24 V → 5 V**, com capacidade ≥100 mA (200 mA dá margem), e meça a
+  saída antes de conectar `PUL+`/`DIR+`.
+- `NAO CONFIRMADO` e obrigatório antes de soldar: modelo do conversor
+  3,3↔5 V, corrente real do opto no exemplar (referência: 8–20 mA) e pulso
+  mínimo do DM556D. Não inventar esses valores; P1 permanece aberta.
 
 ## 4. Motor KTC-HT23-400 — bipolar paralela (P2)
 
@@ -86,7 +89,7 @@ Motor de 8 fios, **2,8 A** em paralela, **1,9 Nm**. O DM556D aceita 2,1–5,6 A.
 |---|---|---|
 | SW1, SW2, SW3 | `OFF, ON, OFF` | corrente de 2,7 / 2,8 A (paralela) |
 | SW4 | `OFF` | reduz pela metade a corrente em repouso |
-| SW5–SW8 | 1/8 de passo → **1600 pulsos/volta** | posições exatas: **conferir na tabela impressa na carcaça** (P2) |
+| SW5–SW8 | 1/8 de passo → **1600 pulsos/volta** | `ON/OFF/ON/ON` (3200 = `OFF/OFF/ON/ON`); conferir na carcaça do exemplar (P2) |
 
 > O firmware mantém `VENTISEG_STEPS_PER_REV = 3200` como valor **provisório**.
 > O alvo é 1600 pulsos/volta; mudar a constante exige regenerar os vetores de
@@ -105,8 +108,14 @@ GND da fonte 5 V ----------------+----> mesmo ponto
 - A fonte é **exclusiva** do driver/motor. Nunca alimente motor ou driver pelo
   `3V3` ou USB da SIMCAM. **Nunca inverta a polaridade.**
 - GND lógico, GND do conversor/5 V, GND do driver e 0 V da fonte se encontram
-  em **um único ponto** (representado por `J_REF_GND` no YAML).
-- `NAO CONFIRMADO`: potência exata, fusível, bitola dos cabos e dissipação.
+  em **um único ponto** (representado por `J_REF_GND` no YAML). PE vai ao
+  chassi, nunca ao retorno de corrente.
+- **Proposta de dimensionamento (P3, ainda não conferida):** fonte 24 VDC
+  regulada 6,25 A / 150 W; fusível DC 7,5 A retardado perto do `+`; 1,5 mm²
+  fonte→driver; 1,0–1,5 mm² driver→motor; par trançado blindado 0,22–0,34 mm²
+  para `PUL`/`DIR`/GND, afastado de potência e fases do motor.
+- `NAO CONFIRMADO`: componentes reais, comprimentos, queda de tensão,
+  dissipação, curva do fusível e continuidade do star ground. P3 aberta.
 
 ## 6. Ordem de montagem e ensaio
 

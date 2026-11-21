@@ -13,6 +13,7 @@
 - [x] Esquema WireViz enxuto + guia de execução `docs/LIGACOES.md`.
 - [x] Commit/push via `tools/save.ps1`.
 - [x] Autoteste na placa: 85/85 checagens, `gpio_gate=0`, serial-only.
+- [x] Auditoria P1–P5 documentada (referência + propostas; fisicamente aberta).
 
 ## Fase 1 — habilitação de GPIO (bloqueada por P1–P5)
 
