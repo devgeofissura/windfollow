@@ -50,13 +50,17 @@ feita.
   rejeição por faixa ligando `fault=Range` (antes só por injeção na UI).
   `PROTOCOLO.md` e o painel do simulador agora documentam a ordem completa
   `tamanho/codificação → formato → faixa → sequência → idade`.
-- Sketch compila na FQBN `ventiseg` (313.540 B flash / 22.960 B RAM), com
+- Sketch compila na FQBN `ventiseg` (315.392 B no binário gravado), com
   `VENTISEG_ENABLE_GPIO=0` e nenhuma chamada de GPIO/Wi-Fi.
+- Autoteste validado na placa real em 21/11/2026: porta detectada na hora
+  (COM4 · ESP32-S3 · flash 16 MB · MAC `dc:da:0c:28:25:30`), upload com hash
+  verificado e boot capturado sem terminal. Log: `gpio_gate=0`,
+  `AUTOTEST total=85 passed=85 failed=0`, `AUTOTEST PASS`, `ACK,-1,SAFE,None`
+  e heartbeat. Não existe chamada `pinMode`/`digitalWrite`/`ledc` no
+  controller: a placa permaneceu serial-only.
 
 ## Ainda não feito
 
-- Autoteste **na placa** não executado: nenhuma gravação foi feita nesta
-  entrega. Detectar a porta na hora antes de qualquer upload.
 - `VENTISEG_STEPS_PER_REV` segue **3200 (provisório)**. O alvo é 1600
   (1/8 passo) assim que SW5–SW8 forem lidos na carcaça; a troca exige
   regenerar vetores e rodar a suíte no mesmo commit.

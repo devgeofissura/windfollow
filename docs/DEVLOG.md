@@ -11,6 +11,27 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-21 11:08 - test(ventiseg): valida autoteste na placa COM4
+
+**Area:** ventiseg
+
+**Feito:**
+- autoteste embarcado reforcado com inibicao pos Lnk e retrack
+- gravado na SIMCAM detectada na hora com hash verificado
+- boot capturado com gpio_gate=0 e AUTOTEST 85/85 PASS
+- ESTADO SPEC e todo atualizados
+
+**Dificuldades e solucoes:**
+- autoteste so verificava fault Lnk e nao o travamento do eixo -> acrescentadas checagens de TRACK MANUAL Range e retrack antes de gravar
+- captura sem terminal via script pyserial do skill esp-capture-logs
+- 149 testes host verdes com VENTISEG_CXX apontando para zig.exe
+
+**Arquivos:**
+- `firmware/ventiseg/controller/autotest.h`
+- `firmware/ventiseg/docs/ESTADO.md`
+- `firmware/ventiseg/spec/SPEC-v0.1.md`
+- `firmware/ventiseg/tasks/todo.md`
+
 ### 2026-11-21 11:03 - feat(ventiseg): define comportamento seguro apos fault Lnk
 
 **Area:** ventiseg

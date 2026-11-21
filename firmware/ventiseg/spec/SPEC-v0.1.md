@@ -21,7 +21,8 @@ entram na Fase 1, não nesta fundação.
 - [x] Definir contrato de protocolo com watchdog e boot seguro.
 - [x] Implementar referência executável em Python.
 - [x] Espelhar o parser em C++ no sketch `controller/controller.ino`.
-- [x] Gerar 52 vetores de autoteste. Falta validar na placa (somente serial).
+- [x] Gerar 52 vetores de autoteste e validá-los na placa (85 checagens,
+      serial-only).
 - [x] Entregar simulador web local com o mesmo contrato.
 - [x] Registrar perfil `ventiseg` no `tools/flash.ps1`.
 - [x] Gerar esquema WireViz enxuto + guia `docs/LIGACOES.md` (terminais,
@@ -39,3 +40,4 @@ Laser, iluminador, relé, fim de curso, tilt, Wi-Fi ativo, MQTT, display.
 4. Nenhuma escrita em GPIO se `VENTISEG_ENABLE_GPIO=0`.
 5. Simulador e firmware compartilham as mesmas constantes, com teste que
    detecta divergência.
+6. Autoteste na placa com `VENTISEG_ENABLE_GPIO=0`: `AUTOTEST PASS`.

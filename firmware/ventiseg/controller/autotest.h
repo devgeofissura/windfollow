@@ -126,13 +126,30 @@ inline AutoTestResult runAutotest(Print& out) {
   checkTelemetry("ACK,2,SAFE,Lnk", s, "telemetry_link_fault", out, &tally);
   check(!s.poll(9000), "watchdog_fires_once", out, &tally);
 
-  // Somente uma amostra T aceita restabelece o link.
-  feedText(s, "TRACK,1", 1400);
-  check(s.fault() == Fault::kLnk, "track_does_not_clear_lnk", out, &tally);
-  feedText(s, "T,3,0,1", 1401);
-  check(s.fault() == Fault::kNone && !s.linkLost() && s.mode() == State::kSafe,
+  // Seguranca pos-Lnk: comandos de movimento sao validos, mas inibidos.
+  const Result blocked_track = feedText(s, "TRACK,1", 1400);
+  check(blocked_track.accepted && s.fault() == Fault::kLnk &&
+            s.mode() == State::kSafe && !s.moving(),
+        "track_inhibited_after_lnk", out, &tally);
+  const Result blocked_manual = feedText(s, "MANUAL,1", 1401);
+  check(blocked_manual.accepted && s.fault() == Fault::kLnk &&
+            s.mode() == State::kSafe && !s.moving() && s.axis() == 0,
+        "manual_inhibited_after_lnk", out, &tally);
+  const Result blocked_range = feedText(s, "TRACK,2", 1402);
+  check(!blocked_range.accepted && blocked_range.reason == Reason::kRange &&
+            s.fault() == Fault::kLnk,
+        "range_does_not_override_lnk", out, &tally);
+  checkTelemetry("ACK,2,SAFE,Lnk", s, "telemetry_link_inhibited", out, &tally);
+
+  // Somente T aceito restabelece o link e ainda exige novo comando de movimento.
+  const Result relink = feedText(s, "T,3,0,1", 1410);
+  check(relink.accepted && s.fault() == Fault::kNone && !s.linkLost() &&
+            s.mode() == State::kSafe && !s.moving(),
         "sample_clears_lnk", out, &tally);
   checkTelemetry("ACK,3,SAFE,None", s, "telemetry_relink", out, &tally);
+  const Result retrack = feedText(s, "TRACK,1", 1411);
+  check(retrack.accepted && s.mode() == State::kTrack && s.moving(),
+        "retrack_after_relink", out, &tally);
 
   // Manual: passo de 80, parada e limites por software.
   Session manual;
