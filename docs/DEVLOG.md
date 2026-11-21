@@ -11,6 +11,23 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-21 10:27 - docs: versiona plano Wi-Fi laserseg e archive wireviz ventiseg
+
+**Area:** laserseg, ventiseg
+
+**Feito:**
+- plano e todo de provisionamento Wi-Fi V1 do laserseg
+- arquivo wireviz.zip do ventiseg com diagrama pan 24V para historico
+
+**Dificuldades e solucoes:**
+- save.ps1 usa git add -A e o plano laserseg pede commit seletivo -> commit unico aprovado pelo usuario
+- wireviz.zip repete arquivos ja versionados em docs/wireviz -> confirmado como artefato a versionar
+
+**Arquivos:**
+- `firmware/laserseg/tasks/plan-wifi-provisioning.md`
+- `firmware/laserseg/tasks/todo-wifi-provisioning.md`
+- `firmware/ventiseg/docs/wireviz.zip`
+
 ### 2026-11-20 17:00 - docs(ventiseg): publica diagrama organizado no SCAD Studio
 
 **Area:** ventiseg
