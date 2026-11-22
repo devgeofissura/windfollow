@@ -11,6 +11,20 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-22 08:42 - docs(ventiseg): adiciona mapa de ligacoes par a par
+
+**Area:** ventiseg
+
+**Feito:**
+- novo docs/LIGACOES-PAR-A-PAR.md com pares SIMCAM conversor 5V DM556D motor fonte e star ground
+- checklist de montagem com criterios P1 a P5 copiado das fontes validadas
+
+**Dificuldades e solucoes:**
+- evitar transformar proposta em fato -> mantive avisos P1 a P5 e status NAO CONFIRMADO iguais as fontes
+
+**Arquivos:**
+- `firmware/ventiseg/docs/LIGACOES-PAR-A-PAR.md`
+
 ### 2026-11-21 15:14 - feat(ventiseg): reforca acessibilidade do simulador
 
 **Area:** ventiseg
