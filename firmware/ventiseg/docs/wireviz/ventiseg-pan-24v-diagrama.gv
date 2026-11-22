@@ -6,8 +6,9 @@ digraph "wireviz_schematic" {
 	{ rank=same; J_SIMCAM; __LEGEND; __WARNINGS; }
 	J_SIMCAM -> __LEGEND [style="invis"]
 	__LEGEND -> __WARNINGS [style="invis"]
-	{ rank=same; J_5V; J_LEVEL; }
-	J_5V -> J_LEVEL [style="invis"]
+	{ rank=same; J_5V; J_ULN_IN; J_ULN_OUT; }
+	J_5V -> J_ULN_IN [style="invis"]
+	J_ULN_IN -> J_ULN_OUT [style="invis"]
 	{ rank=same; J_PSU_24V; J_DM556D; __NC_J_DM556D_5; __NC_J_DM556D_6; }
 	J_PSU_24V -> J_DM556D [style="invis"]
 	J_DM556D -> __NC_J_DM556D_5 [style="invis"]
@@ -40,30 +41,48 @@ digraph "wireviz_schematic" {
  </td></tr>
 </table>
 > fillcolor="#FFFFFF" color="#334155" shape=box style="filled"]
-	J_LEVEL [label=<
+	J_ULN_IN [label=<
 <table border="0" cellborder="0" cellspacing="0" cellpadding="2">
- <tr><td bgcolor="#f8cbad"><b>J_LEVEL</b></td></tr>
+ <tr><td bgcolor="#c9a5e8"><b>J_ULN_IN</b></td></tr>
  <tr><td>
   <table border="0" cellborder="0" cellspacing="0" cellpadding="1">
-   <tr><td><font point-size="9">Conversor de nivel bidirecional 3,3 V / 5 V</font></td></tr>
-   <tr><td><font point-size="8">2 canais · obrigatorio · opto exige alto &gt; 3,5 V</font></td></tr>
+   <tr><td><font point-size="9">Modulo ULN2003A — interface de nivel, entradas (In1..In…</font></td></tr>
+   <tr><td><font point-size="8">In1..In7 · Darlington 500 mA por canal</font></td></tr>
   </table>
  </td></tr>
  <tr><td>
   <table border="1" cellborder="1" cellspacing="0" cellpadding="2">
-   <tr><td port="p1" align="left">1 · STEP_LV</td></tr>
-   <tr><td port="p2" align="left">2 · DIR_LV</td></tr>
-   <tr><td port="p3" align="left">3 · VCC_3V3</td></tr>
-   <tr><td port="p4" align="left">4 · GND_LV</td></tr>
-   <tr><td port="p5" align="left">5 · STEP_HV</td></tr>
-   <tr><td port="p6" align="left">6 · DIR_HV</td></tr>
-   <tr><td port="p7" align="left">7 · VCC_5V</td></tr>
-   <tr><td port="p8" align="left">8 · GND_HV</td></tr>
+   <tr><td port="p1" align="left">1 · IN1_STEP</td></tr>
+   <tr><td port="p2" align="left">2 · IN2_DIR</td></tr>
+   <tr><td port="p3" align="left">3 · GND_ULN</td></tr>
+   <tr><td port="p4" align="left">4 · VCC_5V</td></tr>
   </table>
  </td></tr>
  <tr><td>
   <table border="0" cellborder="0" cellspacing="0" cellpadding="1"><tr>
-   <td><font point-size="8">Lado LV: IO3/IO21/3V3/GND da SIMCAM. Lado HV: PUL+/DIR+ do DM556D a 5 V. VCC_5V: origem NAO CONFIRMADO — verificar antes de energizar. Corrente do opto e pulso minimo: NAO CONFIRMADO — veri…</font></td>
+   <td><font point-size="8">In1 &lt;- IO3 (STEP), In2 &lt;- IO21 (DIR), entrada de 3,3 V. A GPIO fornece apenas a corrente de entrada; a corrente do opto vem do +5 V externo. Nao usar o pino 3V3 da SIMCAM. VCC_5V: jumper &lt;-…</font></td>
+  </tr></table>
+ </td></tr>
+</table>
+> fillcolor="#FFFFFF" color="#334155" shape=box style="filled"]
+	J_ULN_OUT [label=<
+<table border="0" cellborder="0" cellspacing="0" cellpadding="2">
+ <tr><td bgcolor="#c9a5e8"><b>J_ULN_OUT</b></td></tr>
+ <tr><td>
+  <table border="0" cellborder="0" cellspacing="0" cellpadding="1">
+   <tr><td><font point-size="9">Modulo ULN2003A — interface de nivel, saidas (A..G)</font></td></tr>
+   <tr><td><font point-size="8">A..G · coletor aberto · drena os optos</font></td></tr>
+  </table>
+ </td></tr>
+ <tr><td>
+  <table border="1" cellborder="1" cellspacing="0" cellpadding="2">
+   <tr><td port="p1" align="left">1 · A_PUL_N</td></tr>
+   <tr><td port="p2" align="left">2 · B_DIR_N</td></tr>
+  </table>
+ </td></tr>
+ <tr><td>
+  <table border="0" cellborder="0" cellspacing="0" cellpadding="1"><tr>
+   <td><font point-size="8">A -&gt; PUL- do DM556D; B -&gt; DIR- do DM556D. C..G nao conectados. com In1/In2 em ALTO, A/B drenam para GND e o opto conduz (anodo comum). Inversao do sinal: conferir borda de STEP e sentido de…</font></td>
   </tr></table>
  </td></tr>
 </table>
@@ -74,7 +93,7 @@ digraph "wireviz_schematic" {
  <tr><td>
   <table border="0" cellborder="0" cellspacing="0" cellpadding="1">
    <tr><td><font point-size="9">Fonte auxiliar de 5 V</font></td></tr>
-   <tr><td><font point-size="8">somente lado HV do conversor</font></td></tr>
+   <tr><td><font point-size="8">VCC do ULN e anodos PUL+/DIR+</font></td></tr>
   </table>
  </td></tr>
  <tr><td>
@@ -85,7 +104,7 @@ digraph "wireviz_schematic" {
  </td></tr>
  <tr><td>
   <table border="0" cellborder="0" cellspacing="0" cellpadding="1"><tr>
-   <td><font point-size="8">NAO CONFIRMADO — verificar antes de energizar: regs. 24 V-&gt;5 V ou saida auxiliar do driver? NAO tirar do 3V3 da SIMCAM.</font></td>
+   <td><font point-size="8">NAO CONFIRMADO — verificar antes de energizar: regs. 24 V-&gt;5 V ou saida auxiliar do driver? Medir antes de ligar. NAO tirar do 3V3 da SIMCAM. Alimenta o VCC do ULN (LEDs D1/D2) e diretament…</font></td>
   </tr></table>
  </td></tr>
 </table>
@@ -96,7 +115,7 @@ digraph "wireviz_schematic" {
  <tr><td>
   <table border="0" cellborder="0" cellspacing="0" cellpadding="1">
    <tr><td><font point-size="9">Driver DM556D (Policomp/Tecmaf)</font></td></tr>
-   <tr><td><font point-size="8">24-50 VDC · 2,1-5,6 A · catodo comum · alvo 1/8 passo</font></td></tr>
+   <tr><td><font point-size="8">24-50 VDC · 2,1-5,6 A · ANODO COMUM · alvo 1/8 passo</font></td></tr>
   </table>
  </td></tr>
  <tr><td>
@@ -117,7 +136,7 @@ digraph "wireviz_schematic" {
  </td></tr>
  <tr><td>
   <table border="0" cellborder="0" cellspacing="0" cellpadding="1"><tr>
-   <td><font point-size="8">ENA+/ENA- DESCONECTADOS: driver ja inicia habilitado. DIP SW1=OFF SW2=ON SW3=OFF (2,7/2,8 A); SW4=OFF (meia corrente). SW5-SW8 para 1/8 passo (1600 pulsos/volta): NAO CONFIRMADO — verificar…</font></td>
+   <td><font point-size="8">ANODO COMUM: +5 V externo em PUL+/DIR+; saidas A/B do ULN em PUL-/DIR-. ENA+/ENA- DESCONECTADOS: driver ja inicia habilitado. DIP SW1=OFF SW2=ON SW3=OFF (2,7/2,8 A); SW4=OFF (meia corrente)…</font></td>
   </tr></table>
  </td></tr>
 </table>
@@ -191,7 +210,7 @@ digraph "wireviz_schematic" {
  </td></tr>
  <tr><td>
   <table border="0" cellborder="0" cellspacing="0" cellpadding="1"><tr>
-   <td><font point-size="8">Une GND logico (SIMCAM), GND do conversor/fonte 5 V, GND do driver e 0 V da fonte 24 V. Os quatro pinos estao curtos entre si (loops).</font></td>
+   <td><font point-size="8">Une GND logico (SIMCAM), GND do modulo ULN2003A, GND da fonte 5 V, GND do driver e 0 V da fonte 24 V. Os quatro pinos estao curtos entre si (loops). Os drenos A/B do ULN usam esta mesma ref…</font></td>
   </tr></table>
  </td></tr>
 </table>
@@ -203,57 +222,51 @@ digraph "wireviz_schematic" {
 <tr><td colspan="3" bgcolor="#e2e8f0"><b>LEGENDA DAS CORES</b></td></tr>
 <tr>
  <td bgcolor="#ffff00" width="34">YE</td>
- <td align="left"><font point-size="9">STEP / PUL 3,3 V</font></td>
+ <td align="left"><font point-size="9">STEP 3,3 V — IO3 -&gt; In1 do ULN2003A</font></td>
 </tr>
 <tr>
  <td bgcolor="#0066ff" width="34">BU</td>
- <td align="left"><font point-size="9">DIR 3,3 V</font></td>
-</tr>
-<tr>
- <td bgcolor="#ff0000" width="34">RD</td>
- <td align="left"><font point-size="9">alimentacao positiva</font></td>
+ <td align="left"><font point-size="9">DIR 3,3 V — IO21 -&gt; In2 do ULN2003A</font></td>
 </tr>
 <tr>
  <td bgcolor="#000000" width="34">BK</td>
- <td align="left"><font point-size="9">GND / 0 V</font></td>
+ <td align="left"><font point-size="9">GND/0 V e drenos A/B do ULN (PUL-/DIR-)</font></td>
 </tr>
 <tr>
  <td bgcolor="#ff8000" width="34">OG</td>
- <td align="left"><font point-size="9">alimentacao auxiliar 5 V</font></td>
+ <td align="left"><font point-size="9">+5 V externo — VCC do ULN e PUL+/DIR+</font></td>
 </tr>
 <tr>
- <td bgcolor="#8000ff" width="34">VT</td>
- <td align="left"><font point-size="9">sinais apos conversor 5 V</font></td>
+ <td bgcolor="#ff0000" width="34">RD</td>
+ <td align="left"><font point-size="9">+24 V de potencia do driver</font></td>
 </tr>
 <tr>
  <td bgcolor="#00ff00" width="34">GN</td>
- <td align="left"><font point-size="9">fases do motor</font></td>
+ <td align="left"><font point-size="9">fases do motor (cor real no rotulo)</font></td>
 </tr>
 </table>> fillcolor="#ffffff" color="#64748b" shape=box style="filled"]
 	__WARNINGS [label=<
 <table border="1" cellborder="1" cellspacing="0" cellpadding="3">
 <tr><td bgcolor="#ffe699"><b>AVISOS DE SEGURANÇA — LEIA ANTES DE ENERGIZAR</b></td></tr>
-<tr><td align="left"><font point-size="9">1) NUNCA ligar GPIO 3,3 V direto em PUL+ ou DIR+</font></td></tr>
-<tr><td align="left"><font point-size="9">2) Usar OBRIGATORIAMENTE o conversor de nivel 3,3 V para 5 V</font></td></tr>
-<tr><td align="left"><font point-size="9">3) Manter VENTISEG_ENABLE_GPIO=0 ate fechar P1-P5</font></td></tr>
-<tr><td align="left"><font point-size="9">4) Primeiro teste com o motor DESACOPLADO do duto</font></td></tr>
-<tr><td align="left"><font point-size="9">5) Conferir os oito pares do motor com OHMIMETRO</font></td></tr>
+<tr><td align="left"><font point-size="9">1) NUNCA ligar GPIO 3,3 V direto em PUL+ ou DIR+ — usar modulo ULN2003A</font></td></tr>
+<tr><td align="left"><font point-size="9">2) ANODO COMUM: +5 V em PUL+/DIR+ e saidas A/B do ULN em PUL-/DIR-</font></td></tr>
+<tr><td align="left"><font point-size="9">3) NAO tirar o 5 V do pino 3V3 da SIMCAM</font></td></tr>
+<tr><td align="left"><font point-size="9">4) Inversao do ULN: conferir borda de STEP e sentido de DIR no ensaio</font></td></tr>
+<tr><td align="left"><font point-size="9">5) Manter VENTISEG_ENABLE_GPIO=0 ate fechar P1-P5</font></td></tr>
+<tr><td align="left"><font point-size="9">6) Primeiro teste com o motor DESACOPLADO e pares conferidos com OHMIMETRO</font></td></tr>
 <tr><td align="left"><font point-size="9">Pendencias: NAO CONFIRMADO — verificar antes de energizar</font></td></tr>
-<tr><td align="left"><font point-size="9">reservados, GND, 3V3), logica 3,3 V, catodo comum, ENA desconectado,</font></td></tr>
+<tr><td align="left"><font point-size="9">reservados, GND, 3V3 livre), logica 3,3 V, modulo ULN2003A</font></td></tr>
 <tr><td align="left"><font point-size="9">NAO CONFIRMADO — verificar antes de energizar: corrente do opto,</font></td></tr>
-<tr><td align="left"><font point-size="9">SEGURANCA: nunca GPIO 3,3 V direto em PUL+/DIR+; conversor</font></td></tr>
-<tr><td align="left"><font point-size="9">obrigatorio; VENTISEG_ENABLE_GPIO=0 ate P1-P5; 1o teste com motor</font></td></tr>
+<tr><td align="left"><font point-size="9">SEGURANCA: nunca GPIO 3,3 V direto em PUL+/DIR+; ULN2003A obrigatorio;</font></td></tr>
 </table>> fillcolor="#fff2cc" color="#bf9000" shape=box style="filled"]
-	J_SIMCAM:p1:e -> J_LEVEL:p1:w [color="#ffff00" penwidth="2.2" arrowsize="0.7" arrowhead="vee" xlabel="W_STEP:1 · STEP_IO3" fontcolor="#111827" fontsize="8" tooltip="STEP 3,3 V — IO3 -> STEP_LV | W_STEP:1 · STEP_IO3"]
-	J_SIMCAM:p4:e -> J_LEVEL:p2:w [color="#0066ff" penwidth="2.2" arrowsize="0.7" arrowhead="vee" xlabel="W_DIR:1 · DIR_IO21" fontcolor="#111827" fontsize="8" tooltip="DIR 3,3 V — IO21 -> DIR_LV | W_DIR:1 · DIR_IO21"]
-	J_SIMCAM:p6:e -> J_LEVEL:p3:w [color="#ff0000" penwidth="2.2" arrowsize="0.7" arrowhead="vee" xlabel="W_3V3:1 · 3V3_LOGICA" fontcolor="#111827" fontsize="8" tooltip="3V3 logico -> VCC_3V3 do conversor | W_3V3:1 · 3V3_LOGICA"]
-	J_SIMCAM:p5:e -> J_LEVEL:p4:w [color="#000000" penwidth="2.2" arrowsize="0.7" arrowhead="vee" xlabel="W_GND_LV:1 · GND_LV" fontcolor="#111827" fontsize="8" tooltip="GND da SIMCAM -> GND_LV do conversor | W_GND_LV:1 · GND_LV"]
-	J_5V:p1:n -> J_LEVEL:p7:s [color="#ff8000" penwidth="2.2" arrowsize="0.7" arrowhead="vee" constraint="false" xlabel="W_V5V:1 · V5V" fontcolor="#111827" fontsize="8" tooltip="Auxiliar 5 V -> VCC_5V do conversor | W_V5V:1 · V5V"]
-	J_5V:p2:n -> J_LEVEL:p8:s [color="#000000" penwidth="2.2" arrowsize="0.7" arrowhead="vee" constraint="false" xlabel="W_GND_HV:1 · GND_HV" fontcolor="#111827" fontsize="8" tooltip="GND auxiliar 5 V -> GND_HV do conversor | W_GND_HV:1 · GND_HV"]
-	J_LEVEL:p5:e -> J_DM556D:p1:w [color="#8000ff" penwidth="2.2" arrowsize="0.7" arrowhead="vee" xlabel="W_STEP_5V:1 · PUL_5V" fontcolor="#111827" fontsize="8" tooltip="STEP 5 V — STEP_HV -> PUL+ | W_STEP_5V:1 · PUL_5V"]
-	J_LEVEL:p6:e -> J_DM556D:p3:w [color="#8000ff" penwidth="2.2" arrowsize="0.7" arrowhead="vee" xlabel="W_DIR_5V:1 · DIR_5V" fontcolor="#111827" fontsize="8" tooltip="DIR 5 V — DIR_HV -> DIR+ | W_DIR_5V:1 · DIR_5V"]
-	J_SIMCAM:p5:e -> J_DM556D:p2:w [color="#000000" penwidth="2.2" arrowsize="0.7" arrowhead="vee" xlabel="W_PUL_N:1 · PUL_N" fontcolor="#111827" fontsize="8" tooltip="GND SIMCAM -> PUL- (catodo comum) | W_PUL_N:1 · PUL_N"]
-	J_SIMCAM:p5:e -> J_DM556D:p4:w [color="#000000" penwidth="2.2" arrowsize="0.7" arrowhead="vee" xlabel="W_DIR_N:1 · DIR_N" fontcolor="#111827" fontsize="8" tooltip="GND SIMCAM -> DIR- (catodo comum) | W_DIR_N:1 · DIR_N"]
+	J_SIMCAM:p1:e -> J_ULN_IN:p1:w [color="#ffff00" penwidth="2.2" arrowsize="0.7" arrowhead="vee" xlabel="W_STEP:1 · STEP_IO3" fontcolor="#111827" fontsize="8" tooltip="STEP 3,3 V — IO3 -> In1 do ULN2003A | W_STEP:1 · STEP_IO3"]
+	J_SIMCAM:p4:e -> J_ULN_IN:p2:w [color="#0066ff" penwidth="2.2" arrowsize="0.7" arrowhead="vee" xlabel="W_DIR:1 · DIR_IO21" fontcolor="#111827" fontsize="8" tooltip="DIR 3,3 V — IO21 -> In2 do ULN2003A | W_DIR:1 · DIR_IO21"]
+	J_SIMCAM:p5:e -> J_ULN_IN:p3:w [color="#000000" penwidth="2.2" arrowsize="0.7" arrowhead="vee" xlabel="W_GND_ULN:1 · GND_ULN" fontcolor="#111827" fontsize="8" tooltip="GND da SIMCAM -> pino GND do ULN2003A | W_GND_ULN:1 · GND_ULN"]
+	J_5V:p1:n -> J_ULN_IN:p4:s [color="#ff8000" penwidth="2.2" arrowsize="0.7" arrowhead="vee" constraint="false" xlabel="W_V5V_ULN:1 · V5V_ULN" fontcolor="#111827" fontsize="8" tooltip="+5 V -> VCC do ULN (LEDs D1/D2, jumper <-> fechado) | W_V5V_ULN:1 · V5V_ULN"]
+	J_5V:p1:e -> J_DM556D:p1:w [color="#ff8000" penwidth="2.2" arrowsize="0.7" arrowhead="vee" xlabel="W_V5V_PUL:1 · PUL_P" fontcolor="#111827" fontsize="8" tooltip="+5 V -> PUL+ do DM556D (anodo do opto) | W_V5V_PUL:1 · PUL_P"]
+	J_5V:p1:e -> J_DM556D:p3:w [color="#ff8000" penwidth="2.2" arrowsize="0.7" arrowhead="vee" xlabel="W_V5V_DIR:1 · DIR_P" fontcolor="#111827" fontsize="8" tooltip="+5 V -> DIR+ do DM556D (anodo do opto) | W_V5V_DIR:1 · DIR_P"]
+	J_ULN_OUT:p1:e -> J_DM556D:p2:w [color="#000000" penwidth="2.2" arrowsize="0.7" arrowhead="vee" xlabel="W_PUL_N:1 · PUL_N" fontcolor="#111827" fontsize="8" tooltip="Saida A do ULN -> PUL- do DM556D (dreno do opto) | W_PUL_N:1 · PUL_N"]
+	J_ULN_OUT:p2:e -> J_DM556D:p4:w [color="#000000" penwidth="2.2" arrowsize="0.7" arrowhead="vee" xlabel="W_DIR_N:1 · DIR_N" fontcolor="#111827" fontsize="8" tooltip="Saida B do ULN -> DIR- do DM556D (dreno do opto) | W_DIR_N:1 · DIR_N"]
 	J_PSU_24V:p1:n -> J_DM556D:p7:s [color="#ff0000" penwidth="2.2" arrowsize="0.7" arrowhead="vee" constraint="false" xlabel="W_PSU_P:1 · MAIS_24V" fontcolor="#111827" fontsize="8" tooltip="Fonte 24-36 VDC -> VCC do DM556D | W_PSU_P:1 · MAIS_24V"]
 	J_PSU_24V:p2:n -> J_DM556D:p8:s [color="#000000" penwidth="2.2" arrowsize="0.7" arrowhead="vee" constraint="false" xlabel="W_PSU_N:1 · ZERO_V" fontcolor="#111827" fontsize="8" tooltip="Fonte 24-36 VDC -> GND de potencia do DM556D | W_PSU_N:1 · ZERO_V"]
 	J_DM556D:p9:e -> J_M_PAN:p1:w [color="#00ff00" penwidth="2.2" arrowsize="0.7" arrowhead="vee" xlabel="W_M_AP1:1 · A_P1_RD" fontcolor="#111827" fontsize="8" tooltip="A+ fio 1 — VERMELHO (paralela) | W_M_AP1:1 · A_P1_RD"]

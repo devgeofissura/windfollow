@@ -1,9 +1,9 @@
 # Decisões de hardware — ventiseg
 
 Fonte primária: transcrição da serigrafia e decisões do usuário em 20/11/2026,
-complementadas pela especificação do driver/motor enviada pelo usuário na mesma
-data. Tudo que não está em **Confirmado** é `NAO CONFIRMADO` e não autoriza
-montagem.
+complementadas pela especificação do driver/motor enviada na mesma data e pela
+decisão de **22/11/2026** de usar um **módulo ULN2003A** como interface de sinal.
+Tudo que não está em **Confirmado** é `NAO CONFIRMADO` e não autoriza montagem.
 
 ## Confirmado
 
@@ -20,10 +20,22 @@ montagem.
 - Nível lógico dos sinais da placa é **3,3 V**. Não aplicar 5 V nos pinos.
 - Driver é **DM556D** (Azaneli / Policomp / Tecmaf), faixa **24–50 VDC** e
   corrente **2,1–5,6 A**. Alimentação escolhida: **24–36 VDC, mínimo 4 A**.
-- Interface de sinal: **catodo comum** — GND da SIMCAM em `PUL-`/`DIR-`, sinais
-  de **5 V** em `PUL+`/`DIR+`. Os optos exigem nível alto `> 3,5 V`, então um
-  **conversor de nível bidirecional 3,3 V ↔ 5 V é obrigatório**; nunca ligar o
-  GPIO direto.
+- Interface de sinal (decisão do usuário em **22/11/2026**): **módulo
+  ULN2003A** com barra de pinos completa (`In1`–`In7` / `A`–`G`), em **anodo
+  comum**. Mapeamento usado: `In1` ← IO3 (`STEP`), `In2` ← IO21 (`DIR`),
+  `A` → `PUL-`, `B` → `DIR-`, `GND` → star ground, `VCC` → +5 V auxiliar
+  (jumper `<->` fechado para os LEDs D1/D2). O +5 V auxiliar vai direto em
+  `PUL+` e `DIR+`. Canais `C`–`G` ficam livres.
+- O ULN2003A tem transistores Darlington de coletor aberto: com `In1`/`In2`
+  em ALTO, `A`/`B` drenam para GND e fecham o circuito do opto. A corrente do
+  LED do opto vem do +5 V externo, não da SIMCAM; a GPIO fornece apenas a
+  corrente de entrada do ULN. O módulo drena até 500 mA por canal (informação
+  do usuário), muito acima dos ~10 mA por opto.
+- O pino `3V3` da SIMCAM fica **livre** nesta ligação: o módulo não precisa
+  dele. Nunca aplicar 5 V nos pinos da placa.
+- Como o ULN inverte o nível lógico, a borda de `STEP` e o sentido de `DIR`
+  precisam ser conferidos no ensaio; se `DIR` estiver invertido, corrigir em
+  decisão + código com o gate ainda fechado (P5).
 - `ENA+`/`ENA-` ficam **desconectados**: o driver já inicia habilitado por padrão.
 - Motor **KTC-HT23-400**, 8 fios, ligação **bipolar paralela** a **2,8 A**,
   torque **1,9 Nm**. Fios: `A+`=Vermelho+Preto/Branco, `A-`=Preto+Vermelho/Branco,
@@ -49,7 +61,7 @@ Isso **não** substitui a etiqueta/revisão do exemplar instalado nem medição:
   5–24 VDC e resistor série de **2,2 kΩ** indicado pelo fabricante.
 - Tecmaf TMA.DMP.556D: nível alto lógico **4–5 V**, baixo **0–0,5 V**,
   alimentação 24–50 VDC. O manual **não** documenta terminal auxiliar de 5 V;
-  portanto o 5 V do conversor de nível deve ser **externo**.
+  portanto o 5 V do ULN e dos optos deve ser **externo**.
 - Corrente dos optos `PUL`/`DIR` na documentação do DM556D consultada:
   **8 mA mínimo / 10 mA típico / 20 mA máximo por entrada**. Pior caso com
   `PUL` e `DIR` ativos: ~40 mA. O manual do DM556 original (Leadshine) dá
@@ -63,8 +75,12 @@ Isso **não** substitui a etiqueta/revisão do exemplar instalado nem medição:
 
 - Corrente do LED dos optos e pulso mínimo aceitável no **exemplar** do DM556D
   (documentação de referência: 8–20 mA, típ. 10 mA; valor real pendente).
-- Origem do **5 V** do conversor: nenhuma saída auxiliar documentada; DC-DC
-  externo 24 V→5 V é a proposta, mas conversor e tensão medida pendem.
+- Datasheet do **módulo ULN2003A** instalado (corrente de entrada a 3,3 V e
+  jumper dos LEDs D1/D2) e a compatibilidade da placa com a serigrafia da foto.
+- Origem do **5 V** auxiliar: nenhuma saída auxiliar documentada; DC-DC
+  externo 24 V→5 V é a proposta, mas capacidade, jumper e tensão medida pendem.
+- Sentido real de `DIR` e borda ativa de `STEP` depois da inversão do ULN
+  (somente ensaio com carga desacoplada; P5).
 - Posições reais de **SW5–SW8** no exemplar: a tabela é conhecida
   (1600 = `ON/OFF/ON/ON`), mas falta ler a carcaça. Firmware segue 3200.
 - Componentes reais de fonte/fusível/bitolas/dissipação (proposta em P3).
@@ -79,15 +95,15 @@ Isso **não** substitui a etiqueta/revisão do exemplar instalado nem medição:
 - Comportamento **elétrico** dos pinos durante boot/reset do driver: apenas
   verificação lógica foi feita, sem osciloscópio nem carga desacoplada.
 
-## Auditoria P1–P5 — status em 21/11/2026
+## Auditoria P1–P5 — status em 22/11/2026
 
 | ID | Situação | Evidência / próximo passo |
 |---|---|---|
-| P1 | **Aberta** | Documentação de referência fecha corrente (8–20 mA, típ. 10 mA), entrada 5–24 V e necessidade de **DC-DC externo 24 V → 5 V** (≥100 mA, margem de 200 mA). Faltam foto da etiqueta/revisão do DM556D, datasheet do conversor 3,3↔5 V instalado, capacidade do DC-DC e **5 V medido antes de ligar PUL+/DIR+**. |
+| P1 | **Aberta** | Documentação de referência fecha corrente (8–20 mA, típ. 10 mA), entrada 5–24 V e necessidade de **5 V externo** (≥100 mA, margem de 200 mA). Faltam foto da etiqueta/revisão do DM556D, datasheet do **módulo ULN2003A** (jumper dos LEDs, corrente de entrada a 3,3 V), capacidade do DC-DC e **5 V medido em `PUL+`/`DIR+` antes de ligar os optos**. |
 | P2 | **Parcial** | Tabela de micropasso conhecida (1600 = `ON/OFF/ON/ON`), mas posição real no exemplar não foi lida. Curso útil, batentes e acoplamento **não medidos**. `kMaxTravel=533` é provisório; com 1600 pulsos/volta, 533 ≈ 120° por lado e 267 ≈ 60° apenas como hipótese 1:1. Não adotar nenhum sem medição. |
 | P3 | **Aberta** | Proposta de dimensionamento: fonte 24 VDC regulada **6,25 A / 150 W** exclusiva, fusível DC **7,5 A retardado**, 1,5 mm² fonte→driver, 1,0–1,5 mm² driver→motor, par trançado blindado 0,22–0,34 mm² para sinal e **star ground** único (PE só no chassi). Valores **não conferidos**: comprimentos, corrente real da fonte, curva do fusível, queda de tensão, dissipação e continuidade do terra. |
 | P4 | **Aberta** | Sem acoplamento definido, sem referência/home, sem batentes documentados e sem curso medido. Limite por software só depois de medir a distância do home ao batente com margem de segurança. Nenhum `kMaxTravel` validado. |
-| P5 | **Aberta** | "Sem pulso e trava ok" existiu apenas no **nível lógico** (`gpio_gate=0`, autoteste 85/85, nenhuma chamada de GPIO). Não houve osciloscópio em `PUL+`/`DIR+`, nem ensaio com motor desacoplado, nem observação de boot/reset do driver. |
+| P5 | **Aberta** | "Sem pulso e trava ok" existiu apenas no **nível lógico** (`gpio_gate=0`, autoteste 85/85, nenhuma chamada de GPIO). Não houve osciloscópio em `PUL-`/`DIR-` (afundamento pelo ULN), nem ensaio com motor desacoplado, nem observação de boot/reset do driver. Também falta confirmar se a inversão do ULN trocou o sentido de `DIR` e qual borda de `STEP` o driver reconhece. |
 
 Consequência: **nenhuma P foi fechada fisicamente**. Enquanto isso, o firmware
 continua em `VENTISEG_ENABLE_GPIO=0`, serial-only, sem STEP/DIR, sem motor

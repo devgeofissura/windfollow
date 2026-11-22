@@ -1,6 +1,6 @@
 # Estado do ventiseg
 
-Atualizado em 21/11/2026.
+Atualizado em 22/11/2026.
 
 ## Fase atual
 
@@ -16,17 +16,21 @@ feita. A auditoria P1–P5 está documentada, mas **fisicamente aberta**.
   a 24–36 VDC / mín. 4 A.
 - Motor **KTC-HT23-400**, 8 fios, bipolar paralela 2,8 A, 1,9 Nm; fios
   mapeados para `A±/B±` e DIP SW1–SW4 definidos.
-- Interface em **catodo comum** com conversor obrigatório **3,3 V → 5 V**
-  (optos exigem alto > 3,5 V); `ENA` desconectado, driver inicia habilitado.
+- Interface em **anodo comum** com **módulo ULN2003A** (decisão do usuário em
+  22/11/2026): `In1`←IO3, `In2`←IO21, `A`→`PUL-`, `B`→`DIR-`, `VCC`←+5 V
+  auxiliar (LEDs D1/D2) e `GND` no star ground. O +5 V vai direto em
+  `PUL+`/`DIR+`; `3V3` fica livre. O ULN inverte o sinal — conferir borda de
+  `STEP` e sentido de `DIR` no ensaio (P5). `ENA` desconectado.
 - A **SIMCAM detecta a pessoa e comanda o pan** — visão e controle na mesma
   placa, sem controladora externa (reafirmado pelo usuário em 20/11/2026).
 - **A câmera gira junto com o duto**: malha fechada; a visão compensa o
   próprio movimento do pan.
 - Protocolo v0.1 especificado; `T` é o resultado da detecção interna.
   Porta UDP 4211 apenas reservada para depuração futura; serial-only agora.
-- Guia executivo de ligação em `docs/LIGACOES.md` e esquema WireViz em nível
-  de terminal (`PUL±/DIR±/ENA±`, fases `A±/B±`, conversor 3,3→5 V, 24 V):
-  **variante catodo comum desenhada**, validada pelo WireViz 0.4.1.
+- Guias de ligação em `docs/LIGACOES.md` e `docs/LIGACOES-PAR-A-PAR.md` e
+  esquema WireViz em nível de terminal (`PUL±/DIR±/ENA±`, fases `A±/B±`,
+  ULN2003A, 5 V e 24 V): **variante anodo comum desenhada**, validada pelo
+  WireViz 0.4.1.
 - Núcleo TDD entregue: `tools/protocol_ref.py` → `controller/parser.cpp` →
   52 vetores gerados → `autotest.h` → simulador, com **179 testes host
   verdes** (113 protocolo + 43 simulador + 4 diferenciais de parser + 4
@@ -96,16 +100,18 @@ feita. A auditoria P1–P5 está documentada, mas **fisicamente aberta**.
 - `VENTISEG_STEPS_PER_REV` segue **3200 (provisório)**. O alvo é 1600
   (1/8 passo) assim que SW5–SW8 forem lidos na carcaça; a troca exige
   regenerar vetores e rodar a suíte no mesmo commit.
+- Sentido de `DIR` e borda ativa de `STEP` após a inversão do ULN2003A:
+  somente ensaio com carga desacoplada (P5).
 
 ## Pendências antes de qualquer ensaio com motor
 
-| ID | Pendência | Situação em 21/11/2026 | Bloqueia |
+| ID | Pendência | Situação em 22/11/2026 | Bloqueia |
 |---|---|---|---|
-| P1 | Corrente do opto, pulso mínimo e origem do 5 V | Documentação: 8–20 mA (típ. 10), entrada 5–24 V, resistor 2,2 kΩ; **5 V externo obrigatório**. Etiqueta, conversor e 5 V medido: pendentes | Energização do sinal |
+| P1 | Corrente do opto, pulso mínimo, módulo ULN2003A e origem do 5 V | Documentação: 8–20 mA (típ. 10), entrada 5–24 V, resistor 2,2 kΩ; **5 V externo obrigatório**. Etiqueta do DM556D, datasheet do ULN/jumper dos LEDs, capacidade do DC-DC e 5 V medido em `PUL+`/`DIR+`: pendentes | Energização do sinal |
 | P2 | SW5–SW8 e curso útil/batentes | Tabela conhecida: 1600 = `ON/OFF/ON/ON` (firmware segue 3200). Curso, batentes e acoplamento: não medidos; 533 é provisório | Movimento |
 | P3 | Fonte, fusível, bitolas e aterramento | Proposta: 24 V/6,25 A/150 W, fusível DC 7,5 A retardado, 1,5 mm² potência, 1,0–1,5 mm² motor, 0,22–0,34 mm² sinal blindado, star ground. Componentes reais: não conferidos | Energização |
 | P4 | Acoplamento e limite por software | Sem acoplamento, home, batentes ou curso medidos; nenhum `kMaxTravel` validado | Movimento |
-| P5 | Pulso no boot/reset e travamento com carga desacoplada | Somente verificação lógica (`gpio_gate=0`, autoteste 85/85); sem medição elétrica | Habilitação de saída |
+| P5 | Pulso no boot/reset, travamento e inversão do ULN | Somente verificação lógica (`gpio_gate=0`, autoteste 85/85); sem osciloscópio em `PUL-`/`DIR-`, sem carga desacoplada e sem conferência do sentido de `DIR`/borda de `STEP` | Habilitação de saída |
 
 Nenhuma P foi fechada fisicamente. A camada STEP/DIR existe apenas em código
 e testes host; a liberação física continua bloqueada até P1–P5 serem

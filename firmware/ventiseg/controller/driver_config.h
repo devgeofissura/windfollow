@@ -25,6 +25,9 @@
 #define VENTISEG_STEP_GPIO 3
 #define VENTISEG_DIR_GPIO 21
 // IO45 e IO46 ficam reservados por strapping - nunca usar no firmware.
+// Interface de sinal (22/11/2026): modulo ULN2003A em ANODO COMUM. O ULN
+// inverte o nivel: In1/In2 em ALTO drenam PUL-/DIR-. Confirmar no ensaio se o
+// sentido de DIR ficou invertido antes de habilitar os gates (P5).
 
 // Gate de seguranca: 0 = serial-only (padrao), 1 = saidas fisicas (auditoria).
 #ifndef VENTISEG_ENABLE_GPIO

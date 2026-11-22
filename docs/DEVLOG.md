@@ -11,6 +11,39 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-22 09:17 - docs(ventiseg): uln2003a e anodo comum no mapa de ligacoes
+
+**Area:** ventiseg
+
+**Feito:**
+- mapa par a par e guia de ligacao reescritos para modulo ULN2003A em anodo comum com In1 In2 A B e 3V3 livre
+- decisoes estado README e AGENTS atualizados com a inversao do sinal e a verificacao pendente de DIR
+- ambos os YAML WireViz reescritos e DOT SVG e PNGs regenerados com auditoria de 22 arestas e 2 terminais NC
+- simulador alinhado com medicao em PUL-/DIR- e pinagem com 3V3 livre
+- 179 testes host verdes mais validacao WireViz 0.4.1 e layout organizado SCAD Studio
+
+**Dificuldades e solucoes:**
+- o gv versionado nao era reproduzivel pelo wireviz puro -> gerei o DOT com o conversor de layout organizado do SCAD Studio e renderizei SVG e PNGs com Graphviz local
+- o conversor classificava o modulo ULN como role desconhecido -> descrevi os conectores como interface de nivel para mantê-lo no centro do diagrama
+
+**Arquivos:**
+- `firmware/ventiseg/AGENTS.md`
+- `firmware/ventiseg/README.md`
+- `firmware/ventiseg/controller/driver_config.h`
+- `firmware/ventiseg/docs/ESTADO.md`
+- `firmware/ventiseg/docs/HARDWARE-DECISIONS.md`
+- `firmware/ventiseg/docs/LIGACOES-PAR-A-PAR.md`
+- `firmware/ventiseg/docs/LIGACOES.md`
+- `firmware/ventiseg/docs/wireviz/00-LEIA-ME.md`
+- `firmware/ventiseg/docs/wireviz/ventiseg-pan-24v-diagrama-hires.png`
+- `firmware/ventiseg/docs/wireviz/ventiseg-pan-24v-diagrama.gv`
+- `firmware/ventiseg/docs/wireviz/ventiseg-pan-24v-diagrama.png`
+- `firmware/ventiseg/docs/wireviz/ventiseg-pan-24v-diagrama.svg`
+- `firmware/ventiseg/docs/wireviz/ventiseg-pan-24v-diagrama.yaml`
+- `firmware/ventiseg/docs/wireviz/ventiseg-pan-24v.yaml`
+- `firmware/ventiseg/simulator/README.md`
+- `firmware/ventiseg/simulator/index.html`
+
 ### 2026-11-22 08:42 - docs(ventiseg): adiciona mapa de ligacoes par a par
 
 **Area:** ventiseg

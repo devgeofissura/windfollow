@@ -1,4 +1,4 @@
-# ventiseg — pan do fluxo de ar: SIMCAM -> conversor 3,3V->5V -> DM556D 24-36V -> 1 motor
+# ventiseg — pan do fluxo de ar: SIMCAM -> ULN2003A -> DM556D 24-36V -> 1 motor
 #
 # ESQUEMA DE DOCUMENTACAO E EXECUCAO. Renderizar com WireViz 0.4.1:
 #   wireviz firmware\ventiseg\docs\wireviz\ventiseg-pan-24v.yaml
@@ -9,13 +9,14 @@
 # LEGENDA:
 #   CONFIRMADO     = registrado pelo usuario na bancada ou nesta revisao;
 #   NAO CONFIRMADO = ensaio, etiqueta ou tabela da carcacao (P1-P5);
-#   VARIANTE DESENHADA = CATODO COMUM (decisao do usuario nesta revisao).
+#   VARIANTE DESENHADA = ANODO COMUM (decisao do usuario em 22/11/2026).
 #
 # Regra de ouro: VENTISEG_ENABLE_GPIO=0 => firmware serial-only, sem GPIO ativo.
 # Nao energizar motor antes de fechar P1-P5 em docs/ESTADO.md.
 # NAO HA: laser, rele, fim de curso, tilt nem fonte 12 V neste projeto.
-# Existe UMA fonte 5 V, apenas para o lado HV do conversor de nivel (NAO CONFIRMADO).
-# NUNCA ligar GPIO 3,3 V direto em PUL+/DIR+: conversor obrigatorio.
+# Existe UMA fonte 5 V, para o VCC do ULN (LEDs D1/D2) e os anodos PUL+/DIR+
+# dos optos do DM556D (NAO CONFIRMADO).
+# NUNCA ligar GPIO 3,3 V direto nos optos: modulo ULN2003A obrigatorio.
 
 connectors:
   J_GPIO_LIVRES:
@@ -30,9 +31,10 @@ connectors:
       no boot. Nao usar.
       (4) IO21/GPIO21 = DIR. DIVERGENCIA: tabela oficial marca como status do
       modem; prevalece a serigrafia do usuario (HARDWARE-DECISIONS.md).
-      (5) GND = referencia logica, comum com PUL-/DIR- (catodo) e ponto unico.
-      (6) 3V3 = sensores e lado LV do conversor (baixa corrente). NUNCA ir ao
-      driver, ao motor nem aplicar 5 V nos pinos de sinal da placa.
+      (5) GND = referencia logica, comum com o pino GND do ULN2003A, o GND
+      5 V, o driver e o ponto unico de terra.
+      (6) 3V3 = LIVRE nesta ligacao: o modulo ULN2003A nao usa 3V3. NUNCA ir
+      ao driver, ao motor nem aplicar 5 V nos pinos de sinal da placa.
     pinlabels:
       - IO3_STEP
       - IO46_RESERVADO
@@ -41,40 +43,45 @@ connectors:
       - GND
       - 3V3_LOGICA
 
-  # ------------------- conversor de nivel bidirecional 3,3 V <-> 5 V (P1)
-  J_LEVEL_LV:
-    type: "Conversor de nivel bidirecional — lado LV (3,3 V, SIMCAM)"
+  # ------------------- modulo ULN2003A (decisao do usuario em 22/11/2026)
+  J_ULN_IN:
+    type: "Modulo ULN2003A — entradas (In1..In7, lado esquerdo da placa)"
     notes: |-
-      STEP_LV <- IO3, DIR_LV <- IO21, VCC_3V3 <- 3V3, GND_LV <- GND.
-      Obrigatorio: os optos do DM556D exigem nivel alto > 3,5 V; o GPIO da
-      SIMCAM e 3,3 V e nao deve alimenta-los diretamente.
-    pinlabels: [STEP_LV, DIR_LV, VCC_3V3, GND_LV]
+      In1 <- IO3 (STEP), In2 <- IO21 (DIR), GND <- pino 5 da SIMCAM.
+      Darlington de coletor aberto: 500 mA por canal; a GPIO fornece apenas
+      a corrente de entrada. VCC do modulo vai ao +5 V externo (LEDs D1/D2,
+      jumper <-> fechado). O pino 3V3 da SIMCAM fica livre. In3..In7 livres.
+    pinlabels: [IN1_STEP, IN2_DIR, GND_ULN, VCC_5V]
 
-  J_LEVEL_HV:
-    type: "Conversor de nivel bidirecional — lado HV (5 V, DM556D)"
+  J_ULN_OUT:
+    type: "Modulo ULN2003A — saidas (A..G, barra preta a direita)"
     notes: |-
-      STEP_HV -> PUL+, DIR_HV -> DIR+. VCC_5V vem de fonte 5 V externa;
-      NAO CONFIRMADO se o proprio DM556D oferece saida auxiliar 5 V (P1).
-      GND_HV deve ser o mesmo ponto estrela do GND logico da SIMCAM.
-    pinlabels: [STEP_HV, DIR_HV, VCC_5V, GND_HV]
+      A -> PUL- do DM556D, B -> DIR- do DM556D. C..G nao conectados.
+      com In1/In2 em ALTO, A/B drenam para GND e o opto conduz (anodo comum).
+      Inversao: conferir borda de STEP e sentido de DIR no ensaio (P5).
+      LEDs D1/D2 acendem com os sinais.
+    pinlabels: [A_PUL_N, B_DIR_N]
 
   J_5V:
-    type: "Fonte 5 V para o lado HV do conversor — NAO CONFIRMADO (P1)"
+    type: "Fonte 5 V para o ULN e os optos do DM556D — NAO CONFIRMADO (P1)"
     notes: |-
-      Nao tirar do 3V3 da SIMCAM. Pode vir de regulador 24 V->5 V ou de
-      saida auxiliar do driver, se existir. Confirmar no manual antes de
-      ligar. GND_5V vai ao mesmo ponto estrela dos demais GND.
+      Nao tirar do 3V3 da SIMCAM. Alimenta o VCC do ULN (jumper <-> fechado,
+      LEDs D1/D2) e diretamente PUL+/DIR+ do DM556D. Pode vir de regulador
+      24 V->5 V; saida auxiliar do driver nao documentada. GND_5V vai ao
+      mesmo ponto estrela dos demais GND.
     pinlabels: [V5V, GND_5V]
 
   # -------------------------------------------------------------- DM556D
   J_DRV_SIG:
-    type: "DM556D (Azaneli/Policomp/Tecmaf) — entrada de sinal, CATODO COMUM"
+    type: "DM556D (Azaneli/Policomp/Tecmaf) — entrada de sinal, ANODO COMUM"
     notes: |-
-      VARIANTE DESENHADA: CATODO COMUM. GND da SIMCAM em PUL- e DIR-;
-      sinais a 5 V do conversor em PUL+ e DIR+.
+      VARIANTE DESENHADA: ANODO COMUM (decisao 22/11/2026).
+      +5 V externo em PUL+ e DIR+ (anodos); saidas A e B do ULN2003A em
+      PUL- e DIR- (catodos). Logo, In1/In2 em ALTO drenam o opto.
       ENA+/ENA- ficam DESCONECTADOS: o driver ja inicia habilitado por
       padrao (informado pelo usuario nesta revisao).
       Corrente dos optos e pulso minimo NAO CONFIRMADOS (P1).
+      Conferir se a inversao do ULN trocou o sentido de DIR (P5).
     pinlabels: [PUL_P, PUL_N, DIR_P, DIR_N, ENA_P, ENA_N]
 
   J_DRV_PWR:
@@ -119,61 +126,53 @@ connectors:
   J_REF_GND:
     type: "Referencia comum em ponto unico (star ground)"
     notes: |-
-      Une em um unico ponto o GND logico da SIMCAM (LOGICO), o GND do
-      conversor/fonte 5 V (AUX5V), o GND do driver (DRIVER) e o negativo
-      da fonte 24 V (FONTE). Os `loops` curto-circuitam os 4 pinos; sem
-      eles a referencia comum nao fica representada. O GND logico tambem
-      alimenta PUL-/DIR- (catodo comum).
+      Une em um unico ponto o GND logico da SIMCAM (LOGICO), o GND da fonte
+      5 V (AUX5V), o GND do driver (DRIVER) e o negativo da fonte 24 V
+      (FONTE). Os `loops` curto-circuitam os 4 pinos; sem eles a referencia
+      comum nao fica representada. O pino GND do ULN2003A e os drenos A/B
+      usam essa mesma referencia.
     pinlabels: [LOGICO, AUX5V, DRIVER, FONTE]
     loops: [[1, 2], [2, 3], [3, 4]]
 
 cables:
   W_STEP:
-    type: "IO3 -> conversor (logica 3,3 V)"
+    type: "IO3 -> ULN In1 (logica 3,3 V)"
     gauge: 0.25 mm2
     colors: [YE]
     wirelabels: [STEP]
   W_DIR:
-    type: "IO21 -> conversor (logica 3,3 V)"
+    type: "IO21 -> ULN In2 (logica 3,3 V)"
     gauge: 0.25 mm2
     colors: [GY]
     wirelabels: [DIR]
-  W_3V3:
-    type: "3V3 -> lado LV do conversor"
-    gauge: 0.25 mm2
-    colors: [RD]
-  W_GND_LV:
-    type: "GND da SIMCAM -> lado LV do conversor"
+  W_GND_ULN:
+    type: "GND da SIMCAM -> pino GND do ULN2003A"
     gauge: 0.25 mm2
     colors: [BK]
 
-  W_STEP_5V:
-    type: "Conversor -> DM556D PUL+ (nivel 5 V)"
-    gauge: 0.25 mm2
-    colors: [BN]
-    wirelabels: [PUL_P]
-  W_DIR_5V:
-    type: "Conversor -> DM556D DIR+ (nivel 5 V)"
-    gauge: 0.25 mm2
-    colors: [BU]
-    wirelabels: [DIR_P]
-  W_V5V:
-    type: "Fonte 5 V -> lado HV do conversor — NAO CONFIRMADO (P1)"
+  W_V5V_ULN:
+    type: "Fonte 5 V -> VCC do ULN (LEDs D1/D2) — NAO CONFIRMADO (P1)"
     gauge: 0.25 mm2
     colors: [OG]
     notes: "Conferir origem do 5 V no manual antes de ligar."
-  W_GND_HV:
-    type: "Fonte 5 V -> GND do lado HV do conversor"
+  W_V5V_PUL:
+    type: "Fonte 5 V -> PUL+ do DM556D (anodo do opto) — NAO CONFIRMADO (P1)"
     gauge: 0.25 mm2
-    colors: [BK]
+    colors: [OG]
+    wirelabels: [PUL_P]
+  W_V5V_DIR:
+    type: "Fonte 5 V -> DIR+ do DM556D (anodo do opto) — NAO CONFIRMADO (P1)"
+    gauge: 0.25 mm2
+    colors: [OG]
+    wirelabels: [DIR_P]
 
   W_PUL_N:
-    type: "GND da SIMCAM -> DM556D PUL- (catodo comum)"
+    type: "Saida A do ULN -> DM556D PUL- (anodo comum)"
     gauge: 0.25 mm2
     colors: [BK]
     wirelabels: [PUL_N]
   W_DIR_N:
-    type: "GND da SIMCAM -> DM556D DIR- (catodo comum)"
+    type: "Saida B do ULN -> DM556D DIR- (anodo comum)"
     gauge: 0.25 mm2
     colors: [BK]
     wirelabels: [DIR_N]
@@ -237,37 +236,33 @@ cables:
     colors: [BK]
 
 connections:
-  # --- GPIO -> conversor de nivel (3,3 V)
+  # --- GPIO -> ULN2003A (3,3 V). 3V3 da SIMCAM fica livre.
   - - J_GPIO_LIVRES: [IO3_STEP]
     - W_STEP: [1]
-    - J_LEVEL_LV: [STEP_LV]
+    - J_ULN_IN: [IN1_STEP]
   - - J_GPIO_LIVRES: [IO21_DIR]
     - W_DIR: [1]
-    - J_LEVEL_LV: [DIR_LV]
-  - - J_GPIO_LIVRES: [3V3_LOGICA]
-    - W_3V3: [1]
-    - J_LEVEL_LV: [VCC_3V3]
+    - J_ULN_IN: [IN2_DIR]
   - - J_GPIO_LIVRES: [GND]
-    - W_GND_LV: [1]
-    - J_LEVEL_LV: [GND_LV]
+    - W_GND_ULN: [1]
+    - J_ULN_IN: [GND_ULN]
 
-  # --- conversor -> DM556D (CATODO COMUM)
-  - - J_LEVEL_HV: [STEP_HV]
-    - W_STEP_5V: [1]
-    - J_DRV_SIG: [PUL_P]
-  - - J_LEVEL_HV: [DIR_HV]
-    - W_DIR_5V: [1]
-    - J_DRV_SIG: [DIR_P]
+  # --- 5 V externo -> VCC do ULN e anodos PUL+/DIR+ (ANODO COMUM)
   - - J_5V: [V5V]
-    - W_V5V: [1]
-    - J_LEVEL_HV: [VCC_5V]
-  - - J_5V: [GND_5V]
-    - W_GND_HV: [1]
-    - J_LEVEL_HV: [GND_HV]
-  - - J_GPIO_LIVRES: [GND]
+    - W_V5V_ULN: [1]
+    - J_ULN_IN: [VCC_5V]
+  - - J_5V: [V5V]
+    - W_V5V_PUL: [1]
+    - J_DRV_SIG: [PUL_P]
+  - - J_5V: [V5V]
+    - W_V5V_DIR: [1]
+    - J_DRV_SIG: [DIR_P]
+
+  # --- ULN2003A -> DM556D (A drena PUL-, B drena DIR-)
+  - - J_ULN_OUT: [A_PUL_N]
     - W_PUL_N: [1]
     - J_DRV_SIG: [PUL_N]
-  - - J_GPIO_LIVRES: [GND]
+  - - J_ULN_OUT: [B_DIR_N]
     - W_DIR_N: [1]
     - J_DRV_SIG: [DIR_N]
 
@@ -322,24 +317,25 @@ connections:
     - J_REF_GND: [FONTE]
 
 metadata:
-  title: "ventiseg — pan do fluxo de ar (SIMCAM + conversor 3,3V->5V + DM556D 24-36V, 1 motor)"
+  title: "ventiseg — pan do fluxo de ar (SIMCAM + ULN2003A + DM556D 24-36V, 1 motor)"
   description: |-
     Esquema de documentacao e execucao do ventiseg. Uma unica ESP32-S3
     LILYGO T-SIMCAM detecta a pessoa, comanda o pan e gira, com um unico
     motor KTC-HT23-400, o conjunto duto + camera. Camera e duto giram
-    juntos (malha fechada de visao). Conversor de nivel obrigatorio entre
+    juntos (malha fechada de visao). Modulo ULN2003A em anodo comum entre
     GPIO 3,3 V e os optos do DM556D.
   notes: |-
     CONFIRMADO: placa/flash, pinagem do conector preto (STEP=IO3, DIR=IO21,
-    IO45/IO46 reservados, GND, 3V3), logica de 3,3 V, conversor 3,3->5 V,
-    catodo comum, DM556D (24-50 VDC, 2,1-5,6 A) a 24-36 VDC/min 4 A, motor
-    KTC-HT23-400 em bipolar paralela (2,8 A, 1,9 Nm), ENA desconectado
-    (driver inicia habilitado), camera acoplada ao duto e ausencia de laser,
-    rele, fim de curso e tilt.
-    NAO CONFIRMADO: corrente dos optos e pulso minimo, origem do 5 V, DIP
-    SW5-SW8 exatos, curso/batentes, fusivel/bitolas, pulso no boot e revisao
-    da placa. Firmware mantem 3200 pulsos/volta provisorios; alvo e 1600.
-    VARIANTE DESENHADA: catodo comum (GND em PUL-/DIR-, 5 V em PUL+/DIR+).
+    IO45/IO46 reservados, GND, 3V3 livre), logica de 3,3 V, modulo ULN2003A
+    (In1/In2/A/B), anodo comum, DM556D (24-50 VDC, 2,1-5,6 A) a 24-36 VDC/
+    min 4 A, motor KTC-HT23-400 em bipolar paralela (2,8 A, 1,9 Nm), ENA
+    desconectado (driver inicia habilitado), camera acoplada ao duto e
+    ausencia de laser, rele, fim de curso e tilt.
+    NAO CONFIRMADO: corrente dos optos e pulso minimo, datasheet do modulo
+    ULN e jumper dos LEDs, origem do 5 V, inversao de DIR/borda de STEP,
+    DIP SW5-SW8 exatos, curso/batentes, fusivel/bitolas, pulso no boot e
+    revisao da placa. Firmware mantem 3200 pulsos/volta provisorios; alvo e 1600.
+    VARIANTE DESENHADA: anodo comum (+5 V em PUL+/DIR+, ULN drena PUL-/DIR-).
     Documentacao apenas: nenhum GPIO, motor ou fonte foi alterado/energizado.
 
 options:

@@ -84,8 +84,10 @@ estado**. Sem comando aceito em 1200 ms: watchdog força `SAFE`, eixo parado e
   GPIO, nenhum motor energizado. Mesmo o gate da web não altera isso.
 - A verificação foi **lógica** (firmware e testes host): parser, autoteste,
   watchdog, camada STEP/DIR e ensaio de pulsos em Python × JS × C++. Não houve
-  osciloscópio em `PUL+`/`DIR+`, driver alimentado, teste de boot/reset nem
-  carga desacoplada. O ensaio da UI não mede pulso elétrico algum.
+  osciloscópio em `PUL-`/`DIR-` (drenos do ULN2003A), driver alimentado, teste
+  de boot/reset nem carga desacoplada. Também não foi confirmado se a inversão
+  do ULN trocou o sentido de `DIR` ou a borda de `STEP`. O ensaio da UI não mede
+  pulso elétrico algum.
 - Não há aquisição de câmera, rede, `localStorage` nem dependências externas.
   A aba de detecção desenha um quadro sintético: nenhum sensor, captura ou
   inferência é executada, e o alvo de pan mostrado não é enviado ao firmware.

@@ -226,8 +226,8 @@
                         <div>
                             <h3>Não verificado (físico)</h3>
                             <ul>
-                                <li>Medir <code>STEP/PUL</code> ou <code>DIR</code> com osciloscópio.</li>
-                                <li>Observar <code>PUL+</code>/<code>DIR+</code> no lado de 5 V.</li>
+                                <li>Medir <code>In1</code>/<code>In2</code> (3,3 V) e a borda em <code>PUL-</code>/<code>DIR-</code> com osciloscópio.</li>
+                                <li>Observar <code>PUL-</code>/<code>DIR-</code> sendo drenados pelo ULN e o +5 V em <code>PUL+</code>/<code>DIR+</code>.</li>
                                 <li>Alimentar o DM556D ou testar boot/reset do driver.</li>
                                 <li>Confirmar ausência de pulso falso e comportamento com carga desacoplada.</li>
                             </ul>
@@ -380,14 +380,17 @@
                                 <tr><td>2</td><td>IO46 / GPIO46</td><td>reservado</td><td><strong>strapping</strong>: não puxar HIGH no boot</td></tr>
                                 <tr><td>3</td><td>IO45 / GPIO45</td><td>reservado</td><td><strong>strapping</strong>: define tensão da Flash no boot</td></tr>
                                 <tr><td>4</td><td>IO21 / GPIO21</td><td><strong>DIR</strong></td><td>digital/PWM/I2C</td></tr>
-                                <tr><td>5</td><td>GND</td><td>referência</td><td>comum com o driver</td></tr>
-                                <tr><td>6</td><td>3V3</td><td>referência</td><td>lógica 3,3 V; nunca aplicar 5 V nos sinais</td></tr>
+                                <tr><td>5</td><td>GND</td><td>referência</td><td>comum com o ULN, o driver e o star ground</td></tr>
+                                <tr><td>6</td><td>3V3</td><td>livre nesta ligação</td><td>o ULN2003A não usa 3V3; nunca aplicar 5 V nos sinais</td></tr>
                             </tbody>
                         </table>
                     </div>
                     <p class="hint">
-                        Driver <strong>DM556D (Azaneli)</strong> alimentado com <strong>24 VDC</strong>.
-                        Nível lógico da placa: <strong>3,3 V</strong>. Um único motor gira o
+                        Sinal de <strong>3,3 V</strong> em <code>In1</code>/<code>In2</code> do
+                        <strong>ULN2003A</strong>, que drena <code>PUL-</code>/<code>DIR-</code> do
+                        <strong>DM556D (Azaneli)</strong> em <strong>anodo comum</strong> (+5 V em
+                        <code>PUL+</code>/<code>DIR+</code>). Driver alimentado com <strong>24 VDC</strong>.
+                        Um único motor gira o
                         conjunto <strong>câmera + duto</strong>: a SIMCAM detecta a pessoa e
                         comanda o pan. Como a câmera gira junto, a visão é <strong>malha
                         fechada</strong> — o erro detectado precisa compensar o próprio
@@ -398,7 +401,7 @@
                 <article class="card">
                     <h2>Ressalvas — NAO CONFIRMADO</h2>
                     <ul>
-                        <li>Tipo de entrada PUL/DIR/ENA do DM556D (comum e corrente dos optos) e necessidade de conversor de nível.</li>
+                        <li>Topologia do DM556D (anodo comum adotado em 22/11/2026), corrente dos optos e inversão do ULN2003A: sentido de <code>DIR</code> e borda de <code>STEP</code> no ensaio.</li>
                         <li>Modelo/corrente do motor, curso útil em passos e batentes mecânicos.</li>
                         <li>Não existem fim de curso, relé, iluminador, laser ou eixo de tilt neste projeto.</li>
                         <li>Enquanto <code>VENTISEG_ENABLE_GPIO = 0</code>, nenhuma escrita em GPIO é feita.</li>
@@ -423,7 +426,7 @@
         </p>
         <p class="safety-note" id="gate-dialog-note" role="note">
             Entendo que a verificação foi lógica, que nenhum osciloscópio foi ligado
-            em <code>PUL+</code>/<code>DIR+</code> e que nenhum motor foi energizado.
+            em <code>PUL-</code>/<code>DIR-</code> (drenos do ULN) e que nenhum motor foi energizado.
         </p>
         <div class="control-group">
             <button type="button" class="btn" id="gate-dialog-cancel">Cancelar</button>

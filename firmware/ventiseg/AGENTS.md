@@ -35,13 +35,16 @@ e `docs/DEVLOG.md` da raiz no mesmo commit.
 | 3 | IO45 / GPIO45 | livre | **STRAPPING**: define tensão da Flash no boot |
 | 4 | IO21 / GPIO21 | `DIR` | Mais seguro para sinal; digital/PWM/I2C |
 | 5 | GND | referência | Comum com o driver |
-| 6 | 3V3 | referência | Sensores apenas; **não aplicar 5 V nos sinais** |
+| 6 | 3V3 | livre nesta ligação | O ULN2003A não usa 3V3; **não aplicar 5 V nos sinais** |
 
-IO45 e IO46 ficam reservados. A interface com o DM556D é **catodo comum** com
-conversor obrigatório **3,3 V → 5 V** (optos exigem alto > 3,5 V): GND em
-`PUL-`/`DIR-`, sinais em `PUL+`/`DIR+`, `ENA` desconectado. Corrente do opto,
-pulso mínimo e origem do 5 V seguem `NAO CONFIRMADO` (P1). Motor
-**KTC-HT23-400** em bipolar paralela 2,8 A; ver `docs/LIGACOES.md`.
+IO45 e IO46 ficam reservados. A interface com o DM556D usa **módulo
+ULN2003A** (decisão do usuário em 22/11/2026) em **anodo comum**: `In1` ← IO3
+(`STEP`), `In2` ← IO21 (`DIR`), `A` → `PUL-`, `B` → `DIR-`, `GND` no star
+ground e `VCC` no +5 V auxiliar (LEDs D1/D2). O +5 V vai direto em `PUL+` e
+`DIR+`; `ENA` desconectado. O ULN inverte o sinal: verificar no ensaio se o
+sentido de `DIR` ficou invertido e conferir a borda de `STEP`. Corrente do
+opto, pulso mínimo, 5 V medido e inversão seguem `NAO CONFIRMADO` (P1/P5).
+Motor **KTC-HT23-400** em bipolar paralela 2,8 A; ver `docs/LIGACOES.md`.
 
 ## Antes de qualquer gravação
 

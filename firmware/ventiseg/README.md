@@ -12,7 +12,7 @@ motor, **um** driver, **sem** laser/luz, **sem** relé e **sem** fim de curso.
 | STEP = IO3, DIR = IO21 | Serigrafia; inversão posterior tratada como typo |
 | Driver **DM556D** (24–50 VDC, 2,1–5,6 A) | 24–36 VDC / mín. 4 A |
 | Motor **KTC-HT23-400**, bipolar paralela 2,8 A / 1,9 Nm | Fios e DIP em `docs/LIGACOES.md` |
-| Sinal 3,3 V → conversor → 5 V, catodo comum | `ENA` desconectado; corrente do opto `NAO CONFIRMADO` |
+| Sinal 3,3 V → **ULN2003A** → 5 V, **anodo comum** (22/11/2026) | `In1`←IO3, `In2`←IO21, `A`→`PUL-`, `B`→`DIR-`; `PUL+`/`DIR+` no +5 V externo; `ENA` desconectado; corrente do opto `NAO CONFIRMADO` (P1) |
 
 ## Arquitetura
 
@@ -20,7 +20,7 @@ motor, **um** driver, **sem** laser/luz, **sem** relé e **sem** fim de curso.
    pessoa no quadro
           ^                         malha fechada (câmera gira com o duto)
           |                                       |
- [ SIMCAM: detecção + erro ] --STEP(IO3)/DIR(IO21)--> conversor 3,3→5 V --> DM556D 24-36 V --> motor --> duto + câmera
+ [ SIMCAM: detecção + erro ] --STEP(IO3)/DIR(IO21)--> ULN2003A --> DM556D 24-36 V --> motor --> duto + câmera
           |                                                                         |
           +--------------------------- telemetria ACK na serial --------------------+
 ```
@@ -36,6 +36,8 @@ motor, **um** driver, **sem** laser/luz, **sem** relé e **sem** fim de curso.
 - Sem GPIO ativo: `VENTISEG_ENABLE_GPIO=0`.
 - Limites de curso são **por software** (contagem de passos); não existe
   homing físico confirmado.
+- **Atenção (P5):** o ULN2003A inverte o sinal; conferir no ensaio se o sentido
+  de `DIR` ficou invertido e qual borda de `STEP` o driver reconhece.
 
 ## Árvore
 
@@ -47,6 +49,7 @@ firmware/ventiseg/
 │   ├── ESTADO.md             # status, pendências P1-P5
 │   ├── HARDWARE-DECISIONS.md # fatos x NAO CONFIRMADO
 │   ├── LIGACOES.md           # guia de execução: terminal a terminal
+│   ├── LIGACOES-PAR-A-PAR.md # mapa par a par + checklist (22/11/2026)
 │   ├── PROTOCOLO.md          # contrato v0.1
 │   └── wireviz/              # diagrama colorido (.yaml/.svg/.png) + esquema enxuto
 ├── spec/                     # especificações aprovadas
