@@ -205,6 +205,28 @@ out.clampBearing = C.detectionSnapshot(d).bearing_x;
 C.detectionSetPan(d, -9999);
 out.clampPan = C.detectionSnapshot(d).pan_steps;
 
+// Proxy de webcam: funcao pura, mesma usada pela UI com arrays de cinza.
+const W = C.WEBCAM;
+const bw = W.SAMPLE_W;
+const bh = W.SAMPLE_H;
+const fundo = new Uint8Array(bw * bh).fill(20);
+function comBloco(x0, valor, lado) {
+  const quadro = new Uint8Array(bw * bh).fill(20);
+  for (let y = 10; y < 10 + lado; y += 1) {
+    for (let x = x0; x < x0 + lado; x += 1) quadro[y * bw + x] = valor;
+  }
+  return quadro;
+}
+out.webcam = {
+  constants: W,
+  right: C.webcamForegroundX(fundo, comBloco(30, 200, 5), bw, bh, W.DIFF_THRESHOLD),
+  left: C.webcamForegroundX(fundo, comBloco(6, 200, 5), bw, bh, W.DIFF_THRESHOLD),
+  none: C.webcamForegroundX(fundo, fundo, bw, bh, W.DIFF_THRESHOLD),
+  global: C.webcamForegroundX(fundo, new Uint8Array(bw * bh).fill(200),
+                              bw, bh, W.DIFF_THRESHOLD),
+  tiny: C.webcamForegroundX(fundo, comBloco(20, 200, 2), bw, bh, W.DIFF_THRESHOLD),
+};
+
 process.stdout.write(JSON.stringify(out));
 """
 
@@ -291,7 +313,7 @@ class ContratoDeMensagens(unittest.TestCase):
 
     def test_sem_campos_de_outros_projetos(self) -> None:
         proibidos = ("LIGHT,", "LASER,", "TILT", "LED_EN", "'LINK'",
-                     "getUserMedia", "pinMode", "digitalWrite")
+                     "pinMode", "digitalWrite")
         for nome, texto in self.textos.items():
             for token in proibidos:
                 with self.subTest(arquivo=nome, token=token):
@@ -462,6 +484,13 @@ class Seguranca(unittest.TestCase):
             self.assertNotIn(proibido, js, proibido)
         self.assertNotRegex(js, r"\.innerHTML\s*=", "use textContent")
 
+    def test_webcam_sem_gravacao_ou_rede(self) -> None:
+        js = self.textos.get("app.js", "")
+        for proibido in ("MediaRecorder", "WebSocket", "RTCPeerConnection",
+                         "ImageCapture", "encodeURIComponent"):
+            with self.subTest(proibido=proibido):
+                self.assertNotIn(proibido, js)
+
     def test_sem_recursos_externos(self) -> None:
         html = self.textos.get("index.html", "")
         self.assertNotRegex(html, r'(?:src|href)="https?://', "recurso externo")
@@ -623,6 +652,19 @@ class DeteccaoSintetica(unittest.TestCase):
         self.assertEqual(self.out["clampBearing"], 1000)
         self.assertEqual(self.out["clampPan"], -533)
 
+    def test_proxy_de_webcam_e_puro_e_limpo(self) -> None:
+        w = self.out["webcam"]
+        self.assertEqual(w["constants"]["SAMPLE_W"], 40)
+        self.assertEqual(w["constants"]["SAMPLE_H"], 30)
+        self.assertGreater(w["right"], 300)
+        self.assertLess(w["left"], -300)
+        for chave in ("right", "left"):
+            with self.subTest(chave=chave):
+                self.assertLessEqual(abs(w[chave]), 1000)
+        for chave in ("none", "global", "tiny"):
+            with self.subTest(chave=chave):
+                self.assertIsNone(w[chave])
+
 
 class EstruturaDeteccao(unittest.TestCase):
     """A aba de deteccao existe, e rotulada e nao toca hardware real."""
@@ -636,34 +678,41 @@ class EstruturaDeteccao(unittest.TestCase):
         fim = cls.html.find("</section>", inicio) if inicio >= 0 else -1
         cls.painel = cls.html[inicio:fim] if fim > inicio else ""
 
-    def test_aba_existe_e_e_sintetica(self) -> None:
+    def test_aba_existe_e_webcam_e_opcional(self) -> None:
         self.assertIn('data-tab="deteccao"', self.html)
         self.assertIn('id="tabbtn-deteccao"', self.html)
         self.assertTrue(self.painel, "painel de deteccao ausente ou vazio")
         self.assertIn("sintético", self.painel)
-        self.assertIn("não há câmera real", self.painel)
+        self.assertIn("webcam", self.painel.lower())
+        self.assertIn("Não há gravação", self.painel)
 
     def test_ids_e_estilos_presentes(self) -> None:
         ids = (
-            "cam-person", "cam-lost", "det-status", "det-bearing",
-            "det-pan", "det-pan-x", "det-apparent", "det-error",
-            "det-error-px", "det-target", "det-bearing-slider",
-            "det-pan-slider", "det-seen", "det-closed-loop",
+            "cam-frame", "cam-video", "cam-start", "cam-calibrate",
+            "cam-stop", "cam-status", "cam-person", "cam-lost",
+            "det-status", "det-bearing", "det-pan", "det-pan-x",
+            "det-apparent", "det-error", "det-error-px", "det-target",
+            "det-bearing-slider", "det-pan-slider", "det-seen",
+            "det-closed-loop",
         )
         for ident in ids:
             with self.subTest(id=ident):
                 self.assertIn(f'id="{ident}"', self.html)
                 self.assertIn(ident, self.js)
-        for classe in ("cam-frame", "cam-person", "cam-lost", "cam-band"):
+        for classe in ("cam-frame", "cam-video", "cam-person",
+                       "cam-lost", "cam-band"):
             with self.subTest(classe=classe):
                 self.assertIn("." + classe, self.css)
 
-    def test_sem_captura_real_nem_hardware(self) -> None:
-        for proibido in ("getUserMedia", "ImageCapture", "pinMode",
-                         "digitalWrite", "fetch(", "localStorage"):
+    def test_webcam_local_sem_hardware(self) -> None:
+        for proibido in ("ImageCapture", "MediaRecorder", "WebSocket",
+                         "pinMode", "digitalWrite", "fetch(", "localStorage"):
             with self.subTest(proibido=proibido):
                 self.assertNotIn(proibido, self.painel)
-        self.assertIn("Nenhum GPIO", self.painel)
+        self.assertIn("GPIO", self.painel)
+        self.assertIn("comando de protocolo", self.painel)
+        self.assertIn("navigator.mediaDevices.getUserMedia", self.js)
+        self.assertIn(".stop()", self.js)
 
 
 class ReforcoDaInterface(unittest.TestCase):
@@ -692,6 +741,13 @@ class ReforcoDaInterface(unittest.TestCase):
         for classe in ("visually-hidden", "skip-link", "table-scroll"):
             with self.subTest(classe=classe):
                 self.assertIn("." + classe, self.css)
+
+    def test_webcam_com_status_e_video_rotulado(self) -> None:
+        self.assertIn('id="cam-status" role="status" aria-live="polite"', self.html)
+        self.assertIn('aria-label="Vídeo local da webcam', self.html)
+        for ident in ("cam-start", "cam-calibrate", "cam-stop"):
+            with self.subTest(id=ident):
+                self.assertIn(f'id="{ident}"', self.html)
 
     def test_valores_dos_sliders_e_foco_do_dialogo(self) -> None:
         for ident in ("det-bearing-value", "det-pan-value"):

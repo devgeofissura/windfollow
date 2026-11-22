@@ -82,13 +82,15 @@ feita. A auditoria P1–P5 está documentada, mas **fisicamente aberta**.
   `STEP`/`DIR` para provar que gate fechado não escreve pino e que fechar o
   gate com pulso em alto baixa o STEP. Firmware **não regravado** após essas
   correções; a placa segue com o build serial-only anterior.
-- Visualização **sintética** da detecção na aba "Detecção (sintética)":
-  quadro com pessoa, zona morta, erro de posição, erro em pixels e alvo de pan.
-  O núcleo em `simulator/js/app.js` é determinístico e espelha a geometria do
-  laço fechado (erro = bearing da pessoa − pan da câmera); a malha fechada é
-  opcional e apenas aproxima o pan sintético. **Não há captura de imagem,
-  câmera real, detecção de pessoa nem acionamento de motor/GPIO** — os testes
-  host exercitam o núcleo em Node com valores fixos.
+- Visualização da detecção na aba "Detecção (sintética)": quadro com marcador,
+  zona morta, erro de posição, erro em pixels e alvo de pan. O núcleo em
+  `simulator/js/app.js` é determinístico e espelha a geometria do laço fechado
+  (erro = bearing da pessoa − pan da câmera); a malha fechada é opcional e
+  apenas aproxima o pan sintético. Desde 22/11/2026 a UI aceita, **por opção do
+  usuário**, a webcam local: um proxy de diferença de fundo estima o x que
+  entra no mesmo núcleo. A câmera é somente deste navegador — não há captura
+  no firmware, detector de pessoa, motor/GPIO nem comando de protocolo. Os
+  testes host exercitam o núcleo e o proxy em Node com valores fixos.
 - Simulador reforçado em 21/11/2026: abas com *roving tabindex* e setas
   `←`/`→`/`Home`/`End`, *skip link*, foco devolvido ao botão após o modal,
   valores dos sliders visíveis, tabelas roláveis e tokens de contraste próprios
@@ -116,8 +118,9 @@ feita. A auditoria P1–P5 está documentada, mas **fisicamente aberta**.
 Nenhuma P foi fechada fisicamente. A camada STEP/DIR existe apenas em código
 e testes host; a liberação física continua bloqueada até P1–P5 serem
 conferidas no equipamento real. Não energizar driver/motor, não liberar os
-gates de compilação e não integrar captura de câmera/malha fechada antes
-disso. Detalhes em `HARDWARE-DECISIONS.md`.
+gates de compilação e não integrar captura de câmera ao firmware nem malha
+fechada física antes disso (a webcam do simulador é apenas UI local).
+Detalhes em `HARDWARE-DECISIONS.md`.
 
 ## Regra de atualização
 

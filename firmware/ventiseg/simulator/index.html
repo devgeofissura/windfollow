@@ -235,8 +235,10 @@
                     </div>
                     <p class="safety-note" role="note">
                         <strong>Nenhum DM556D, motor ou carga foi energizado nesta entrega.</strong>
-                        Não há captura de câmera, detecção de pessoa, erro real de imagem,
-                        malha fechada ou compensação de movimento ativos. Firmware não foi gravado.
+                        A webcam local, quando ativada, alimenta apenas a aba de detecção
+                        deste navegador: não há captura no firmware, detector de pessoa,
+                        malha fechada real ou compensação de movimento física. Firmware
+                        não foi gravado.
                     </p>
                 </article>
             </section>
@@ -244,17 +246,23 @@
             <!-- DETECÇÃO SINTÉTICA -->
             <section id="tab-deteccao" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-deteccao" hidden>
                 <p class="safety-note" role="note">
-                    <strong>Quadro sintético:</strong> não há câmera real, captura de imagem
-                    nem detecção de pessoa. Os números abaixo são gerados no navegador
-                    apenas para visualizar a geometria do laço fechado. Nenhum GPIO,
-                    driver ou motor é acionado e nenhum comando de protocolo é enviado.
+                    <strong>Quadro sintético por padrão.</strong> A webcam deste
+                    dispositivo é opcional e fica apenas nesta aba: você ativa com
+                    um clique, o navegador pede permissão e os quadros são
+                    amostrados localmente. Não há gravação, envio, detector de
+                    pessoa, GPIO, driver ou motor. Um proxy de diferença em
+                    relação ao fundo estima apenas um x para a simulação; nenhum
+                    comando de protocolo é enviado ao firmware.
                 </p>
 
                 <div class="grid-2">
                     <article class="card">
-                        <h2>Quadro sintético</h2>
-                        <div class="cam-frame" role="img"
+                        <h2>Quadro — sintético ou webcam local</h2>
+                        <div class="cam-frame" id="cam-frame" role="img"
                              aria-label="Quadro sintético com a pessoa e a zona central">
+                            <video id="cam-video" class="cam-video" hidden
+                                   playsinline muted autoplay
+                                   aria-label="Vídeo local da webcam, sem gravação"></video>
                             <div class="cam-band" aria-hidden="true"></div>
                             <div class="cam-center" aria-hidden="true"></div>
                             <div class="cam-person" id="cam-person" aria-hidden="true">
@@ -263,10 +271,28 @@
                             </div>
                             <div class="cam-lost" id="cam-lost" hidden>sem detecção</div>
                         </div>
+                        <div class="control-group">
+                            <button type="button" class="btn btn-primary" id="cam-start"
+                                    aria-pressed="false">Ativar webcam</button>
+                            <button type="button" class="btn" id="cam-calibrate" disabled>
+                                Calibrar fundo
+                            </button>
+                            <button type="button" class="btn btn-ghost" id="cam-stop" disabled>
+                                Desativar webcam
+                            </button>
+                        </div>
+                        <p class="hint" id="cam-status" role="status" aria-live="polite">
+                            Webcam desligada — quadro sintético em uso.
+                        </p>
                         <p class="hint" id="det-caption">
                             Erro = posição da pessoa no mundo − pan da câmera. Como a
                             câmera gira junto com o duto, o erro compensa o próprio
-                            movimento para manter a pessoa centralizada.
+                            movimento para manter a pessoa centralizada. Com a webcam,
+                            o x estimado entra no lugar do bearing sintético e, com
+                            <code>TRACK</code> ligado, vira a amostra <code>T</code>
+                            que comanda o pan simulado. Enquanto a webcam está ativa,
+                            os controles sintéticos ficam desabilitados; sem alvo no
+                            proxy, nenhuma amostra <code>T</code> é enviada.
                         </p>
                     </article>
 

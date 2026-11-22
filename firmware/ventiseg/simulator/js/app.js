@@ -492,6 +492,48 @@
     PAN_X_SCALE: X_LIMIT / SIM.MAX_TRAVEL,
   });
 
+  // Webcam local da UI: so amostra o quadro e estima um x do contrato.
+  // Nao e detector de pessoa, nao grava e nao envia nada para o firmware.
+  const WEBCAM = Object.freeze({
+    SAMPLE_W: 40,
+    SAMPLE_H: 30,
+    DIFF_THRESHOLD: 18,
+    MIN_FOREGROUND_RATIO: 0.01,
+    MAX_FOREGROUND_RATIO: 0.55,
+  });
+
+  // Centro de massa dos pixels que mudaram em relacao ao fundo. Funcao pura:
+  // recebe arrays de cinza e devolve x em [-1000, 1000] ou null (sem alvo).
+  function webcamForegroundX(background, frame, width, height, threshold) {
+    if (!background || !frame || !Number.isInteger(width) ||
+        !Number.isInteger(height) || width < 2 || height < 2) return null;
+    const total = width * height;
+    if (background.length < total || frame.length < total ||
+        !Number.isFinite(threshold)) return null;
+    let weightSum = 0;
+    let xSum = 0;
+    let changed = 0;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const i = y * width + x;
+        const diff = Math.abs(frame[i] - background[i]);
+        if (diff <= threshold) continue;
+        const weight = diff - threshold;
+        weightSum += weight;
+        xSum += x * weight;
+        changed += 1;
+      }
+    }
+    if (weightSum === 0 || changed === 0) return null;
+    const ratio = changed / total;
+    // Mudanca global (luz/exposicao) ou ruido isolado nao e alvo valido.
+    if (ratio < WEBCAM.MIN_FOREGROUND_RATIO ||
+        ratio > WEBCAM.MAX_FOREGROUND_RATIO) return null;
+    const centroidX = xSum / weightSum;
+    const x = Math.round((centroidX / (width - 1) * 2 - 1) * X_LIMIT);
+    return clamp(x, X_LIMIT);
+  }
+
   function createDetection() {
     const d = {
       bearingX: 0,   // bearing da pessoa no mundo, em x do contrato
@@ -579,7 +621,7 @@
     stepDirTestPulse, stepDirUpdate, stepDirConfig, stepDirSnapshot,
     CAM, createDetection, detectionSetBearing, detectionSetPan,
     detectionSetSeen, detectionUpdate, detectionCloseLoop,
-    detectionSnapshot,
+    detectionSnapshot, WEBCAM, webcamForegroundX,
   });
 
   global.VentisegCore = Core;
@@ -618,6 +660,9 @@
     detBearingSlider: $('det-bearing-slider'), detPanSlider: $('det-pan-slider'),
     detBearingValue: $('det-bearing-value'), detPanValue: $('det-pan-value'),
     detSeen: $('det-seen'), detClosedLoop: $('det-closed-loop'),
+    camFrame: $('cam-frame'), camVideo: $('cam-video'),
+    camStart: $('cam-start'), camCalibrate: $('cam-calibrate'),
+    camStop: $('cam-stop'), camStatus: $('cam-status'),
   };
 
   let sim = Core.createState();
@@ -628,6 +673,17 @@
   let gateSource = 'nenhuma';
   let cfgReply = '—';
   let detection = Core.createDetection();
+
+  // Estado somente da UI: stream local, fundo calibrado e timer de amostragem.
+  const webcam = {
+    stream: null,
+    timer: null,
+    canvas: null,
+    ctx: null,
+    background: null,
+    active: false,
+    lastX: null,
+  };
 
   function clock() {
     return typeof performance !== 'undefined' && performance.now
@@ -704,6 +760,152 @@
     el.gateOpen.setAttribute('aria-pressed', String(stepDir.gate));
     el.gateOpen.textContent = stepDir.gate
       ? 'Saída liberada (WEB)' : 'Liberar saída (WEB)';
+  }
+
+  function setWebcamStatus(text) {
+    if (el.camStatus) el.camStatus.textContent = text;
+  }
+
+  function renderWebcamControls() {
+    if (!el.camStart) return;
+    el.camStart.setAttribute('aria-pressed', String(webcam.active));
+    el.camStart.disabled = webcam.active;
+    el.camCalibrate.disabled = !webcam.active;
+    el.camStop.disabled = !webcam.active;
+    el.camStart.textContent = webcam.active ? 'Webcam ativa' : 'Ativar webcam';
+    // Enquanto a webcam manda o bearing, os controles sintéticos seriam
+    // sobrescritos no próximo quadro: desabilita para não enganar quem usa.
+    for (const controles of [el.detBearingSlider, el.detPanSlider,
+                             el.detSeen, el.detClosedLoop]) {
+      if (controles) controles.disabled = webcam.active;
+    }
+    if (el.camFrame) {
+      el.camFrame.classList.toggle('webcam-on', webcam.active);
+      el.camFrame.setAttribute('aria-label', webcam.active
+        ? 'Webcam local ao vivo com marcador do proxy de fundo e zona central'
+        : 'Quadro sintético com a pessoa e a zona central');
+    }
+    if (el.camVideo) el.camVideo.hidden = !webcam.active;
+  }
+
+  function stopWebcam(reason) {
+    if (webcam.timer !== null) {
+      window.clearInterval(webcam.timer);
+      webcam.timer = null;
+    }
+    if (webcam.stream) {
+      webcam.stream.getTracks().forEach((track) => track.stop());
+      webcam.stream = null;
+    }
+    if (el.camVideo) el.camVideo.srcObject = null;
+    webcam.active = false;
+    webcam.background = null;
+    webcam.lastX = null;
+    Core.detectionSetSeen(detection, el.detSeen ? el.detSeen.checked : true);
+    renderWebcamControls();
+    renderDeteccao();
+    setWebcamStatus(reason || 'Webcam desligada — quadro sintético em uso.');
+  }
+
+  function grayFrame(imageData) {
+    const count = imageData.width * imageData.height;
+    const gray = new Uint8Array(count);
+    for (let i = 0; i < count; i += 1) {
+      const p = i * 4;
+      gray[i] = Math.round(imageData.data[p] * 0.299 +
+        imageData.data[p + 1] * 0.587 + imageData.data[p + 2] * 0.114);
+    }
+    return gray;
+  }
+
+  function sampleWebcam() {
+    if (!webcam.active || !webcam.ctx || !el.camVideo ||
+        el.camVideo.readyState < 2) return null;
+    webcam.ctx.drawImage(el.camVideo, 0, 0,
+      Core.WEBCAM.SAMPLE_W, Core.WEBCAM.SAMPLE_H);
+    return webcam.ctx.getImageData(0, 0,
+      Core.WEBCAM.SAMPLE_W, Core.WEBCAM.SAMPLE_H);
+  }
+
+  function analyzeWebcamFrame() {
+    const sample = sampleWebcam();
+    if (!sample) return;
+    const frame = grayFrame(sample);
+    if (!webcam.background) {
+      webcam.background = frame;
+      setWebcamStatus('Webcam ativa: fundo capturado. Entre no quadro ou '
+        + 'use "Calibrar fundo" com a cena vazia.');
+      return;
+    }
+    const x = Core.webcamForegroundX(webcam.background, frame,
+      Core.WEBCAM.SAMPLE_W, Core.WEBCAM.SAMPLE_H,
+      Core.WEBCAM.DIFF_THRESHOLD);
+    if (x === null) {
+      webcam.lastX = null;
+      Core.detectionSetSeen(detection, false);
+      setWebcamStatus('Webcam ativa — sem alvo no proxy local (luz/ruído '
+        + 'ou cena igual ao fundo); nenhuma amostra T é gerada.');
+      renderDeteccao();
+      return;
+    }
+    webcam.lastX = x;
+    Core.detectionSetBearing(detection, x);
+    Core.detectionSetSeen(detection, true);
+    setWebcamStatus('Webcam ativa — x estimado: ' + x +
+      ' (proxy de fundo, não é detector de pessoa).');
+    renderDeteccao();
+  }
+
+  function calibrateWebcam() {
+    const sample = sampleWebcam();
+    if (!sample) {
+      setWebcamStatus('Não foi possível calibrar: aguarde o vídeo ficar pronto.');
+      return false;
+    }
+    webcam.background = grayFrame(sample);
+    webcam.lastX = null;
+    Core.detectionSetSeen(detection, false);
+    renderDeteccao();
+    setWebcamStatus('Fundo recalibrado com o quadro atual — nada é enviado '
+      + 'ao firmware.');
+    return true;
+  }
+
+  async function startWebcam() {
+    if (webcam.active) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setWebcamStatus('Webcam indisponível neste contexto. Use um navegador '
+        + 'com suporte e origem segura (file:// ou localhost).');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+      });
+      webcam.stream = stream;
+      if (el.camVideo) el.camVideo.srcObject = stream;
+      if (el.camVideo) await el.camVideo.play();
+      webcam.canvas = document.createElement('canvas');
+      webcam.canvas.width = Core.WEBCAM.SAMPLE_W;
+      webcam.canvas.height = Core.WEBCAM.SAMPLE_H;
+      webcam.ctx = webcam.canvas.getContext('2d', { willReadFrequently: true });
+      if (!webcam.ctx) throw new Error('canvas indisponível');
+      webcam.active = true;
+      webcam.background = null;
+      webcam.lastX = null;
+      Core.detectionSetSeen(detection, false);
+      renderWebcamControls();
+      renderDeteccao();
+      setWebcamStatus('Webcam ativa — capturando o fundo neste navegador.');
+      webcam.timer = window.setInterval(analyzeWebcamFrame, 150);
+      analyzeWebcamFrame();
+    } catch (error) {
+      const nome = error && error.name ? error.name : 'erro desconhecido';
+      stopWebcam('Webcam não iniciada (' + nome +
+        '). Permissão negada ou dispositivo sem câmera: o quadro sintético '
+        + 'continua disponível.');
+    }
   }
 
   function renderDeteccao() {
@@ -800,6 +1002,7 @@
 
   function reset() {
     closeGate('reset');
+    stopWebcam('Webcam desligada no reinício — quadro sintético em uso.');
     sim = Core.createState();
     sim.lastAcceptedMs = clock();
     nextSeq = 0;
@@ -823,10 +1026,22 @@
         ' ms — SAFE, eixo parado, gate fechado');
       addLog('rx', Core.telemetry(sim));
     }
-    if (sim.mode === 'TRACK' && !linkCut) {
-      syntheticTarget = Core.clamp(
-        syntheticTarget + Math.round((Math.random() - 0.5) * 240), Core.X_LIMIT);
-      const valid = Math.random() > 0.15;
+    // Com webcam, o pan exibido e o eixo comandado pela FSM; o servo sintetico
+    // fica fora para nao competir com o mesmo alvo.
+    if (webcam.active && webcam.lastX !== null) {
+      Core.detectionSetPan(detection, sim.axis);
+    }
+    // Com webcam ativa e sem alvo, nao inventa amostra T: eixo para no SAFE.
+    if (sim.mode === 'TRACK' && !linkCut &&
+        !(webcam.active && webcam.lastX === null)) {
+      const usarWebcam = webcam.active && webcam.lastX !== null;
+      if (usarWebcam) {
+        syntheticTarget = webcam.lastX;  // proxy local no lugar do alvo aleatorio
+      } else {
+        syntheticTarget = Core.clamp(
+          syntheticTarget + Math.round((Math.random() - 0.5) * 240), Core.X_LIMIT);
+      }
+      const valid = usarWebcam || Math.random() > 0.15;
       const seq = Math.max(nextSeq, sim.seq + 1);
       send('T,' + seq + ',' + syntheticTarget + ',' + (valid ? 1 : 0));
       nextSeq = seq + 1;
@@ -836,9 +1051,8 @@
     // escrito: tudo permanece no estado logico do navegador.
     Core.setStepDirTarget(stepDir, sim.axis);
     Core.stepDirUpdate(stepDir, clockUs());
-    // Servo sintetico opcional: so aproxima o pan do alvo, sem tocar GPIO.
-    if (el.detClosedLoop && el.detClosedLoop.checked) {
-      Core.detectionCloseLoop(detection);
+    if (!webcam.active && el.detClosedLoop && el.detClosedLoop.checked) {
+      Core.detectionCloseLoop(detection);  // servo sintetico, sem tocar GPIO
     }
     render();
   }
@@ -1003,12 +1217,18 @@
       Core.detectionSetSeen(detection, el.detSeen.checked);
       renderDeteccao();
     });
+    el.camStart.addEventListener('click', startWebcam);
+    el.camCalibrate.addEventListener('click', calibrateWebcam);
+    el.camStop.addEventListener('click', () => stopWebcam());
+    window.addEventListener('pagehide', () => stopWebcam(
+      'Webcam desligada ao sair da página.'));
   }
 
   function init() {
     initTheme();
     bind();
     fillConstants();
+    renderWebcamControls();
     sim.lastAcceptedMs = clock();
     addLog('evt', 'BOOT: SAFE, eixo parado, fault None');
     addLog('rx', Core.telemetry(sim));

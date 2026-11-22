@@ -278,6 +278,30 @@ select:focus-visible, button:focus-visible, .skip-link:focus-visible,
     overflow: hidden;
 }
 
+.cam-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #000;
+}
+
+.cam-frame.webcam-on { background: #000; }
+
+/* Com webcam, o "boneco" vira apenas um marcador do proxy de fundo. */
+.cam-frame.webcam-on .cam-person {
+    top: 50%;
+    width: 12%;
+    height: 28%;
+    border: 2px solid var(--color-success);
+    border-radius: 2px;
+    background: transparent;
+}
+
+.cam-frame.webcam-on .cam-head,
+.cam-frame.webcam-on .cam-body { display: none; }
+
 .cam-center {
     position: absolute;
     left: 50%;

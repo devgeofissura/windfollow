@@ -11,6 +11,28 @@ e soluções, arquivos tocados.
 
 ## Histórico
 
+### 2026-11-22 10:04 - feat(ventiseg): webcam local no simulador
+
+**Area:** ventiseg
+
+**Feito:**
+- webcam opt-in na aba de deteccao com proxy de fundo e controles
+- x estimado alimenta o nucleo e amostras T em TRACK
+- documentacao e testes atualizados
+
+**Dificuldades e solucoes:**
+- getUserMedia pode ser negado ou ausente -> fallback sintetico e status claro
+- proxy com bloco pequeno era descartado -> amplitude ajustada no teste
+- sem alvo a UI podia dizer detectada -> seen=false e nenhuma amostra T
+
+**Arquivos:**
+- `firmware/ventiseg/docs/ESTADO.md`
+- `firmware/ventiseg/simulator/README.md`
+- `firmware/ventiseg/simulator/css/style.css`
+- `firmware/ventiseg/simulator/index.html`
+- `firmware/ventiseg/simulator/js/app.js`
+- `firmware/ventiseg/tests/test_simulator.py`
+
 ### 2026-11-22 09:17 - docs(ventiseg): uln2003a e anodo comum no mapa de ligacoes
 
 **Area:** ventiseg

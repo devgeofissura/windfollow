@@ -5,13 +5,39 @@ Página local para exercitar o contrato v0.1 do ventiseg **sem placa**: FSM
 Não há Wi-Fi, luz, laser, relé, tilt nem fim de curso neste projeto.
 
 > **Isto é uma simulação.** Nenhum GPIO, motor ou iluminador real é acionado.
-> Os comandos ficam neste navegador. O firmware de bancada mantém
-> `VENTISEG_ENABLE_GPIO = 0`.
+> Os comandos ficam neste navegador; a webcam, se ativada, também fica aqui.
+> O firmware de bancada mantém `VENTISEG_ENABLE_GPIO = 0`.
 
 ## Como abrir
 
 Duplo clique em `index.html` — funciona em `file://`, sem servidor, sem rede,
-sem build e sem bibliotecas externas. Não é preciso instalar nada.
+sem build e sem bibliotecas externas. Não é preciso instalar nada. A webcam é
+opcional: o quadro sintético funciona sem permissão alguma.
+
+## Webcam local (opcional)
+
+1. Abra a aba **Detecção (sintética)** e clique em **Ativar webcam**. O
+   navegador pede permissão; negar não quebra o simulador.
+2. O primeiro quadro válido é usado como **fundo**. Saia da cena e clique em
+   **Calibrar fundo** para reduzir falsos positivos (luz/exposição também
+   mudam o fundo).
+3. O proxy compara cada quadro com o fundo e estima o centro horizontal da
+   diferença; esse x entra em `detectionSetBearing`. Com `TRACK` ligado, ele
+   também substitui o alvo aleatório das amostras `T`, e o pan simulado da FSM
+   desloca o marcador no quadro — é malha fechada lógica, não motor real.
+   Enquanto a webcam está ativa, os controles sintéticos são desabilitados;
+   sem alvo no proxy, o painel mostra "sem detecção" e nenhuma amostra `T` é
+   gerada, deixando o eixo parar em SAFE. Sem webcam, o gerador aleatório e o
+   servo sintético seguem como antes.
+4. **Desativar webcam**, **Reiniciar simulação** e sair da página param os
+   tracks e liberam o dispositivo. O estado `role="status"` informa permissão
+   negada, câmera ausente ou contexto sem `getUserMedia`.
+
+**Limites do proxy:** não é detector de pessoa, não mede profundidade, não
+grava, não envia quadros nem usa rede. Não há `ImageCapture`,
+`MediaRecorder`, `WebSocket` ou inferência externa. Em navegadores que só
+permitem mídia em origem segura, sirva a pasta por `localhost` (por exemplo,
+`python -m http.server`) — nenhuma dependência é instalada.
 
 ## Navegação e acessibilidade
 
@@ -43,12 +69,13 @@ sem build e sem bibliotecas externas. Não é preciso instalar nada.
   e auditoria elétrica antes de qualquer saída física. O formulário de ensaio
   emite N pulsos exatos com prioridade sobre o alvo da FSM — ainda somente
   lógico, sem escrita de pino.
-- **Detecção (sintética):** quadro com a pessoa, zona morta central, erro de
-  posição (em x e em pixels) e alvo de pan. Sliders movem o bearing da pessoa e
-  o pan da câmera; o erro compensa o próprio movimento da câmera, que gira
-  junto com o duto. A malha fechada opcional apenas aproxima o pan sintético do
-  alvo. **Não há imagem, câmera real ou detecção de pessoa** — é geometria pura
-  no navegador, sem comandos de protocolo e sem tocar GPIO/driver/motor.
+- **Detecção (sintética ou webcam local):** quadro com marcador, zona morta
+  central, erro de posição (em x e em pixels) e alvo de pan. Sliders movem o
+  bearing da pessoa e o pan da câmera; o erro compensa o próprio movimento da
+  câmera, que gira junto com o duto. A malha fechada opcional apenas aproxima o
+  pan sintético do alvo. Com a webcam ativa, o x estimado pelo proxy de fundo
+  substitui o bearing do slider; nada é enviado ao firmware nem tocado em
+  GPIO/driver/motor.
 - **Protocolo:** constantes e formatos do contrato v0.1, somente leitura.
 - **Pinagem:** conector `J_GPIO_LIVRES` (STEP=IO3, DIR=IO21, IO45/46
   reservados por strapping, GND, 3V3), lógica 3,3 V e driver DM556D Azaneli
@@ -88,9 +115,11 @@ estado**. Sem comando aceito em 1200 ms: watchdog força `SAFE`, eixo parado e
   de boot/reset nem carga desacoplada. Também não foi confirmado se a inversão
   do ULN trocou o sentido de `DIR` ou a borda de `STEP`. O ensaio da UI não mede
   pulso elétrico algum.
-- Não há aquisição de câmera, rede, `localStorage` nem dependências externas.
-  A aba de detecção desenha um quadro sintético: nenhum sensor, captura ou
-  inferência é executada, e o alvo de pan mostrado não é enviado ao firmware.
+- A webcam é **opt-in**, somente nesta aba, e seus tracks são parados ao
+  desativar, reiniciar ou sair da página. Não há rede, `localStorage`,
+  `fetch(` ou dependências externas; nenhum quadro é gravado ou transmitido.
+  O alvo de pan mostrado não é enviado ao firmware, e nenhum GPIO/driver/motor
+  é tocado.
 - As constantes exibidas espelham `docs/PROTOCOLO.md`; testes host barram
   divergência e exercitam a FSM em Node com tempo determinístico.
 - O roteiro de casos-limite compara as três implementações e contabiliza
@@ -109,5 +138,7 @@ python -m unittest discover -s firmware/ventiseg/tests -p 'test_simulator.py' -v
 
 - Não integra com firmware real, serial, UDP nem gravação na placa.
 - O gerador de alvo usa valores aleatórios apenas na UI; a FSM testada é pura.
+- A webcam fornece apenas um proxy de diferença de fundo: não há calibragem
+  de câmera, detector de pessoa nem laço fechado real com o motor.
 - Tipos de entrada do DM556D, corrente do motor e curso útil seguem
   `NAO CONFIRMADO` em `docs/HARDWARE-DECISIONS.md`.
